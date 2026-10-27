@@ -249,6 +249,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private final java.util.concurrent.ExecutorService wallDecoder = java.util.concurrent.Executors.newSingleThreadExecutor();
     private long wallShownAt;
     private android.widget.ImageView wallView;
+    /** The wallpaper, softened, faded in while an app tile has focus (see setWallBlur). */
+    private WallBlurView wallBlur;
+    private static final float WALL_BLUR_ALPHA = 0.75f;
     private android.graphics.Bitmap wallBitmap;
     /** Dynamic atmospheric weather canvas particle overlay over the wallpaper */
     private WeatherBackgroundView weatherOverlayView;
@@ -878,6 +881,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         // Hide the glass when focus leaves the tiles.
         getWindow().getDecorView().getViewTreeObserver().addOnGlobalFocusChangeListener((oldF, newF) -> {
             boolean onTile = newF != null && newF.getId() == R.id.card;
+            setWallBlur(onTile);
             if (!onTile) hideGlass();
             if (!onTile && (newF == null || !(isTopPill(newF) || inMenu(newF)))) glider.hide();
         });
@@ -976,6 +980,13 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             if (placesMode) wallView.setColorFilter(0xFF7A7A7A, android.graphics.PorterDuff.Mode.MULTIPLY);
             root.addView(wallView, 0, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             ensureWeatherOverlayView();
+            wallBlur = new WallBlurView(this);
+            wallBlur.setAlpha(0f);
+            wallBlur.setVisibility(View.GONE);
+            root.addView(wallBlur, 1, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+            Backdrop.watch(wallBlur);
+            View focused = getCurrentFocus();
+            if (focused != null && focused.getId() == R.id.card) setWallBlur(true);
         }
         android.graphics.Bitmap old = wallBitmap;
         wallBitmap = bmp;
@@ -1005,6 +1016,22 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             root.setBackground(null);
             getWindow().setBackgroundDrawable(null);
         }
+    }
+
+    /** Softens the wallpaper a little while the cursor is on the apps, and brings it back sharp after. */
+    private void setWallBlur(boolean on) {
+        if (wallBlur == null) return;
+        float target = on ? WALL_BLUR_ALPHA : 0f;
+        wallBlur.animate().cancel();
+        if (on) wallBlur.setVisibility(View.VISIBLE);
+        if (reducedMotion) {
+            wallBlur.setAlpha(target);
+            if (!on) wallBlur.setVisibility(View.GONE);
+            return;
+        }
+        wallBlur.animate().alpha(target).setDuration(on ? 260 : 200).withEndAction(() -> {
+            if (wallBlur.getAlpha() == 0f) wallBlur.setVisibility(View.GONE);
+        }).start();
     }
 
     /** Hands the picture now on screen to the glass, which blurs it once, off the main thread. */
