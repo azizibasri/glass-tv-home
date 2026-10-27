@@ -304,7 +304,7 @@ final class PrayerTimes {
         if (loc.contains("kuala lumpur") || loc.contains("cheras") || loc.contains("batu muda")) return "WLY01";
         if (loc.contains("labuan")) return "WLY02";
         if (loc.contains("melaka") || loc.contains("alor gajah") || loc.contains("rambai")) return "MLK01";
-        if (loc.contains("petaling") || loc.contains("shah alam")) return "SGR01";
+        if (loc.contains("petaling") || loc.contains("shah alam") || loc.contains("cyberjaya") || loc.contains("sepang")) return "SGR01";
         if (loc.contains("klang") || loc.contains("banting")) return "SGR03";
         if (loc.contains("seremban") || loc.contains("nilai") || loc.contains("port dickson")) return "NGS02";
         if (loc.contains("johor") || loc.contains("larkin") || loc.contains("pasir gudang")) return "JHR02";
