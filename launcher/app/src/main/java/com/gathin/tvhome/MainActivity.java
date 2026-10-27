@@ -5353,7 +5353,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         // iPhone StandBy Wind Down Mode: 10:00 PM (22:00) to 6:00 AM (06:00) -> Red Monochrome
         java.util.Calendar cal = java.util.Calendar.getInstance();
         int hour = cal.get(java.util.Calendar.HOUR_OF_DAY);
-        boolean isNightMode = (hour >= 22 || hour < 6);
+        boolean isNightMode = false;   // Red night mode off at the owner's request: the text stays white all day.
 
         TextView clock = screensaverView.findViewById(R.id.nightstandClock);
         TextView ampm = screensaverView.findViewById(R.id.nightstandAmPm);

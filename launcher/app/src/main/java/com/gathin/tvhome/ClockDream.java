@@ -124,7 +124,7 @@ public class ClockDream extends DreamService {
         // StandBy Wind Down Mode: 10:00 PM (22:00) to 6:00 AM (06:00) -> Red Monochrome
         Calendar cal = Calendar.getInstance();
         int hour = cal.get(Calendar.HOUR_OF_DAY);
-        boolean isNightMode = (hour >= 22 || hour < 6);
+        boolean isNightMode = false;   // Red night mode off at the owner's request: the text stays white all day.
 
         if (isNightMode) {
             int red = 0xFFFF453A;
