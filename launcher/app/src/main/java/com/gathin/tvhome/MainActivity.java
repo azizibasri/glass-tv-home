@@ -153,6 +153,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     private static final float HERO_TITLE_MAX_SP = 40f;
     /** The breathing room between the shelf's last line and the top of the app container. */
     private static final float HERO_GAP_DP = 70f;
+    /** The Doa Harian & Waktu Solat shelf sits this much lower than the hero line, closer to the dock. */
+    private static final float ISLAMIC_DROP_DP = 36f;
+    private final android.graphics.Rect islamicTopRect = new android.graphics.Rect();
     private static final float HERO_TITLE_MIN_SP = 26f;
     /** The shelf's width in pixels, worked out once from the screen. */
     private int heroMaxWidth, heroNameMaxWidth;
@@ -583,7 +586,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             timeIsyak = findViewById(R.id.timeIsyak);
 
             islamicShelf.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, orr, ob) -> {
-                if (heroBottom > 0) v.setY(heroBottom - v.getHeight());
+                if (heroBottom > 0) v.setY(islamicY(v));
             });
             updateIslamicShelf();
         }
@@ -1589,7 +1592,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         heroBottom = dockTopInRoot - HERO_GAP_DP * density;
 
         if (islamicShelf != null) {
-            float iy = heroBottom - islamicShelf.getHeight();
+            float iy = islamicY(islamicShelf);
             islamicShelf.setY(iy);
             islamicShelf.animate().cancel();
             if (!heroShown) {
@@ -1669,6 +1672,24 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
      * right edge of the last dock card, and Inputs follows on its left. Card width follows the
      * column count and the screen, so the edge is measured rather than written down.
      */
+    /**
+     * Where the Doa Harian & Waktu Solat shelf goes: a little lower than the hero line, and never up into
+     * the top-bar pills (Wi-Fi, Assistant, Settings…); never down past the dock either.
+     */
+    private float islamicY(View shelf) {
+        float h = shelf.getHeight();
+        float y = heroBottom - h + ISLAMIC_DROP_DP * density;
+        float maxY = heroBottom + HERO_GAP_DP * density - 8 * density - h;   // stays above the dock
+        View top = findViewById(R.id.topButtons);
+        if (top != null && top.getHeight() > 0) {
+            islamicTopRect.set(0, 0, top.getWidth(), top.getHeight());
+            root.offsetDescendantRectToMyCoords(top, islamicTopRect);
+            float minY = islamicTopRect.bottom + 12 * density;               // clears the pills
+            if (y < minY) y = minY;
+        }
+        return Math.min(y, maxY);
+    }
+
     private void alignTopButtons() {
         // This runs on every layout pass, which during a grid scroll is every frame, so it keeps
         // its views and rectangles rather than looking them up or allocating each time.
