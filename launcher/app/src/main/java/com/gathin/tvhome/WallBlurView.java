@@ -17,7 +17,7 @@ import android.view.View;
  */
 final class WallBlurView extends View {
     /** How strongly the app's colour washes over the picture (0..255), before the layer's own fade. */
-    private static final int TINT_ALPHA = 0x48;
+    private static final int TINT_ALPHA = 0x24;
 
     private final Backdrop.Fill fill = new Backdrop.Fill();
     private final RectF rect = new RectF();

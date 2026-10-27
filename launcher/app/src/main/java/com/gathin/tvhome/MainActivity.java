@@ -1941,11 +1941,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         int h = 270;
         Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        // Stronger and wider than before: the app's colour now washes over the whole wallpaper a little
-        // (12% at the edges), brightest around the middle of the screen where the apps are.
+        // Wider than the original: the app's colour washes over the whole wallpaper a little
+        // (6% at the edges), brightest around the middle of the screen where the apps are.
         paint.setShader(new RadialGradient(
                 w * 0.5f, h * 0.58f, w * 0.85f,
-                new int[]{0x8CFFFFFF, 0x4DFFFFFF, 0x1FFFFFFF},
+                new int[]{0x46FFFFFF, 0x26FFFFFF, 0x10FFFFFF},
                 new float[]{0f, 0.5f, 1f},
                 Shader.TileMode.CLAMP));
         new Canvas(bmp).drawRect(0, 0, w, h, paint);
