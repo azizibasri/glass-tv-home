@@ -985,6 +985,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             wallBlur.setVisibility(View.GONE);
             root.addView(wallBlur, 1, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
             Backdrop.watch(wallBlur);
+            if (ambientColor != -1) wallBlur.setTint(ambientColor, 0);
             View focused = getCurrentFocus();
             if (focused != null && focused.getId() == R.id.card) setWallBlur(true);
         }
@@ -1962,6 +1963,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         }
         int previous = ambientColor;
         ambientColor = color;
+        if (wallBlur != null) wallBlur.setTint(color, crossFade ? 450 : 0);
         // Every app's glow is the same shape in a different colour, so the shape is drawn once and
         // each app only tints it. Drawing a fresh bitmap per move cost a CPU fill, half a megabyte
         // and a texture upload every time focus moved, which is what made moving around feel heavy
