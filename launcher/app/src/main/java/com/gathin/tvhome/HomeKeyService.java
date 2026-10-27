@@ -57,51 +57,37 @@ public class HomeKeyService extends AccessibilityService {
         return false;
     }
 
+    /**
+     * Restarts the box. An app cannot reboot Android itself, and on Android 11 the accessibility action
+     * this used (12) is the accessibility-button chooser, not a reboot, so the button did nothing on the
+     * Mi Box S 2nd gen. It now asks the box's own debugging service (as the cache cleaner does) to run
+     * {@code svc power reboot}; the first time the TV asks "Allow USB debugging?". If that is not possible
+     * the system power menu opens instead, which has Restart.
+     */
     public static boolean restartTv(Context context) {
-        if (instance != null) {
-            Log.i(TAG, "Attempting TV restart via accessibility service");
-            // Android 11+ (API 30+) provides GLOBAL_ACTION_REBOOT = 12
-            if (android.os.Build.VERSION.SDK_INT >= 30) {
-                boolean done = instance.performGlobalAction(12);
-                if (done) return true;
-            }
-            // Fallback: System power dialog which presents Restart
-            boolean dialog = instance.performGlobalAction(GLOBAL_ACTION_POWER_DIALOG);
-            if (dialog) return true;
-        }
-        // Fallback: system broadcast or shell reboot
-        try {
-            Intent intent = new Intent(Intent.ACTION_REBOOT);
-            intent.putExtra("nowait", 1);
-            intent.putExtra("interval", 1);
-            intent.putExtra("window", 0);
-            context.sendBroadcast(intent);
-            return true;
-        } catch (Exception e) {
-            try {
-                Runtime.getRuntime().exec("reboot");
-                return true;
-            } catch (Exception ignored) {}
-        }
-        return false;
+        Log.i(TAG, "restart requested");
+        CacheCleaner.power(context, true, () -> showPowerMenu(context));
+        return true;
     }
 
+    /**
+     * Puts the box (and over HDMI-CEC the TV) to standby, like the remote's power button: KEYCODE_SLEEP
+     * through the debugging service. Without it, the accessibility lock action, then the power menu.
+     */
     public static boolean turnOffTv(Context context) {
-        if (instance != null) {
-            Log.i(TAG, "Attempting TV power off / sleep via accessibility service");
-            boolean done = instance.performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN);
-            if (done) return true;
-            boolean dialog = instance.performGlobalAction(GLOBAL_ACTION_POWER_DIALOG);
-            if (dialog) return true;
-        }
-        try {
-            Intent intent = new Intent("android.intent.action.ACTION_REQUEST_SHUTDOWN");
-            intent.putExtra("android.intent.extra.KEY_CONFIRM", false);
-            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(intent);
-            return true;
-        } catch (Exception ignored) {}
-        return false;
+        Log.i(TAG, "turn off requested");
+        CacheCleaner.power(context, false, () -> {
+            if (instance != null && instance.performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)) return;
+            showPowerMenu(context);
+        });
+        return true;
+    }
+
+    private static void showPowerMenu(Context context) {
+        if (instance != null && instance.performGlobalAction(GLOBAL_ACTION_POWER_DIALOG)) return;
+        android.widget.Toast.makeText(context.getApplicationContext(),
+                "Tidak dapat restart/padam dari sini. Tekan lama butang kuasa pada remote.",
+                android.widget.Toast.LENGTH_LONG).show();
     }
 
     public static void forceStopApp(Context context, String pkg) {
