@@ -1,7 +1,7 @@
 {
-  "versionCode": 14,
-  "versionName": "3.1.4",
+  "versionCode": 19,
+  "versionName": "3.1.5",
   "apkUrl": "https://github.com/aqmangge/glass-tv-home/raw/main/release/glass-tv-home.apk",
-  "changelog": "☕ Tambah Kad Belanja Kopi DuitNow QR (@imsomangge) dalam Popup Kemas Kini OTA\n🔄 Label Butang Candy Box Memaparkan Versi Patch Terkini (v3.1.4)\n🍎 Rekaan Dialog Apple TV-Style Minimal & Kemas",
+  "changelog": "📍 Cyberjaya (SGR01) dalam senarai Waktu Solat Selangor\n🎮 Butang Netflix, YouTube & Prime Video pada remote Mi Box S 2nd gen\n🌫️ Wallpaper dikaburkan sedikit & diwarnakan ikut ikon aplikasi bila dipilih\n🕌 Doa Harian & Waktu Solat diturunkan supaya tidak bertindih butang atas\n🔄 Restart TV & Turn Off TV kini berfungsi\n🕒 Font Nightstand sentiasa putih",
   "releaseDate": "2026-10-28"
 }
