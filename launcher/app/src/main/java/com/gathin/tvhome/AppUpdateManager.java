@@ -36,7 +36,7 @@ import java.util.concurrent.Executors;
  */
 public final class AppUpdateManager {
     private static final String TAG = "AppUpdateManager";
-    private static final String VERSION_URL = "https://raw.githubusercontent.com/aqmangge/glass-tv-home/main/release/version.json";
+    private static final String VERSION_URL = "https://raw.githubusercontent.com/azizibasri/glass-tv-home/main/release/version.json";
     private static final String PREFS_NAME = "update_prefs";
     private static final String KEY_LAST_CHECK = "last_check_timestamp";
     public static final String KEY_AUTO_UPDATE = "pref_auto_update";
