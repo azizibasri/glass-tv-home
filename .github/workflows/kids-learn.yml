@@ -72,13 +72,14 @@ jobs:
         with:
           name: belajar-ceria-screenshots
           path: shots/
-      - name: Publish the screenshots on the kids-learn-screenshots branch
+      - name: Publish the screenshots and the APK on the kids-learn-screenshots branch
         if: github.event_name == 'push'
         continue-on-error: true # a nice-to-have: never fails the build
         run: |
           cd shots
+          cp ../belajar-ceria.apk .
           git init -q -b kids-learn-screenshots
-          git add *.png
+          git add *.png belajar-ceria.apk
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
             commit -q -m "Screenshots of ${GITHUB_SHA::7}"
           for try in 1 2 3; do
