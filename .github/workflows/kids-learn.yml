@@ -74,10 +74,17 @@ jobs:
           path: shots/
       - name: Publish the screenshots on the kids-learn-screenshots branch
         if: github.event_name == 'push'
+        continue-on-error: true # a nice-to-have: never fails the build
         run: |
           cd shots
           git init -q -b kids-learn-screenshots
           git add *.png
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
             commit -q -m "Screenshots of ${GITHUB_SHA::7}"
-          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:kids-learn-screenshots
+          for try in 1 2 3; do
+            git -c http.postBuffer=52428800 push -q -f \
+              "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:kids-learn-screenshots \
+              && exit 0
+            sleep $((try * 10))
+          done
+          exit 1
