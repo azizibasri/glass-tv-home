@@ -38,7 +38,10 @@ final class TraceScreen extends Screen {
         board.setBackground(Ui.round(Ui.WHITE, Ui.dp(36)));
         Ui.lift(board, 12, s.colors[0]);
         trace = new TraceView(a);
-        board.addView(trace, new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+        // The right strip of the board holds the crayon box, so the letter is centred in the rest.
+        FrameLayout.LayoutParams tp = new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
+        tp.rightMargin = Ui.dp(118);
+        board.addView(trace, tp);
 
         label = Ui.text(a, "", 20, Ui.INK, Ui.BLACK);
         label.setBackground(Ui.round(Content.mix(Ui.WHITE, s.colors[0], 0.12f), Ui.dp(22)));
@@ -53,7 +56,7 @@ final class TraceScreen extends Screen {
         pl.setMargins(Ui.dp(14), 0, 0, Ui.dp(14));
         board.addView(Ui.chevronButton(a, true, s.colors[0], () -> go(-1)), pl);
         FrameLayout.LayoutParams nl = new FrameLayout.LayoutParams(nav, nav, Gravity.BOTTOM | Gravity.END);
-        nl.setMargins(0, 0, Ui.dp(14), Ui.dp(14));
+        nl.setMargins(0, 0, Ui.dp(130), Ui.dp(14));
         board.addView(Ui.chevronButton(a, false, s.colors[0], () -> go(1)), nl);
         body.addView(board, new LinearLayout.LayoutParams(0, LayoutParams.MATCH_PARENT, 1f));
 
@@ -62,7 +65,7 @@ final class TraceScreen extends Screen {
         tools.setOrientation(LinearLayout.VERTICAL);
         tools.setGravity(Gravity.CENTER);
         Ui.noClip(tools);
-        int dot = Ui.dp(38);
+        int dot = Ui.dp(36);
         for (int r = 0; r < 3; r++) {
             LinearLayout row = new LinearLayout(a);
             Ui.noClip(row);
@@ -86,9 +89,9 @@ final class TraceScreen extends Screen {
         LinearLayout.LayoutParams cl = new LinearLayout.LayoutParams(Ui.dp(56), Ui.dp(56));
         cl.topMargin = Ui.dp(14);
         tools.addView(clear, cl);
-        LinearLayout.LayoutParams tl = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.MATCH_PARENT);
-        tl.leftMargin = Ui.dp(14);
-        body.addView(tools, tl);
+        FrameLayout.LayoutParams tl = new FrameLayout.LayoutParams(Ui.dp(110), LayoutParams.MATCH_PARENT, Gravity.END);
+        tl.rightMargin = Ui.dp(8);
+        board.addView(tools, tl);
 
         col.addView(body, new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, 0, 1f));
         addView(col, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
