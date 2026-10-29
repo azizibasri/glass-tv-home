@@ -97,6 +97,7 @@ final class MatchScreen extends Screen {
         }
         Ui.enter(views, 60);
         lines.animateFor(1400);
+        act.logViewsSoon();
     }
 
     private View add(Content.Item it, boolean left, int x, int y, int w, int h) {

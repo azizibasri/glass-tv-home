@@ -112,6 +112,7 @@ final class DragScreen extends Screen {
         }
         Ui.enter(cards, 60);
         Ui.enter(tiles, 260);
+        act.logViewsSoon();
     }
 
     /** What the card shows: the picture, the dots to count, or for Hijaiyah the letter's shadow. */

@@ -12,7 +12,6 @@ import re
 import subprocess
 import sys
 import time
-import xml.etree.ElementTree as ET
 
 PKG = "com.belajarceria.kids"
 OUT = sys.argv[1] if len(sys.argv) > 1 else "playtest"
@@ -28,20 +27,18 @@ def sh(cmd):
 
 
 def nodes():
-    """Every on-screen element as (content description, (left, top, right, bottom))."""
-    for _ in range(4):
-        out = sh("uiautomator dump /sdcard/ui.xml >/dev/null 2>&1; cat /sdcard/ui.xml")
-        start = out.find("<hierarchy")
-        if start >= 0:
-            root = ET.fromstring(out[start:out.rindex("</hierarchy>") + len("</hierarchy>")])
-            found = []
-            for n in root.iter("node"):
-                b = [int(v) for v in re.findall(r"-?\d+", n.get("bounds", ""))]
-                if len(b) == 4:
-                    found.append((n.get("content-desc", ""), tuple(b)))
-            return found
-        time.sleep(1)
-    return []
+    """Every labelled piece on screen as (label, (left, top, right, bottom)). The app logs them each time a screen
+    or round settles (uiautomator can't be used: the animated background never lets the screen go idle)."""
+    lines = events()
+    if "layout" not in lines:
+        return []
+    last = len(lines) - 1 - lines[::-1].index("layout")
+    found = []
+    for e in lines[last + 1:]:
+        m = re.match(r"view (.+) (-?\d+) (-?\d+) (-?\d+) (-?\d+)$", e)
+        if m:
+            found.append((m.group(1), tuple(int(m.group(i)) for i in range(2, 6))))
+    return found
 
 
 def find(desc, exact=False):
@@ -52,7 +49,7 @@ def center(b):
     return (b[0] + b[2]) // 2, (b[1] + b[3]) // 2
 
 
-def tap(desc, wait=2.5):
+def tap(desc, wait=3.0):
     hits = find(desc, exact=True)
     if not hits:
         print(f"  ! nothing on screen called {desc!r}")
@@ -67,7 +64,7 @@ def swipe(a, b, ms):
     sh(f"input swipe {a[0]} {a[1]} {b[0]} {b[1]} {ms}")
 
 
-def back(wait=2.0):
+def back(wait=2.5):
     sh("input keyevent 4")
     time.sleep(wait)
 

@@ -112,6 +112,7 @@ public final class MainActivity extends Activity {
         }
         bg.setPalette(s.palette());
         s.onShown();
+        logViewsSoon();
     }
 
     void back() {
@@ -137,6 +138,7 @@ public final class MainActivity extends Activity {
         Spring.scale(prev, 1f, 260f, 0.8f);
         bg.setPalette(prev.palette());
         prev.onShown();
+        logViewsSoon();
     }
 
     @SuppressWarnings("deprecation")
@@ -171,6 +173,31 @@ public final class MainActivity extends Activity {
             }).to(0f);
             Spring.scale(badge, 0.8f, 300f, 1f);
         }, 1700);
+    }
+
+    /** For automated tests: once the screen settles, log where each labelled piece is on screen. */
+    void logViewsSoon() {
+        host.removeCallbacks(logViews);
+        host.postDelayed(logViews, 1800);
+    }
+
+    private final Runnable logViews = () -> {
+        if (stack.isEmpty()) return;
+        log("layout");
+        logTree(stack.get(stack.size() - 1));
+    };
+
+    private static void logTree(View v) {
+        CharSequence d = v.getContentDescription();
+        if (d != null && v.isShown()) {
+            int[] p = new int[2];
+            v.getLocationOnScreen(p);
+            log("view " + d + " " + p[0] + " " + p[1] + " " + (p[0] + v.getWidth()) + " " + (p[1] + v.getHeight()));
+        }
+        if (v instanceof ViewGroup) {
+            ViewGroup g = (ViewGroup) v;
+            for (int i = 0; i < g.getChildCount(); i++) logTree(g.getChildAt(i));
+        }
     }
 
     /** One line per game event in logcat (tag Ceria), so automated tests can check what happened. */
