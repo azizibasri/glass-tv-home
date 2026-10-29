@@ -46,6 +46,8 @@ jobs:
     name: Run it on an emulator
     needs: apk
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # to publish the screenshots on their own branch
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -70,3 +72,12 @@ jobs:
         with:
           name: belajar-ceria-screenshots
           path: shots/
+      - name: Publish the screenshots on the kids-learn-screenshots branch
+        if: github.event_name == 'push'
+        run: |
+          cd shots
+          git init -q -b kids-learn-screenshots
+          git add *.png
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -q -m "Screenshots of ${GITHUB_SHA::7}"
+          git push -q -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}" HEAD:kids-learn-screenshots
