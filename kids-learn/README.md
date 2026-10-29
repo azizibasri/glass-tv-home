@@ -54,7 +54,8 @@ cd kids-learn
 ```
 
 `tools/screenshots.sh <apk> <folder>` installs it on a connected device or emulator, opens every kind of
-screen and saves screenshots. Any screen can be opened directly:
+screen and saves screenshots. `tools/playtest.py <folder>` then plays the games like a child (flicks cards,
+drags tiles, draws match lines, traces Alif), records a video and checks each game reacted; CI runs both. Any screen can be opened directly:
 `adb shell am start -n com.belajarceria.kids/.MainActivity --es open 2,3` (subject 0–4, activity 0–3).
 
 ## Code map

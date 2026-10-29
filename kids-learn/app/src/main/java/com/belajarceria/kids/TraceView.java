@@ -284,6 +284,7 @@ final class TraceView extends View {
         }
         if (letter == 0 || inked == 0) return;
         float coverage = covered / (float) letter, precision = onLetter / (float) inked;
+        MainActivity.log(String.format(java.util.Locale.US, "trace check coverage=%.2f precision=%.2f", coverage, precision));
         if (coverage >= 0.62f && precision >= 0.55f) {
             traced = true;
             doneAnim = ValueAnimator.ofFloat(0f, 1f);
@@ -296,6 +297,7 @@ final class TraceView extends View {
             for (int s = 0; s < 30; s++) {
                 addSpark(getWidth() * (0.15f + 0.7f * rnd.nextFloat()), getHeight() * (0.1f + 0.8f * rnd.nextFloat()));
             }
+            MainActivity.log("traced " + glyph);
             if (listener != null) listener.onTraced();
         } else if (precision < 0.4f && inked > letter) {
             if (listener != null) listener.onMessy();

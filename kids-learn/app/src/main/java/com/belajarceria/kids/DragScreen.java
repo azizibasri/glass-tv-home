@@ -95,6 +95,7 @@ final class DragScreen extends Screen {
             lp.leftMargin = (int) (gap + i * (colW + gap) + (colW - cardW) / 2);
             lp.topMargin = Ui.dp(6);
             board.addView(card, lp);
+            card.setContentDescription("slot:" + items[i].word);
             slot.card = card;
             slot.hole = hole;
             slots.add(slot);
@@ -126,7 +127,7 @@ final class DragScreen extends Screen {
         tile.setBackground(Ui.gradient(s.colors, r));
         tile.setForeground(Ui.shine(r));
         Ui.lift(tile, 8, s.colors[0]);
-        tile.setContentDescription(it.word);
+        tile.setContentDescription("tile:" + it.word);
         if (s.kind == Content.Kind.WORDS) {
             LinearLayout v = new LinearLayout(c);
             v.setOrientation(LinearLayout.VERTICAL);
@@ -205,6 +206,7 @@ final class DragScreen extends Screen {
                 hit.filled = true;
                 locked = true;
                 placed++;
+                MainActivity.log("drag right " + item.word);
                 float tx = hit.card.getLeft() + hit.hole.getLeft() + hit.hole.getWidth() / 2f - (v.getLeft() + v.getWidth() / 2f);
                 float ty = hit.card.getTop() + hit.hole.getTop() + hit.hole.getHeight() / 2f - (v.getTop() + v.getHeight() / 2f);
                 Spring.move(v, tx, ty, 450f, 0.62f);
@@ -216,6 +218,7 @@ final class DragScreen extends Screen {
                 if (placed == slots.size()) postDelayed(() -> act.celebrate(DragScreen.this::newRound), 1000);
             } else {
                 if (hit != null) {
+                    MainActivity.log("drag wrong " + item.word);
                     Sfx.oops();
                     Ui.shake(hit.card);
                 }

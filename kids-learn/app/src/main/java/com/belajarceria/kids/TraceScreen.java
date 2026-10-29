@@ -38,6 +38,7 @@ final class TraceScreen extends Screen {
         board.setBackground(Ui.round(Ui.WHITE, Ui.dp(36)));
         Ui.lift(board, 12, s.colors[0]);
         trace = new TraceView(a);
+        trace.setContentDescription("board");
         // The right strip of the board holds the crayon box, so the letter is centred in the rest.
         FrameLayout.LayoutParams tp = new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
         tp.rightMargin = Ui.dp(118);

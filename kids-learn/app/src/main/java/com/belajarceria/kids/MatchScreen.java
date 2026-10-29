@@ -104,7 +104,7 @@ final class MatchScreen extends Screen {
         FrameLayout v = new FrameLayout(c);
         v.setBackground(Ui.round(Ui.GLASS, Ui.dp(24)));
         Ui.lift(v, 6, s.colors[0]);
-        v.setContentDescription(it.word);
+        v.setContentDescription((left ? "left:" : "right:") + it.word);
         View content = left ? leftContent(it) : rightContent(it);
         FrameLayout.LayoutParams cp = new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT);
         cp.setMargins(Ui.dp(10), Ui.dp(6), Ui.dp(10), Ui.dp(6));
@@ -172,6 +172,7 @@ final class MatchScreen extends Screen {
             l.b = a.left ? b : a;
             l.color = LINE_COLORS[links.size() % LINE_COLORS.length];
             links.add(l);
+            MainActivity.log("match right " + a.item.word);
             for (Card c : new Card[]{a, b}) {
                 GradientDrawable g = Ui.round(Content.mix(Ui.WHITE, l.color, 0.16f), Ui.dp(24));
                 g.setStroke(Ui.dp(3), l.color);
@@ -184,6 +185,7 @@ final class MatchScreen extends Screen {
             lines.animateFor(800);
             if (links.size() == pairs) postDelayed(() -> act.celebrate(this::newRound), 1000);
         } else {
+            MainActivity.log("match wrong " + a.item.word + " / " + b.item.word);
             Sfx.oops();
             Ui.shake(b.view);
             lines.animateFor(800);

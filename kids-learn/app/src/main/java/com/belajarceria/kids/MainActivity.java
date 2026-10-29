@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.text.SpannableString;
 import android.text.style.RelativeSizeSpan;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -147,6 +148,7 @@ public final class MainActivity extends Activity {
     /** Confetti, a star, a fanfare and a cheer; then {@code after} runs (usually the next round). */
     void celebrate(Runnable after) {
         String[] p = PRAISE[random.nextInt(PRAISE.length)];
+        log("celebrate " + p[0]);
         SpannableString s = new SpannableString("🌟\n" + p[0]);
         s.setSpan(new RelativeSizeSpan(2.2f), 0, 2, 0);
         badge.setText(s);
@@ -169,6 +171,11 @@ public final class MainActivity extends Activity {
             }).to(0f);
             Spring.scale(badge, 0.8f, 300f, 1f);
         }, 1700);
+    }
+
+    /** One line per game event in logcat (tag Ceria), so automated tests can check what happened. */
+    static void log(String event) {
+        Log.i("Ceria", event);
     }
 
     @Override

@@ -58,7 +58,7 @@ jobs:
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Open every screen and take screenshots
+      - name: Open every screen, then play every game on a recording
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -66,20 +66,22 @@ jobs:
           arch: x86_64
           profile: pixel_6
           disable-animations: false
-          script: sh kids-learn/tools/screenshots.sh belajar-ceria.apk shots
+          script: |
+            sh kids-learn/tools/screenshots.sh belajar-ceria.apk shots
+            python3 kids-learn/tools/playtest.py shots/playtest
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: belajar-ceria-screenshots
           path: shots/
       - name: Publish the screenshots and the APK on the kids-learn-screenshots branch
-        if: github.event_name == 'push'
+        if: always() && github.event_name == 'push'
         continue-on-error: true # a nice-to-have: never fails the build
         run: |
           cd shots
-          cp ../belajar-ceria.apk .
+          cp ../belajar-ceria.apk . 2>/dev/null || true
           git init -q -b kids-learn-screenshots
-          git add *.png belajar-ceria.apk
+          git add -A
           git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
             commit -q -m "Screenshots of ${GITHUB_SHA::7}"
           for try in 1 2 3; do

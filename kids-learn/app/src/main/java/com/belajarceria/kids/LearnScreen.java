@@ -58,6 +58,7 @@ final class LearnScreen extends Screen {
         LayoutParams cp = new LayoutParams(cw, ch, Gravity.CENTER);
         cp.topMargin = Ui.dp(44);
         addView(card, cp);
+        card.setContentDescription("card");
         card.setOnTouchListener(this::onCardTouch);
 
         int b = Ui.dp(64);
@@ -96,6 +97,7 @@ final class LearnScreen extends Screen {
             int n = s.items.length;
             index = (index + dir + n) % n;
             show();
+            MainActivity.log("card " + s.items[index].word);
             card.setTranslationX(dir * off);
             card.setRotation(dir * 14f);
             Spring.of(card, View.TRANSLATION_X).config(240f, 0.74f).to(0f);
