@@ -1,0 +1,208 @@
+package com.belajarceria.kids;
+
+import android.app.Activity;
+import android.os.Build;
+import android.os.Bundle;
+import android.os.SystemClock;
+import android.text.SpannableString;
+import android.text.style.RelativeSizeSpan;
+import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
+import android.widget.FrameLayout;
+import android.widget.TextView;
+
+import java.util.ArrayList;
+import java.util.Random;
+
+/**
+ * The only activity. Screens are plain views in a stack: opening one zooms it in from the card that was tapped
+ * (like opening an app on an iPhone) while the one behind fades and grows slightly; going back reverses it.
+ */
+public final class MainActivity extends Activity {
+    private static final String[][] PRAISE = {
+            {"Great job!", "Great job!"}, {"Well done!", "Well done!"}, {"Awesome!", "Awesome!"},
+            {"You did it!", "You did it!"}, {"Masya-Allah!", "Masha Allah! Well done!"}, {"Hebat!", "Super!"},
+    };
+
+    private final ArrayList<Screen> stack = new ArrayList<>();
+    private final Random random = new Random();
+    private FrameLayout host;
+    private BlobBackground bg;
+    private Confetti confetti;
+    private TextView badge;
+    private long lastNav;
+    Voice voice;
+
+    @Override
+    protected void onCreate(Bundle state) {
+        super.onCreate(state);
+        Ui.init(this);
+        Sfx.init();
+        voice = new Voice(this);
+
+        FrameLayout root = new FrameLayout(this);
+        bg = new BlobBackground(this);
+        root.addView(bg, match());
+        host = new FrameLayout(this);
+        Ui.noClip(host);
+        root.addView(host, match());
+        confetti = new Confetti(this);
+        root.addView(confetti, match());
+
+        badge = Ui.text(this, "", 30, Ui.INK, Ui.BLACK);
+        badge.setBackground(Ui.round(0xF7FFFFFF, Ui.dp(40)));
+        badge.setPadding(Ui.dp(44), Ui.dp(20), Ui.dp(44), Ui.dp(26));
+        Ui.lift(badge, 24, 0xFFFFB300);
+        badge.setVisibility(View.GONE);
+        root.addView(badge, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
+
+        setContentView(root);
+        immersive();
+        push(new HomeScreen(this));
+        String open = getIntent().getStringExtra("open");
+        if (open != null) open(open);
+    }
+
+    /**
+     * Opens a screen straight away, for screenshots and testing:
+     * {@code adb shell am start -n com.belajarceria.kids/.MainActivity --es open 2,3} opens Alif Ba Ta, Match.
+     */
+    private void open(String path) {
+        try {
+            String[] p = path.split(",");
+            Content.Subject s = Content.SUBJECTS[Integer.parseInt(p[0].trim())];
+            lastNav = 0;
+            push(new SubjectScreen(this, s));
+            if (p.length > 1) {
+                lastNav = 0;
+                push(SubjectScreen.activity(this, s, Integer.parseInt(p[1].trim())));
+            }
+        } catch (RuntimeException ignored) {
+            // a mistyped path just leaves the home screen
+        }
+    }
+
+    private static FrameLayout.LayoutParams match() {
+        return new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+    }
+
+    void push(Screen s) {
+        long now = SystemClock.uptimeMillis();
+        if (!stack.isEmpty() && now - lastNav < 400) return; // a double tap opens one screen, not two
+        lastNav = now;
+        final Screen prev = stack.isEmpty() ? null : stack.get(stack.size() - 1);
+        stack.add(s);
+        host.addView(s, match());
+        s.setAlpha(0f);
+        s.setScaleX(0.86f);
+        s.setScaleY(0.86f);
+        s.setTranslationY(Ui.dp(30));
+        Spring.of(s, View.ALPHA).config(260f, 1f).to(1f);
+        Spring.scale(s, 1f, 240f, 0.74f);
+        Spring.of(s, View.TRANSLATION_Y).config(240f, 0.8f).to(0f);
+        if (prev != null) {
+            prev.onHidden();
+            Spring.of(prev, View.ALPHA).config(400f, 1f).then(() -> prev.setVisibility(View.INVISIBLE)).to(0f);
+            Spring.scale(prev, 1.08f, 300f, 1f);
+        }
+        bg.setPalette(s.palette());
+        s.onShown();
+    }
+
+    void back() {
+        if (stack.size() <= 1) {
+            finish();
+            return;
+        }
+        long now = SystemClock.uptimeMillis();
+        if (now - lastNav < 250) return;
+        lastNav = now;
+        voice.stop();
+        final Screen top = stack.remove(stack.size() - 1);
+        top.onHidden();
+        Spring.stop(top);
+        // Let touches reach the screen behind right away, while this one shrinks away.
+        top.setEnabled(false);
+        Spring.of(top, View.ALPHA).config(380f, 1f).then(() -> host.removeView(top)).to(0f);
+        Spring.scale(top, 0.86f, 320f, 1f);
+        Screen prev = stack.get(stack.size() - 1);
+        prev.setVisibility(View.VISIBLE);
+        prev.bringToFront();
+        Spring.of(prev, View.ALPHA).config(260f, 1f).to(1f);
+        Spring.scale(prev, 1f, 260f, 0.8f);
+        bg.setPalette(prev.palette());
+        prev.onShown();
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public void onBackPressed() {
+        back();
+    }
+
+    /** Confetti, a star, a fanfare and a cheer; then {@code after} runs (usually the next round). */
+    void celebrate(Runnable after) {
+        String[] p = PRAISE[random.nextInt(PRAISE.length)];
+        SpannableString s = new SpannableString("🌟\n" + p[0]);
+        s.setSpan(new RelativeSizeSpan(2.2f), 0, 2, 0);
+        badge.setText(s);
+        badge.setVisibility(View.VISIBLE);
+        badge.setAlpha(0f);
+        badge.setScaleX(0.3f);
+        badge.setScaleY(0.3f);
+        badge.setRotation(-18f);
+        Spring.of(badge, View.ALPHA).config(300f, 1f).to(1f);
+        Spring.scale(badge, 1f, 260f, 0.48f);
+        Spring.of(badge, View.ROTATION).config(200f, 0.42f).to(0f);
+        confetti.rain(70);
+        confetti.burst(confetti.getWidth() / 2f, confetti.getHeight() * 0.62f, 60);
+        Sfx.fanfare();
+        voice.say(p[1]);
+        badge.postDelayed(() -> {
+            Spring.of(badge, View.ALPHA).config(300f, 1f).then(() -> {
+                badge.setVisibility(View.GONE);
+                if (after != null) after.run();
+            }).to(0f);
+            Spring.scale(badge, 0.8f, 300f, 1f);
+        }, 1700);
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) immersive();
+    }
+
+    @SuppressWarnings("deprecation")
+    private void immersive() {
+        if (Build.VERSION.SDK_INT >= 30) {
+            WindowInsetsController c = getWindow().getInsetsController();
+            if (c != null) {
+                c.hide(WindowInsets.Type.systemBars());
+                c.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            }
+        } else {
+            getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                    | View.SYSTEM_UI_FLAG_FULLSCREEN | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        voice.stop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        voice.shutdown();
+        Sfx.release();
+        super.onDestroy();
+    }
+}
