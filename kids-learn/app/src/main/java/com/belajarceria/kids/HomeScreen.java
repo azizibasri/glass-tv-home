@@ -23,7 +23,11 @@ final class HomeScreen extends Screen {
     HomeScreen(MainActivity a) {
         super(a);
         int cardH = (int) Math.min(Math.max(Ui.shortSide(a) * 0.5f, Ui.dp(170)), Ui.dp(300));
-        int cardW = (int) (cardH * 0.8f);
+        // All five cards fit across the screen when it is wide enough, so nothing hides off the edge.
+        int screenW = getResources().getDisplayMetrics().widthPixels;
+        int fitW = (screenW - Ui.dp(48)) / Content.SUBJECTS.length - Ui.dp(20);
+        int cardW = (int) Math.max(Ui.dp(120), Math.min(cardH * 0.8f, fitW));
+        cardH = (int) Math.min(cardH, cardW * 1.3f);
 
         LinearLayout col = new LinearLayout(a);
         col.setOrientation(LinearLayout.VERTICAL);

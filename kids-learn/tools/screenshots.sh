@@ -7,6 +7,9 @@ out=$2
 pkg=com.belajarceria.kids
 mkdir -p "$out"
 adb install -r "$apk"
+# A busy CI emulator's own launcher tends to hang and cover the shots with "isn't responding": switch it off
+# (this is only ever run on a test device), and close any system dialog before each shot.
+adb shell pm disable-user --user 0 com.google.android.apps.nexuslauncher >/dev/null 2>&1 || true
 # Skip Android's one-time "Viewing full screen" notice, which would cover the screenshots.
 adb shell settings put secure immersive_mode_confirmations confirmed
 adb logcat -c
@@ -19,6 +22,8 @@ shot() {
     adb shell am start -S -W -n "$pkg/.MainActivity" --es open "$2" >/dev/null
   fi
   sleep 6
+  adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null 2>&1 || true
+  sleep 1
   adb shell screencap -p /sdcard/shot.png
   adb pull /sdcard/shot.png "$out/$1.png" >/dev/null
   echo "saved $out/$1.png"
