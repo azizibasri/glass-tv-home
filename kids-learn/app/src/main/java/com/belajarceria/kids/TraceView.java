@@ -127,7 +127,10 @@ final class TraceView extends View {
         ox = (w - b.width()) / 2f - b.left;
         oy = (h - b.height()) / 2f - b.top;
         glyphPath.reset();
-        guide.getTextPath(glyph, 0, glyph.length(), ox, oy, glyphPath);
+        Path raw = new Path();
+        guide.getTextPath(glyph, 0, glyph.length(), ox, oy, raw);
+        // Fonts build letters from overlapping strokes; merge them so the dashed outline is only the edge.
+        if (!glyphPath.op(raw, Path.Op.UNION)) glyphPath.set(raw);
         brushWidth = Math.max(Ui.dp(16), Math.min(size * 0.11f, Ui.dp(46)));
         fill.setShader(new LinearGradient(0, oy + b.top, 0, oy + b.bottom, colors, null, Shader.TileMode.CLAMP));
         guide.setColor((colors[0] & 0x00FFFFFF) | 0x1F000000);
