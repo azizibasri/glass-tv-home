@@ -7,6 +7,8 @@ out=$2
 pkg=com.belajarceria.kids
 mkdir -p "$out"
 adb install -r "$apk"
+# Skip Android's one-time "Viewing full screen" notice, which would cover the screenshots.
+adb shell settings put secure immersive_mode_confirmations confirmed
 adb logcat -c
 
 shot() {
@@ -16,7 +18,7 @@ shot() {
   else
     adb shell am start -S -W -n "$pkg/.MainActivity" --es open "$2" >/dev/null
   fi
-  sleep 4
+  sleep 6
   adb shell screencap -p /sdcard/shot.png
   adb pull /sdcard/shot.png "$out/$1.png" >/dev/null
   echo "saved $out/$1.png"
@@ -37,6 +39,8 @@ shot 12-islamic-learn "3,0"
 shot 13-islamic-match "3,3"
 shot 14-arabic-drag "4,2"
 shot 15-arabic-draw "4,1"
+shot 16-123-learn "1,0"
+shot 17-islamic-drag "3,2"
 
 adb logcat -d > "$out/logcat.txt"
 if adb logcat -d -b crash | grep -q "$pkg"; then

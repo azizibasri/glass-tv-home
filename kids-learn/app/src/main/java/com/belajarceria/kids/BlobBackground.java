@@ -2,18 +2,21 @@ package com.belajarceria.kids;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.LinearGradient;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.RadialGradient;
+import android.graphics.Rect;
 import android.graphics.Shader;
 import android.os.SystemClock;
 import android.view.View;
 
 /**
  * A soft pastel backdrop with big blurred colour blobs that drift slowly, like the iPhone's dynamic wallpapers.
- * Its colours glide to each subject's palette when the child opens it.
+ * Its colours glide to each subject's palette when the child opens it. The blobs are soft anyway, so they are
+ * painted into a bitmap a tenth of the screen's size and stretched: cheap enough for any tablet.
  */
 final class BlobBackground extends View {
     private static final float[][] PATHS = {
@@ -24,7 +27,13 @@ final class BlobBackground extends View {
             {0.78f, 0.18f, 0.18f, 0.82f, 0.16f, 0.14f, 4.4f},
     };
 
+    private static final int SHRINK = 10;
+
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint stretch = new Paint(Paint.FILTER_BITMAP_FLAG);
+    private final Rect dest = new Rect();
+    private Bitmap small;
+    private Canvas smallCanvas;
     private final Matrix matrix = new Matrix();
     private final RadialGradient[] blobs = new RadialGradient[4];
     private final int[] shown = new int[6];
@@ -59,14 +68,21 @@ final class BlobBackground extends View {
     @Override
     protected void onSizeChanged(int w, int h, int ow, int oh) {
         radius = Math.max(w, h) * 0.55f;
+        if (w > 0 && h > 0) {
+            small = Bitmap.createBitmap(w / SHRINK + 1, h / SHRINK + 1, Bitmap.Config.ARGB_8888);
+            smallCanvas = new Canvas(small);
+            smallCanvas.scale(small.getWidth() / (float) w, small.getHeight() / (float) h);
+            dest.set(0, 0, w, h);
+        }
         base = null; // rebuilt at the new size on the next frame
         java.util.Arrays.fill(blobs, null);
     }
 
     @Override
-    protected void onDraw(Canvas canvas) {
+    protected void onDraw(Canvas screen) {
         int w = getWidth(), h = getHeight();
-        if (w == 0) return;
+        if (w == 0 || small == null) return;
+        Canvas canvas = smallCanvas;
         int[] c = current();
         if (c[0] != shown[0] || c[1] != shown[1] || base == null) {
             base = new LinearGradient(0, 0, 0, h, c[0], c[1], Shader.TileMode.CLAMP);
@@ -94,6 +110,7 @@ final class BlobBackground extends View {
             canvas.drawCircle(x, y, radius, paint);
         }
         paint.setShader(null);
+        screen.drawBitmap(small, null, dest, stretch);
         postInvalidateOnAnimation();
     }
 }

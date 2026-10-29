@@ -120,7 +120,8 @@ final class Spring implements TimeAnimator.TimeListener {
             cancel();
             return;
         }
-        float dt = Math.min(deltaTime, 48L) / 1000f;
+        // Catch up after slow frames (a busy or cheap device), so movements finish on time, not in slow motion.
+        float dt = Math.min(deltaTime, 250L) / 1000f;
         float omega = (float) Math.sqrt(stiffness);
         float c = 2f * damping * omega;
         int steps = Math.max(1, (int) Math.ceil(dt / 0.004f));
