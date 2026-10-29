@@ -34,6 +34,16 @@ final class HomeScreen extends Screen {
         col.setGravity(Gravity.CENTER);
         Ui.noClip(col);
 
+        // The publisher's mark, small and spaced out above the app's name.
+        TextView brand = Ui.text(a, "KHAIZURAN ACADEMY™", 13, 0xFF5B4BB7, Ui.BOLD);
+        brand.setLetterSpacing(0.2f);
+        brand.setBackground(Ui.round(Ui.GLASS, Ui.dp(16)));
+        brand.setPadding(Ui.dp(16), Ui.dp(6), Ui.dp(16), Ui.dp(6));
+        Ui.lift(brand, 3, 0xFF8A5CFF);
+        LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+        bp.bottomMargin = Ui.dp(2);
+        col.addView(brand, bp);
+
         TextView title = Ui.text(a, "Belajar Ceria", 40, Ui.INK, Ui.BLACK);
         Ui.gradientText(title, new int[]{0xFFFF4F86, 0xFF8A5CFF, 0xFF3FA8FF});
         col.addView(title, new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
