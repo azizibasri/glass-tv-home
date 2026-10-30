@@ -25,11 +25,15 @@ final class LearnScreen extends Screen {
         super(a);
         this.s = s;
         LinearLayout bar = header(s.title, s);
-        addSpacer(bar);
+        // With a theme mascot the bar already ends in a gap and the mascot; the counter goes next to it.
+        boolean hasMascot = bar.getChildCount() > 2;
+        if (!hasMascot) addSpacer(bar);
         counter = Ui.text(a, "", 18, Ui.MUTED, Ui.BOLD);
         counter.setBackground(Ui.round(Ui.GLASS, Ui.dp(26)));
         counter.setPadding(Ui.dp(20), 0, Ui.dp(20), 0);
-        bar.addView(counter, new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, Ui.dp(52)));
+        LinearLayout.LayoutParams cl = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, Ui.dp(52));
+        if (hasMascot) cl.leftMargin = Ui.dp(10);
+        bar.addView(counter, cl);
         addView(bar, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT, Gravity.TOP));
 
         int ch = (int) (Ui.shortSide(a) * 0.68f);
