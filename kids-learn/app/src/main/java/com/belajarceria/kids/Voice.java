@@ -19,6 +19,7 @@ final class Voice implements TextToSpeech.OnInitListener {
     private final TextToSpeech tts;
     private boolean ready, arabic;
     private Locale malay;
+    private boolean muted;
     private int id;
 
     Voice(Context c) {
@@ -70,6 +71,16 @@ final class Voice implements TextToSpeech.OnInitListener {
         else speak(fallback, ENGLISH, true);
     }
 
+    /** Silences everything (the test's "Senyap" button) until unmuted. */
+    void setMuted(boolean m) {
+        muted = m;
+        if (m) stop();
+    }
+
+    boolean hasMalay() {
+        return malay != null;
+    }
+
     void stop() {
         if (ready) tts.stop();
     }
@@ -79,7 +90,7 @@ final class Voice implements TextToSpeech.OnInitListener {
     }
 
     private void speak(String text, Locale locale, boolean flush) {
-        if (!ready || text == null || text.isEmpty()) return;
+        if (!ready || muted || text == null || text.isEmpty()) return;
         tts.setLanguage(locale);
         tts.speak(text, flush ? TextToSpeech.QUEUE_FLUSH : TextToSpeech.QUEUE_ADD, null, "say" + (id++));
     }

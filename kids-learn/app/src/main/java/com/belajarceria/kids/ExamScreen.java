@@ -31,14 +31,28 @@ final class ExamScreen extends Screen {
     private boolean busy;
     private int[] taken = {};
     private View resultPage;
+    /** The test's voice: "ms" (Melayu), "en" (English) or "off" (Senyap); remembered between tests. */
+    private String mode;
+    private TextView voiceButton, promptView;
+    private Exam.Q current;
 
     ExamScreen(MainActivity a) {
         super(a);
         LinearLayout col = new LinearLayout(a);
         col.setOrientation(LinearLayout.VERTICAL);
         Ui.noClip(col);
-        col.addView(header("Ujian Diagnostik Tahun 1", Theme.current.title[0]),
-                new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+        mode = prefs().getString("exam_voice", "ms");
+        LinearLayout bar = header("Ujian Diagnostik Tahun 1", Theme.current.title[0]);
+        addSpacer(bar);
+        voiceButton = Ui.text(a, "", 17, Ui.INK, Ui.BLACK);
+        voiceButton.setBackground(Ui.round(Ui.GLASS, Ui.dp(26)));
+        voiceButton.setPadding(Ui.dp(20), 0, Ui.dp(20), 0);
+        Ui.lift(voiceButton, 4, Theme.current.title[0]);
+        voiceButton.setContentDescription("voice");
+        Ui.press(voiceButton, this::nextVoice);
+        bar.addView(voiceButton, new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, Ui.dp(52)));
+        showVoice();
+        col.addView(bar, new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
         body = new FrameLayout(a);
         Ui.noClip(body);
         col.addView(body, new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, 0, 1f));
@@ -97,7 +111,7 @@ final class ExamScreen extends Screen {
 
         body.addView(col, new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
         Ui.enter(tiles, 60);
-        act.voice.sayMalay("Pilih satu bahagian.");
+        talk("Pilih satu bahagian.", "Choose a part.");
         act.logViewsSoon();
     }
 
@@ -186,7 +200,9 @@ final class ExamScreen extends Screen {
         card.setPadding(Ui.dp(16), Ui.dp(10), Ui.dp(16), Ui.dp(10));
         card.setBackground(Ui.round(Ui.WHITE, Ui.dp(30)));
         Ui.lift(card, 12, col[0]);
-        TextView prompt = Ui.fit(c, q.prompt, 20, Ui.INK, Ui.BLACK);
+        current = q;
+        TextView prompt = Ui.fit(c, text(q), 20, Ui.INK, Ui.BLACK);
+        promptView = prompt;
         prompt.setMaxLines(2);
         Ui.press(prompt, () -> sayPrompt(q));
         card.addView(prompt, new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, Ui.dp(50)));
@@ -240,8 +256,50 @@ final class ExamScreen extends Screen {
     }
 
     private void sayPrompt(Exam.Q q) {
-        if ("en".equals(q.lang)) act.voice.say(q.prompt);
-        else act.voice.sayMalay(q.prompt);
+        talk(q.promptMs, q.promptEn);
+    }
+
+    /** The instruction in the chosen language (Malay when muted, as on the paper). */
+    private String text(Exam.Q q) {
+        return "en".equals(mode) ? q.promptEn : q.promptMs;
+    }
+
+    private void talk(String ms, String en) {
+        if ("en".equals(mode)) act.voice.say(en);
+        else if ("ms".equals(mode)) act.voice.sayMalay(ms);
+    }
+
+    /** Melayu, then English, then Senyap, then Melayu again. */
+    private void nextVoice() {
+        mode = "ms".equals(mode) ? "en" : "en".equals(mode) ? "off" : "ms";
+        prefs().edit().putString("exam_voice", mode).apply();
+        showVoice();
+        Ui.jelly(voiceButton, 1.5f);
+        MainActivity.log("exam voice " + mode);
+        if (promptView != null && current != null && promptView.isAttachedToWindow()) {
+            promptView.setText(text(current));
+            sayPrompt(current);
+        }
+        if ("ms".equals(mode) && !act.voice.hasMalay()) {
+            // Say why it stays quiet: this phone has no Malay (or Indonesian) voice installed.
+            voiceButton.setText("🔇 Tiada suara Melayu");
+            voiceButton.postDelayed(this::showVoice, 2500);
+        }
+    }
+
+    private void showVoice() {
+        voiceButton.setText("en".equals(mode) ? "🔊 English" : "off".equals(mode) ? "🔇 Senyap" : "🔊 Melayu");
+        act.voice.setMuted("off".equals(mode));
+    }
+
+    @Override
+    void onShown() {
+        act.voice.setMuted("off".equals(mode));
+    }
+
+    @Override
+    void onHidden() {
+        act.voice.setMuted(false);
     }
 
     private View stem(Exam.Q q, int[] col) {
@@ -354,6 +412,8 @@ final class ExamScreen extends Screen {
         left.addView(big, new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, Ui.dp(84)));
         String cheer = pct >= 0.84f ? "Cemerlang! Tahniah!" : pct >= 0.6f ? "Bagus! Teruskan usaha!"
                 : "Cuba lagi, kamu boleh!";
+        String cheerEn = pct >= 0.84f ? "Excellent! Congratulations!" : pct >= 0.6f ? "Good! Keep it up!"
+                : "Try again, you can do it!";
         left.addView(Ui.fit(c, cheer, 20, Ui.MUTED, Ui.BOLD),
                 new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, Ui.dp(32)));
         LinearLayout btns = new LinearLayout(c);
@@ -383,7 +443,8 @@ final class ExamScreen extends Screen {
         page.setAlpha(0f);
         Spring.of(page, View.ALPHA).config(260f, 1f).to(1f);
         act.celebrate(null);
-        act.voice.sayMalay("Kamu dapat " + total + " markah daripada " + max + ". " + cheer);
+        talk("Kamu dapat " + total + " markah daripada " + max + ". " + cheer,
+                "You got " + total + " marks out of " + max + ". " + cheerEn);
         act.logViewsSoon();
     }
 
@@ -474,7 +535,7 @@ final class ExamScreen extends Screen {
             row.setBackground(Ui.round(Ui.GLASS, Ui.dp(18)));
             String what = q.kind == Exam.Stem.SWATCH ? "🎨" : q.kind == Exam.Stem.SHAPE ? "🔷"
                     : Content.XYLOPHONE.equals(q.stem) ? "🎶" : q.stem.replace('\n', ' ');
-            TextView qText = Ui.text(c, Exam.ICONS[q.section] + "  " + q.prompt + "\n" + what
+            TextView qText = Ui.text(c, Exam.ICONS[q.section] + "  " + text(q) + "\n" + what
                     + (q.caption.isEmpty() ? "" : "   " + q.caption), 15, Ui.INK, Ui.BOLD);
             qText.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
             row.addView(qText, new LinearLayout.LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));

@@ -32,7 +32,8 @@ types per part (vowels, picture to word, syllables, capital letters, "Ini ___"; 
 sounds, missing vowels, colours, "This is a ___"; counting, number sequences, adding, taking away, shapes; Jawi letter
 names, look-alike letters, alphabet order, picture to Jawi word, Jawi spelling). The child answers one question at a
 time with big buttons; at the end each part gets a mark out of 25 with the paper's band (21–25 Cemerlang, 15–20 Baik,
-10–14 Perlu bimbingan, 0–9 Perlu intervensi segera), a total, and a list of wrong answers for the parent. Questions are
+10–14 Perlu bimbingan, 0–9 Perlu intervensi segera), a total, and a list of wrong answers for the parent. A button at the top switches the
+instructions, shown and read aloud, between 🔊 Melayu, 🔊 English and 🔇 Senyap (remembered). Questions are
 drawn fresh from banks each time, and the last mark of each part is kept.
 
 Three looks, picked with the round buttons at the top of the home screen and remembered: **🌈 Rainbow**

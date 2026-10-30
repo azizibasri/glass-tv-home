@@ -217,6 +217,15 @@ def play_exam():
         if right is None:
             print(f"  ! question {i + 1} never appeared")
             break
+        if i == 1:
+            # The voice button: Melayu -> English (photographed) -> Senyap -> Melayu.
+            v0 = len(events())
+            tap("voice", 1.5)
+            shot("p7b-exam-english")
+            tap("voice", 1)
+            tap("voice", 1)
+            modes = [e.split()[-1] for e in events()[v0:] if e.startswith("exam voice")]
+            check("Ujian: the voice button cycles Melayu, English, Senyap", modes == ["en", "off", "ms"], " ".join(modes))
         if i == 2 and not shot_taken:
             shot("p7-exam-question")
             shot_taken = True

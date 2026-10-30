@@ -23,10 +23,8 @@ final class Exam {
 
     static final class Q {
         int section;
-        /** The instruction, shown and read aloud. */
-        String prompt;
-        /** "ms" or "en": the language the instruction is read in. */
-        String lang;
+        /** The instruction in Malay and in English, as on the paper; shown and read aloud in the chosen one. */
+        String promptMs, promptEn;
         Stem kind;
         /** Text, emoji, or Jawi shown big; for SWATCH and SHAPE see color and shape. */
         String stem = "";
@@ -90,33 +88,33 @@ final class Exam {
         Collections.shuffle(vowels, rnd);
         List<String> consonants = Arrays.asList("b", "c", "d", "g", "k", "l", "m", "n", "p", "r", "s", "t");
         for (String v : vowels) {
-            Q q = q("Pilih huruf vokal.", "ms", Stem.TEXT, "🔤");
+            Q q = q("Pilih huruf vokal.", "Choose the vowel.", Stem.TEXT, "🔤");
             choices(q, v, consonants, 3);
             out.add(q);
         }
         // 2. Match the picture to its word.
         for (String[] w : pick(BM_WORDS, 5)) {
-            Q q = q("Pilih perkataan bagi gambar ini.", "ms", Stem.PICTURE, w[1]);
+            Q q = q("Pilih perkataan bagi gambar ini.", "Choose the word for this picture.", Stem.PICTURE, w[1]);
             choices(q, w[0], column(BM_WORDS, 0), 3);
             out.add(q);
         }
         // 3. Complete the word with the right syllable.
         for (Object[] w : pick(BM_SYLLABLES, 5)) {
             String word = (String) w[1], syl = (String) w[2];
-            Q q = q("Lengkapkan perkataan dengan suku kata yang betul.", "ms", Stem.PICTURE, (String) w[0]);
+            Q q = q("Lengkapkan perkataan dengan suku kata yang betul.", "Complete the word with the right syllable.", Stem.PICTURE, (String) w[0]);
             q.caption = (Boolean) w[3] ? "_ _ " + word.substring(2) : word.substring(0, 2) + " _ _";
             choices(q, syl, Arrays.asList(SYLLABLES), 3);
             out.add(q);
         }
         // 4. The capital letter for a small letter.
         for (String l : letters(5)) {
-            Q q = q("Pilih huruf besar bagi huruf ini.", "ms", Stem.TEXT, l);
+            Q q = q("Pilih huruf besar bagi huruf ini.", "Choose the capital letter for this letter.", Stem.TEXT, l);
             choices(q, l.toUpperCase(), upperAlphabet(), 3);
             out.add(q);
         }
         // 5. "Ini ____." — tick the right word.
         for (String[] w : pick(BM_INI, 5)) {
-            Q q = q("Ini apa? Pilih perkataan yang betul.", "ms", Stem.PICTURE, w[0]);
+            Q q = q("Ini apa? Pilih perkataan yang betul.", "What is this? Choose the right word.", Stem.PICTURE, w[0]);
             q.caption = "Ini ______ .";
             pair(q, w[1], w[2]);
             out.add(q);
@@ -149,26 +147,26 @@ final class Exam {
     private void en(List<Q> out) {
         // 1. Capital letter to small letter.
         for (String l : letters(5)) {
-            Q q = q("Choose the small letter.", "en", Stem.TEXT, l.toUpperCase());
+            Q q = q("Pilih huruf kecil.", "Choose the small letter.", Stem.TEXT, l.toUpperCase());
             choices(q, l, lowerAlphabet(), 3);
             out.add(q);
         }
         // 2. The beginning sound of a picture.
         for (String[] w : pick(EN_START, 5)) {
-            Q q = q("Choose the beginning sound.", "en", Stem.PICTURE, w[0]);
+            Q q = q("Pilih bunyi huruf awal.", "Choose the beginning sound.", Stem.PICTURE, w[0]);
             choices(q, w[1], lowerAlphabet(), 3);
             out.add(q);
         }
         // 3. The missing vowel in a three-letter word.
         for (String[] w : pick(EN_CVC, 5)) {
-            Q q = q("Fill in the missing letter.", "en", Stem.PICTURE, w[0]);
+            Q q = q("Isi huruf yang tertinggal.", "Fill in the missing letter.", Stem.PICTURE, w[0]);
             q.caption = w[1].replace("_", " _ ");
             choices(q, w[2], Arrays.asList("a", "e", "i", "o", "u"), 4);
             out.add(q);
         }
         // 4. A colour to its word.
         for (Object[] c : pick(COLOURS, 5)) {
-            Q q = q("What colour is this?", "en", Stem.SWATCH, "");
+            Q q = q("Apakah warna ini?", "What colour is this?", Stem.SWATCH, "");
             q.color = (Integer) c[1];
             List<String> names = new ArrayList<>();
             for (Object[] o : COLOURS) names.add((String) o[0]);
@@ -177,7 +175,7 @@ final class Exam {
         }
         // 5. "This is a ____."
         for (String[] w : pick(EN_THIS, 5)) {
-            Q q = q("Look and choose the correct word.", "en", Stem.PICTURE, w[0]);
+            Q q = q("Lihat dan pilih perkataan yang betul.", "Look and choose the correct word.", Stem.PICTURE, w[0]);
             q.caption = "This is a ______ .";
             pair(q, w[1], w[2]);
             out.add(q);
@@ -191,7 +189,7 @@ final class Exam {
     private void mt(List<Q> out) {
         // 1. Count the pictures (1 to 10).
         for (int n : distinct(1, 10, 5)) {
-            Q q = q("Kira gambar. Berapa banyak?", "ms", Stem.PICTURE, rows(thing(), n));
+            Q q = q("Kira gambar. Berapa banyak?", "Count the pictures. How many?", Stem.PICTURE, rows(thing(), n));
             numberChoices(q, n, 1, 10);
             out.add(q);
         }
@@ -203,7 +201,7 @@ final class Exam {
                 if (k > 0) b.append("   ");
                 b.append(k == gap ? "?" : String.valueOf(start + k));
             }
-            Q q = q("Nombor apakah yang tertinggal?", "ms", Stem.TEXT, b.toString());
+            Q q = q("Nombor apakah yang tertinggal?", "Which number is missing?", Stem.TEXT, b.toString());
             numberChoices(q, start + gap, 1, 20);
             out.add(q);
         }
@@ -211,7 +209,7 @@ final class Exam {
         for (int i = 0; i < 5; i++) {
             int a = 1 + rnd.nextInt(5), b = 1 + rnd.nextInt(Math.min(5, 10 - a));
             String t = thing();
-            Q q = q("Tambah. Kira semua gambar.", "ms", Stem.PICTURE, repeat(t, a) + "  ➕  " + repeat(t, b));
+            Q q = q("Tambah. Kira semua gambar.", "Add. Count all the pictures.", Stem.PICTURE, repeat(t, a) + "  ➕  " + repeat(t, b));
             q.caption = a + " + " + b + " = ?";
             numberChoices(q, a + b, 0, 10);
             out.add(q);
@@ -220,7 +218,7 @@ final class Exam {
         for (int i = 0; i < 5; i++) {
             int a = 3 + rnd.nextInt(6), b = 1 + rnd.nextInt(a - 1);
             String t = thing();
-            Q q = q("Tolak. Gambar yang dipangkah telah diambil.", "ms", Stem.PICTURE,
+            Q q = q("Tolak. Gambar yang dipangkah telah diambil.", "Take away. The crossed pictures are gone.", Stem.PICTURE,
                     repeat(t, a - b) + repeat("❌", b));
             q.caption = a + " − " + b + " = ?";
             numberChoices(q, a - b, 0, 10);
@@ -231,7 +229,7 @@ final class Exam {
         Integer[] order = {0, 1, 2, 3, 4};
         Collections.shuffle(Arrays.asList(order), rnd);
         for (int s : order) {
-            Q q = q("Namakan bentuk ini.", "ms", Stem.SHAPE, "");
+            Q q = q("Namakan bentuk ini.", "Name this shape.", Stem.SHAPE, "");
             q.shape = s;
             q.options = new String[]{"bulatan", "segi tiga", "segi empat sama", "segi empat tepat"};
             q.answer = Arrays.asList(q.options).indexOf(names[s]);
@@ -272,13 +270,13 @@ final class Exam {
     private void jw(List<Q> out) {
         // 1. The name of a Jawi letter.
         for (String[] l : pick(JAWI_NAMES, 5)) {
-            Q q = q("Apakah nama huruf Jawi ini?", "ms", Stem.JAWI, l[0]);
+            Q q = q("Apakah nama huruf Jawi ini?", "What is the name of this Jawi letter?", Stem.JAWI, l[0]);
             choices(q, l[1], column(JAWI_NAMES, 1), 3);
             out.add(q);
         }
         // 2. Find the same letter among look-alikes.
         for (String[] set : pick(LOOKALIKES, 5)) {
-            Q q = q("Pilih huruf yang sama.", "ms", Stem.JAWI, set[0]);
+            Q q = q("Pilih huruf yang sama.", "Choose the same letter.", Stem.JAWI, set[0]);
             List<String> opts = new ArrayList<>(Arrays.asList(set));
             Collections.shuffle(opts, rnd);
             q.options = opts.toArray(new String[0]);
@@ -294,21 +292,21 @@ final class Exam {
                 if (k > 0) b.append("  ");
                 b.append(k == gap ? "؟" : JAWI[start + k]);
             }
-            Q q = q("Huruf apakah yang tertinggal? Baca dari kanan ke kiri.", "ms", Stem.JAWI, b.toString());
+            Q q = q("Huruf apakah yang tertinggal? Baca dari kanan ke kiri.", "Which letter is missing? Read from right to left.", Stem.JAWI, b.toString());
             choices(q, JAWI[start + gap], Arrays.asList(JAWI), 3);
             q.jawiOptions = true;
             out.add(q);
         }
         // 4. A picture to its Jawi word.
         for (String[] w : pick(JAWI_WORDS, 5)) {
-            Q q = q("Pilih perkataan Jawi bagi gambar ini.", "ms", Stem.PICTURE, w[0]);
+            Q q = q("Pilih perkataan Jawi bagi gambar ini.", "Choose the Jawi word for this picture.", Stem.PICTURE, w[0]);
             choices(q, w[2], column(JAWI_WORDS, 2), 3);
             q.jawiOptions = true;
             out.add(q);
         }
         // 5. The right Jawi spelling of a word.
         for (String[] w : pick(JAWI_SPELLING, 5)) {
-            Q q = q("Pilih ejaan Jawi yang betul.", "ms", Stem.PICTURE, w[0]);
+            Q q = q("Pilih ejaan Jawi yang betul.", "Choose the correct Jawi spelling.", Stem.PICTURE, w[0]);
             q.caption = w[1];
             pair(q, w[2], w[3]);
             q.jawiOptions = true;
@@ -318,10 +316,10 @@ final class Exam {
 
     // ---------------------------------------------------------------- helpers
 
-    private static Q q(String prompt, String lang, Stem kind, String stem) {
+    private static Q q(String promptMs, String promptEn, Stem kind, String stem) {
         Q q = new Q();
-        q.prompt = prompt;
-        q.lang = lang;
+        q.promptMs = promptMs;
+        q.promptEn = promptEn;
         q.kind = kind;
         q.stem = stem;
         return q;
