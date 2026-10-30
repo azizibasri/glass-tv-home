@@ -72,6 +72,15 @@ public final class MainActivity extends Activity {
      */
     private void open(String path) {
         try {
+            if (path.startsWith("exam")) {
+                // "exam" opens the test; "exam,2" starts its Matematik part straight away.
+                lastNav = 0;
+                ExamScreen exam = new ExamScreen(this);
+                push(exam);
+                String[] p = path.split(",");
+                if (p.length > 1) exam.start(new int[]{Integer.parseInt(p[1].trim())});
+                return;
+            }
             String[] p = path.split(",");
             Content.Subject s = Content.SUBJECTS[Integer.parseInt(p[0].trim())];
             lastNav = 0;

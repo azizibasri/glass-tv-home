@@ -26,6 +26,15 @@ Five subjects, each with four ways to play:
 | 🧩 **Drag** | Drag each tile into the slot of its picture: 🍎 takes A, three ducklings take 3, the shadow of ب takes ب. |
 | 🔗 **Match** | Draw a line from each picture to its word (or tap one, then the other). |
 
+**📝 Ujian** (the last card on the home screen) is the Year 1 diagnostic test (Ujian Diagnostik Tahun 1) as a
+game: Bahasa Melayu, Bahasa Inggeris, Matematik and Jawi, 25 marks each, in the school paper's five question
+types per part (vowels, picture to word, syllables, capital letters, "Ini ___"; capital to small letters, beginning
+sounds, missing vowels, colours, "This is a ___"; counting, number sequences, adding, taking away, shapes; Jawi letter
+names, look-alike letters, alphabet order, picture to Jawi word, Jawi spelling). The child answers one question at a
+time with big buttons; at the end each part gets a mark out of 25 with the paper's band (21–25 Cemerlang, 15–20 Baik,
+10–14 Perlu bimbingan, 0–9 Perlu intervensi segera), a total, and a list of wrong answers for the parent. Questions are
+drawn fresh from banks each time, and the last mark of each part is kept.
+
 Three looks, picked with the round buttons at the top of the home screen and remembered: **🌈 Rainbow**
 (the default), **🦸 Hero Squad** (bold comic colours, a city skyline, hero mascots, "POW!" celebrations) and
 **❄️ Ice Kingdom** (icy blues and lavender, falling snow, an ice castle, snowflake confetti, wintry mascots).
@@ -69,6 +78,7 @@ drags tiles, draws match lines, traces Alif), records a video and checks each ga
 | File | What it does |
 |---|---|
 | `Content.java` | All the letters, numbers and words |
+| `Exam.java`, `ExamScreen.java` | The Year 1 test: question banks, and the test with its marks |
 | `Theme.java` | The three looks: colours, mascots, celebrations, background decoration |
 | `MainActivity.java` | The screen stack, zoom transitions, celebrations |
 | `HomeScreen`, `SubjectScreen` | The menus |

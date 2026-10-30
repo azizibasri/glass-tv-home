@@ -189,14 +189,74 @@ def play_trace():
     back()
 
 
+def wait_question(i, timeout=15):
+    """Waits until question i is on screen and its buttons are logged; returns the right answer's index."""
+    end = time.time() + timeout
+    while time.time() < end:
+        ev = events()
+        mark = [k for k, e in enumerate(ev) if e.startswith(f"exam q {i} ")]
+        if mark and "layout" in ev[mark[-1]:]:
+            return int(ev[mark[-1]].split()[-1])
+        time.sleep(0.5)
+    return None
+
+
+def play_exam():
+    print("Ujian: the Bahasa Melayu part, 24 right and one wrong on purpose")
+    tap("Ujian", 3)
+    before = len(events())
+    tap("start:0", 1)
+    shot_taken = False
+    for i in range(25):
+        right = wait_question(i)
+        if right is None:
+            print(f"  ! question {i + 1} never appeared")
+            break
+        if i == 2 and not shot_taken:
+            shot("p7-exam-question")
+            shot_taken = True
+        opts = {d: b for d, b in nodes() if d.startswith("opt:")}
+        pick = right if i != 3 else (right + 1) % len(opts)  # question 4 answered wrongly
+        b = opts.get(f"opt:{pick}")
+        if b:
+            sh("input tap %d %d" % center(b))
+        time.sleep(0.4)
+    time.sleep(2.5)
+    shot("p8-exam-result")
+    ev = events()[before:]
+    check("Ujian: all 25 questions answered", count("exam answer", before) == 25, f"{count('exam answer', before)}")
+    check("Ujian: the mark is 24/25 (one wrong on purpose)", "exam result 0 24/25" in ev,
+          next((e for e in ev if e.startswith("exam result")), "no result"))
+    check("Ujian: the result is celebrated", count("celebrate", before) >= 1)
+    time.sleep(2)
+    if tap("Lihat jawapan", 2):
+        shot("p9-exam-review")
+    back()
+
+
+def record(name):
+    """Starts a screen recording (Android stops each one after 3 minutes)."""
+    return subprocess.Popen(["adb", "shell", "screenrecord", "--time-limit", "180", "--bit-rate", "6000000",
+                             f"/sdcard/{name}.mp4"])
+
+
+def stop(rec, name):
+    sh("pkill -INT screenrecord")
+    try:
+        rec.wait(timeout=20)
+    except subprocess.TimeoutExpired:
+        rec.kill()
+    time.sleep(3)
+    adb("pull", f"/sdcard/{name}.mp4", os.path.join(OUT, f"{name}.mp4"))
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     sh("settings put secure immersive_mode_confirmations confirmed")
     adb("logcat", "-c")
     sh(f"am start -S -W -n {PKG}/.MainActivity")
     time.sleep(6)
-    rec = subprocess.Popen(["adb", "shell", "screenrecord", "--time-limit", "180", "--bit-rate", "6000000",
-                            "/sdcard/playtest.mp4"])
+    rec = record("playtest")
     time.sleep(2)
     shot("p0-home")
 
@@ -217,13 +277,12 @@ def main():
     play_match(tap_mode=True)
     back()
 
-    sh("pkill -INT screenrecord")
-    try:
-        rec.wait(timeout=20)
-    except subprocess.TimeoutExpired:
-        rec.kill()
-    time.sleep(3)
-    adb("pull", "/sdcard/playtest.mp4", os.path.join(OUT, "playtest.mp4"))
+    stop(rec, "playtest")
+
+    rec = record("exam")
+    time.sleep(1)
+    play_exam()
+    stop(rec, "exam")
 
     crash = adb("logcat", "-d", "-b", "crash")
     check("No crash", PKG not in crash, crash.strip()[:300])

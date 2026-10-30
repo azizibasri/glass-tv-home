@@ -12,9 +12,13 @@ import java.util.Locale;
 final class Voice implements TextToSpeech.OnInitListener {
     private static final Locale ARABIC = Locale.forLanguageTag("ar");
     private static final Locale ENGLISH = Locale.US;
+    private static final Locale MALAY = Locale.forLanguageTag("ms-MY");
+    /** Indonesian is spelt and said almost like Malay, and far more phones have a voice for it. */
+    private static final Locale INDONESIAN = Locale.forLanguageTag("id-ID");
 
     private final TextToSpeech tts;
     private boolean ready, arabic;
+    private Locale malay;
     private int id;
 
     Voice(Context c) {
@@ -26,12 +30,20 @@ final class Voice implements TextToSpeech.OnInitListener {
         if (status != TextToSpeech.SUCCESS) return;
         ready = true;
         arabic = tts.isLanguageAvailable(ARABIC) >= TextToSpeech.LANG_AVAILABLE;
+        if (tts.isLanguageAvailable(MALAY) >= TextToSpeech.LANG_AVAILABLE) malay = MALAY;
+        else if (tts.isLanguageAvailable(INDONESIAN) >= TextToSpeech.LANG_AVAILABLE) malay = INDONESIAN;
         tts.setSpeechRate(0.85f);
         tts.setPitch(1.1f);
     }
 
     void say(String text) {
         speak(text, ENGLISH, true);
+    }
+
+    /** Reads Malay with a Malay (or Indonesian) voice; stays quiet rather than mangle it with an English one. */
+    void sayMalay(String text) {
+        if (malay != null) speak(text, malay, true);
+        else stop();
     }
 
     /** Reads one item the way a teacher would. */

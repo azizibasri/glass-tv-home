@@ -50,6 +50,13 @@ shot 15-arabic-draw "4,1"
 shot 16-123-learn "1,0"
 shot 17-islamic-drag "3,2"
 
+# The test: its start, and a question from each part (random each time).
+shot 40-exam-intro "exam"
+shot 41-exam-bm "exam,0"
+shot 42-exam-en "exam,1"
+shot 43-exam-mt "exam,2"
+shot 44-exam-jawi "exam,3"
+
 # The two themed looks, on the home screen and in a few games.
 shot 20-hero-home "" hero
 shot 21-hero-abc-drag "0,2"

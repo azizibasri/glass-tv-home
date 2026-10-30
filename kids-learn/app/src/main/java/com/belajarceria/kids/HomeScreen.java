@@ -25,7 +25,7 @@ final class HomeScreen extends Screen {
         int cardH = (int) Math.min(Math.max(Ui.shortSide(a) * 0.5f, Ui.dp(170)), Ui.dp(300));
         // All five cards fit across the screen when it is wide enough, so nothing hides off the edge.
         int screenW = getResources().getDisplayMetrics().widthPixels;
-        int fitW = (screenW - Ui.dp(48)) / Content.SUBJECTS.length - Ui.dp(20);
+        int fitW = (screenW - Ui.dp(48)) / (Content.SUBJECTS.length + 1) - Ui.dp(20);
         int cardW = (int) Math.max(Ui.dp(120), Math.min(cardH * 0.8f, fitW));
         cardH = (int) Math.min(cardH, cardW * 1.3f);
 
@@ -65,6 +65,11 @@ final class HomeScreen extends Screen {
             row.addView(c, lp);
             cards.add(c);
         }
+        View exam = examCard(cardW, cardH);
+        LinearLayout.LayoutParams ep = new LinearLayout.LayoutParams(cardW, cardH);
+        ep.leftMargin = ep.rightMargin = Ui.dp(10);
+        row.addView(exam, ep);
+        cards.add(exam);
         sv.addView(row, new FrameLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
         col.addView(sv, new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 
@@ -142,6 +147,16 @@ final class HomeScreen extends Screen {
         }
 
         Ui.press(card, () -> act.push(new SubjectScreen(act, s)));
+        return card;
+    }
+
+    /** The test: a card like the subjects', in the theme's title colours, with a trophy. */
+    private View examCard(int w, int h) {
+        Content.Subject look = new Content.Subject("Ujian", "Tahun 1 · Markah", "📝",
+                new int[]{Theme.current.title[0], Theme.current.title[2]}, Content.Kind.WORDS, new Content.Item[0]);
+        View card = card(look, w, h);
+        card.setContentDescription("Ujian");
+        Ui.press(card, () -> act.push(new ExamScreen(act)));
         return card;
     }
 
