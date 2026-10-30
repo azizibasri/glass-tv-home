@@ -11,13 +11,10 @@ import java.util.Random;
 
 /** Confetti that tumbles and flips in 3D as it falls. Draws nothing, and costs nothing, when idle. */
 final class Confetti extends View {
-    private static final int[] COLORS = {
-            0xFFFF4F86, 0xFFFFA45B, 0xFFFFD23F, 0xFF0FB57F, 0xFF3FD0FF, 0xFF4F7BFF, 0xFF8A5CFF, 0xFFD16BFF};
-
     private static final class Bit {
         float x, y, vx, vy, rot, vr, flip, vflip, size;
         int color;
-        boolean round;
+        int shape; // 0 a paper strip, 1 a dot, 2 a snowflake
     }
 
     private final ArrayList<Bit> bits = new ArrayList<>();
@@ -60,14 +57,26 @@ final class Confetti extends View {
         b.flip = rnd.nextFloat() * 6f;
         b.vflip = 4f + rnd.nextFloat() * 8f;
         b.size = Ui.dp(7) + rnd.nextFloat() * Ui.dp(8);
-        b.color = COLORS[rnd.nextInt(COLORS.length)];
-        b.round = rnd.nextInt(4) == 0;
+        Theme t = Theme.current;
+        b.color = t.confetti[rnd.nextInt(t.confetti.length)];
+        b.shape = t.snowflakes && rnd.nextBoolean() ? 2 : rnd.nextInt(4) == 0 ? 1 : 0;
         bits.add(b);
     }
 
     private void start() {
         last = SystemClock.uptimeMillis();
         postInvalidateOnAnimation();
+    }
+
+    /** Three crossed bars with little branches: a six-armed snowflake. */
+    private void snowflake(Canvas c, float r) {
+        float w = Math.max(1.5f, r * 0.16f);
+        for (int i = 0; i < 3; i++) {
+            c.drawRect(-r, -w / 2, r, w / 2, paint);
+            c.drawRect(r * 0.45f, -r * 0.3f, r * 0.45f + w, r * 0.3f, paint);
+            c.drawRect(-r * 0.45f - w, -r * 0.3f, -r * 0.45f, r * 0.3f, paint);
+            c.rotate(60);
+        }
     }
 
     @Override
@@ -95,7 +104,8 @@ final class Confetti extends View {
             c.translate(b.x, b.y);
             c.rotate(b.rot);
             c.scale(1f, (float) Math.cos(b.flip));
-            if (b.round) c.drawCircle(0, 0, b.size * 0.45f, paint);
+            if (b.shape == 1) c.drawCircle(0, 0, b.size * 0.45f, paint);
+            else if (b.shape == 2) snowflake(c, b.size * 0.8f);
             else c.drawRect(-b.size / 2, -b.size * 0.3f, b.size / 2, b.size * 0.3f, paint);
             c.restore();
         }

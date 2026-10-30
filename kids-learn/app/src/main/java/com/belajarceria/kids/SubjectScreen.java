@@ -31,7 +31,7 @@ final class SubjectScreen extends Screen {
         LinearLayout col = new LinearLayout(a);
         col.setOrientation(LinearLayout.VERTICAL);
         Ui.noClip(col);
-        col.addView(header(s.title + "  ·  " + s.subtitle, s.colors[0]),
+        col.addView(header(s.title + "  ·  " + s.subtitle, s),
                 new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 
         HorizontalScrollView sv = new HorizontalScrollView(a);

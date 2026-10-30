@@ -26,6 +26,12 @@ Five subjects, each with four ways to play:
 | 🧩 **Drag** | Drag each tile into the slot of its picture: 🍎 takes A, three ducklings take 3, the shadow of ب takes ب. |
 | 🔗 **Match** | Draw a line from each picture to its word (or tap one, then the other). |
 
+Three looks, picked with the round buttons at the top of the home screen and remembered: **🌈 Rainbow**
+(the default), **🦸 Hero Squad** (bold comic colours, a city skyline, hero mascots, "POW!" celebrations) and
+**❄️ Ice Kingdom** (icy blues and lavender, falling snow, an ice castle, snowflake confetti, wintry mascots).
+They change every subject and every game. All three are original designs using generic emoji: no
+characters or logos from films, comics or cartoons, which belong to their studios.
+
 The feel is meant to be like Apple's: spring physics on every movement (buttons press in and bounce back,
 cards follow the finger and tilt, tiles lift with a deeper shadow), soft drifting colour blobs behind
 everything, glossy cards with tinted shadows, zoom transitions between screens, gentle bell sounds and haptics.
@@ -63,6 +69,7 @@ drags tiles, draws match lines, traces Alif), records a video and checks each ga
 | File | What it does |
 |---|---|
 | `Content.java` | All the letters, numbers and words |
+| `Theme.java` | The three looks: colours, mascots, celebrations, background decoration |
 | `MainActivity.java` | The screen stack, zoom transitions, celebrations |
 | `HomeScreen`, `SubjectScreen` | The menus |
 | `LearnScreen`, `TraceScreen` + `TraceView`, `DragScreen`, `MatchScreen` | The four activities |

@@ -23,11 +23,6 @@ import java.util.Random;
  * (like opening an app on an iPhone) while the one behind fades and grows slightly; going back reverses it.
  */
 public final class MainActivity extends Activity {
-    private static final String[][] PRAISE = {
-            {"Great job!", "Great job!"}, {"Well done!", "Well done!"}, {"Awesome!", "Awesome!"},
-            {"You did it!", "You did it!"}, {"Masya-Allah!", "Masha Allah! Well done!"}, {"Hebat!", "Super!"},
-    };
-
     private final ArrayList<Screen> stack = new ArrayList<>();
     private final Random random = new Random();
     private FrameLayout host;
@@ -41,6 +36,9 @@ public final class MainActivity extends Activity {
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         Ui.init(this);
+        Theme.load(this);
+        String theme = getIntent().getStringExtra("theme"); // for screenshots: --es theme hero
+        if (theme != null) Theme.save(this, Theme.byId(theme));
         Sfx.init();
         voice = new Voice(this);
 
@@ -115,6 +113,19 @@ public final class MainActivity extends Activity {
         logViewsSoon();
     }
 
+    /** Switches the whole app to another theme: the home screen is rebuilt in its colours and fades in. */
+    void switchTheme(Theme t) {
+        if (t == Theme.current || stack.size() != 1) return;
+        Theme.save(this, t);
+        final Screen old = stack.remove(0);
+        old.onHidden();
+        Spring.of(old, View.ALPHA).config(400f, 1f).then(() -> host.removeView(old)).to(0f);
+        lastNav = 0;
+        push(new HomeScreen(this));
+        confetti.burst(confetti.getWidth() / 2f, confetti.getHeight() * 0.3f, 50);
+        voice.say(t.label + "!");
+    }
+
     void back() {
         if (stack.size() <= 1) {
             finish();
@@ -149,10 +160,12 @@ public final class MainActivity extends Activity {
 
     /** Confetti, a star, a fanfare and a cheer; then {@code after} runs (usually the next round). */
     void celebrate(Runnable after) {
-        String[] p = PRAISE[random.nextInt(PRAISE.length)];
+        Theme th = Theme.current;
+        String[] p = th.praise[random.nextInt(th.praise.length)];
+        if (!stack.isEmpty()) stack.get(stack.size() - 1).cheer();
         log("celebrate " + p[0]);
-        SpannableString s = new SpannableString("🌟\n" + p[0]);
-        s.setSpan(new RelativeSizeSpan(2.2f), 0, 2, 0);
+        SpannableString s = new SpannableString(th.badge + "\n" + p[0]);
+        s.setSpan(new RelativeSizeSpan(2.2f), 0, th.badge.length(), 0);
         badge.setText(s);
         badge.setVisibility(View.VISIBLE);
         badge.setAlpha(0f);

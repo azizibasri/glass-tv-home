@@ -22,6 +22,46 @@ abstract class Screen extends FrameLayout {
 
     void onHidden() {}
 
+    /** The theme's mascot in this screen's top bar, if the theme has one. */
+    private TextView mascot;
+
+    /** The mascot jumps for joy: called on every win. */
+    void cheer() {
+        if (mascot == null) return;
+        Ui.jelly(mascot, 4f);
+        Spring.of(mascot, ROTATION).config(260f, 0.25f).kick(500f).to(0f);
+    }
+
+    /** The top bar for a subject's screen: back button, title pill, and the theme's mascot on the right. */
+    LinearLayout header(String title, Content.Subject s) {
+        LinearLayout bar = header(title, s.colors[0]);
+        String m = Theme.current.mascot(s);
+        if (m != null) {
+            addSpacer(bar);
+            mascot = Ui.text(getContext(), m, 30, Ui.INK, null);
+            mascot.setBackground(Ui.oval(new int[]{0xF2FFFFFF, Content.mix(Ui.WHITE, s.colors[1], 0.25f)}));
+            Ui.lift(mascot, 6, s.colors[0]);
+            bar.addView(mascot, new LinearLayout.LayoutParams(Ui.dp(56), Ui.dp(56)));
+            // A gentle sway while the screen is open.
+            android.animation.ObjectAnimator sway = android.animation.ObjectAnimator.ofFloat(mascot, ROTATION, -7f, 7f);
+            sway.setDuration(1300);
+            sway.setRepeatMode(android.animation.ValueAnimator.REVERSE);
+            sway.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+            mascot.addOnAttachStateChangeListener(new OnAttachStateChangeListener() {
+                @Override
+                public void onViewAttachedToWindow(android.view.View v) {
+                    sway.start();
+                }
+
+                @Override
+                public void onViewDetachedFromWindow(android.view.View v) {
+                    sway.cancel();
+                }
+            });
+        }
+        return bar;
+    }
+
     /** The top bar: a round back button and a title pill. More can be added to its right. */
     LinearLayout header(String title, int accent) {
         LinearLayout bar = new LinearLayout(getContext());

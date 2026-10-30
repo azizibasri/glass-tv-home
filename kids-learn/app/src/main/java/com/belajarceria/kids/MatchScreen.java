@@ -51,7 +51,7 @@ final class MatchScreen extends Screen {
         LinearLayout col = new LinearLayout(a);
         col.setOrientation(LinearLayout.VERTICAL);
         Ui.noClip(col);
-        col.addView(header(s.title + "  ·  Match", s.colors[0]),
+        col.addView(header(s.title + "  ·  Match", s),
                 new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
         FrameLayout area = new FrameLayout(a) {
             @Override

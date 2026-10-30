@@ -45,7 +45,7 @@ final class HomeScreen extends Screen {
         col.addView(brand, bp);
 
         TextView title = Ui.text(a, "Belajar Ceria", 40, Ui.INK, Ui.BLACK);
-        Ui.gradientText(title, new int[]{0xFFFF4F86, 0xFF8A5CFF, 0xFF3FA8FF});
+        Ui.gradientText(title, Theme.current.title);
         col.addView(title, new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
         TextView sub = Ui.text(a, "Let's learn and play!  🌈", 18, Ui.MUTED, Ui.BOLD);
         col.addView(sub, new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
@@ -69,6 +69,31 @@ final class HomeScreen extends Screen {
         col.addView(sv, new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 
         addView(col, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+        addView(themePicker(), new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT,
+                Gravity.TOP | Gravity.END));
+    }
+
+    /** Three round buttons, one per theme; the chosen one is bigger and ringed in its colours. */
+    private View themePicker() {
+        LinearLayout row = new LinearLayout(getContext());
+        row.setPadding(Ui.dp(12), Ui.dp(14), Ui.dp(20), Ui.dp(8));
+        Ui.noClip(row);
+        for (Theme t : Theme.ALL) {
+            boolean on = t == Theme.current;
+            TextView b = Ui.text(getContext(), t.icon, 24, Ui.INK, null);
+            android.graphics.drawable.GradientDrawable bg = Ui.oval(new int[]{0xF7FFFFFF, 0xF7FFFFFF});
+            if (on) bg.setStroke(Ui.dp(3), t.title[0]);
+            b.setBackground(bg);
+            Ui.lift(b, on ? 8 : 3, t.title[0]);
+            b.setContentDescription("theme:" + t.id);
+            b.setScaleX(on ? 1.12f : 0.92f);
+            b.setScaleY(on ? 1.12f : 0.92f);
+            Ui.press(b, () -> act.switchTheme(t));
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(Ui.dp(48), Ui.dp(48));
+            lp.leftMargin = Ui.dp(8);
+            row.addView(b, lp);
+        }
+        return row;
     }
 
     private View card(Content.Subject s, int w, int h) {
@@ -101,13 +126,28 @@ final class HomeScreen extends Screen {
         lp.leftMargin = lp.rightMargin = Ui.dp(10);
         card.addView(labels, lp);
 
+        // In a themed look, the subject's mascot peeks over the card's corner.
+        String m = Theme.current.mascot(s);
+        if (m != null) {
+            TextView peek = Ui.text(getContext(), m, 26, Ui.INK, null);
+            peek.setBackground(Ui.oval(new int[]{0xFFFFFFFF, 0xFFFFFFFF}));
+            Ui.lift(peek, 6, s.colors[0]);
+            peek.setRotation(12f);
+            int size = Ui.dp(50);
+            FrameLayout.LayoutParams pp = new FrameLayout.LayoutParams(size, size, Gravity.TOP | Gravity.END);
+            pp.topMargin = -size / 3;
+            pp.rightMargin = -size / 4;
+            card.addView(peek, pp);
+            Ui.noClip(card);
+        }
+
         Ui.press(card, () -> act.push(new SubjectScreen(act, s)));
         return card;
     }
 
     @Override
     int[] palette() {
-        return Content.HOME;
+        return Theme.current.home;
     }
 
     @Override

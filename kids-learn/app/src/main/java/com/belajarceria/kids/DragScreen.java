@@ -40,7 +40,7 @@ final class DragScreen extends Screen {
         LinearLayout col = new LinearLayout(a);
         col.setOrientation(LinearLayout.VERTICAL);
         Ui.noClip(col);
-        col.addView(header(s.title + "  ·  Drag & drop", s.colors[0]),
+        col.addView(header(s.title + "  ·  Drag & drop", s),
                 new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
         board = new FrameLayout(a) {
             @Override

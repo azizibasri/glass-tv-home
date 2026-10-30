@@ -31,7 +31,8 @@ final class Content {
 
     static final class Subject {
         final String title, subtitle, icon;
-        final int[] colors;
+        /** The subject's gradient pair; set by the current {@link Theme}. */
+        int[] colors;
         final Kind kind;
         final Item[] items;
 
@@ -53,9 +54,6 @@ final class Content {
         }
     }
 
-    /** Background palette: top, bottom, then four drifting colour blobs. */
-    static final int[] HOME = {0xFFFFF3FA, 0xFFE9F3FF, 0xFFFF9AC1, 0xFF8EC5FF, 0xFFFFD36E, 0xFF9BF6C5};
-
     static final Subject[] SUBJECTS = {
             new Subject("ABC", "Letters A to Z", "ABC",
                     new int[]{0xFFFF4F86, 0xFFFFA45B}, Kind.LETTERS, letters()),
@@ -72,7 +70,8 @@ final class Content {
     private Content() {}
 
     static int[] palette(int a, int b) {
-        return new int[]{mix(0xFFFFFFFF, a, 0.14f), mix(0xFFFFFFFF, b, 0.22f), a, b, 0xFFFFE08A, 0xFFA8E6FF};
+        int[] x = Theme.current.extras;
+        return new int[]{mix(0xFFFFFFFF, a, 0.14f), mix(0xFFFFFFFF, b, 0.22f), a, b, x[0], x[1]};
     }
 
     static int mix(int x, int y, float t) {

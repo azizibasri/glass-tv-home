@@ -24,7 +24,7 @@ final class LearnScreen extends Screen {
     LearnScreen(MainActivity a, Content.Subject s) {
         super(a);
         this.s = s;
-        LinearLayout bar = header(s.title, s.colors[0]);
+        LinearLayout bar = header(s.title, s);
         addSpacer(bar);
         counter = Ui.text(a, "", 18, Ui.MUTED, Ui.BOLD);
         counter.setBackground(Ui.round(Ui.GLASS, Ui.dp(26)));

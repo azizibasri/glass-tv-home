@@ -27,7 +27,7 @@ final class TraceScreen extends Screen {
         LinearLayout col = new LinearLayout(a);
         col.setOrientation(LinearLayout.VERTICAL);
         Ui.noClip(col);
-        col.addView(header(s.title + "  ·  Draw", s.colors[0]),
+        col.addView(header(s.title + "  ·  Draw", s),
                 new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 
         LinearLayout body = new LinearLayout(a);

@@ -16,11 +16,13 @@ adb logcat -c
 
 shot() {
   # $1: file name, $2: screen to open ("" = home). Format of --es open: subject,activity (see MainActivity.open).
-  if [ -z "$2" ]; then
-    adb shell am start -S -W -n "$pkg/.MainActivity" >/dev/null
-  else
-    adb shell am start -S -W -n "$pkg/.MainActivity" --es open "$2" >/dev/null
-  fi
+  # $3 (optional): a theme to switch to first (classic, hero, ice); it is remembered for later shots.
+  set -- "$1" "$2" "${3:-}"
+  extra=""
+  [ -n "$2" ] && extra="--es open $2"
+  [ -n "$3" ] && extra="$extra --es theme $3"
+  # shellcheck disable=SC2086
+  adb shell am start -S -W -n "$pkg/.MainActivity" $extra >/dev/null
   sleep 6
   adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS >/dev/null 2>&1 || true
   sleep 1
@@ -46,6 +48,19 @@ shot 14-arabic-drag "4,2"
 shot 15-arabic-draw "4,1"
 shot 16-123-learn "1,0"
 shot 17-islamic-drag "3,2"
+
+# The two themed looks, on the home screen and in a few games.
+shot 20-hero-home "" hero
+shot 21-hero-abc-drag "0,2"
+shot 22-hero-123-match "1,3"
+shot 23-hero-alifbata-draw "2,1"
+shot 30-ice-home "" ice
+shot 31-ice-abc-learn "0,0"
+shot 32-ice-islamic-match "3,3"
+shot 33-ice-arabic-drag "4,2"
+shot 34-ice-subject "1"
+# Back to the default look for whatever runs next.
+adb shell am start -S -W -n "$pkg/.MainActivity" --es theme classic >/dev/null
 
 adb logcat -d > "$out/logcat.txt"
 if adb logcat -d -b crash | grep -q "$pkg"; then
