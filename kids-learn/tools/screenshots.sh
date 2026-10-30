@@ -17,10 +17,11 @@ adb logcat -c
 shot() {
   # $1: file name, $2: screen to open ("" = home). Format of --es open: subject,activity (see MainActivity.open).
   # $3 (optional): a theme to switch to first (classic, hero, ice); it is remembered for later shots.
-  set -- "$1" "$2" "${3:-}"
+  set -- "$1" "$2" "${3:-}" "${4:-}"
   extra=""
   [ -n "$2" ] && extra="--es open $2"
   [ -n "$3" ] && extra="$extra --es theme $3"
+  [ -n "${4:-}" ] && extra="$extra --es heroes $4"
   # shellcheck disable=SC2086
   adb shell am start -S -W -n "$pkg/.MainActivity" $extra >/dev/null
   sleep 6
@@ -62,6 +63,8 @@ shot 20-hero-home "" hero
 shot 21-hero-abc-drag "0,2"
 shot 22-hero-123-match "1,3"
 shot 23-hero-alifbata-draw "2,1"
+shot 24-hero-squad-demo "1,0" hero demo
+shot 25-hero-subject "0" hero
 shot 30-ice-home "" ice
 shot 31-ice-abc-learn "0,0"
 shot 32-ice-islamic-match "3,3"

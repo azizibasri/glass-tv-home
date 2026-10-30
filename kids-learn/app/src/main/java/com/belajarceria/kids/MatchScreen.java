@@ -183,6 +183,7 @@ final class MatchScreen extends Screen {
                 Ui.jelly(c.view, 1.4f);
             }
             Sfx.ding();
+            act.heroZap(b.view, s);
             lines.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
             act.voice.item(s, a.item);
             lines.animateFor(800);

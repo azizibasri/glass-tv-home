@@ -1,6 +1,7 @@
 package com.belajarceria.kids;
 
 import android.view.Gravity;
+import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -23,7 +24,7 @@ abstract class Screen extends FrameLayout {
     void onHidden() {}
 
     /** The theme's mascot in this screen's top bar, if the theme has one. */
-    private TextView mascot;
+    private View mascot;
 
     /** The mascot jumps for joy: called on every win. */
     void cheer() {
@@ -35,8 +36,14 @@ abstract class Screen extends FrameLayout {
     /** The top bar for a subject's screen: back button, title pill, and the theme's mascot on the right. */
     LinearLayout header(String title, Content.Subject s) {
         LinearLayout bar = header(title, s.colors[0]);
+        HeroArt.Hero hero = Theme.current.hero(s);
         String m = Theme.current.mascot(s);
-        if (m != null) {
+        if (hero != null) {
+            // The subject's hero stands at the right of the bar, waving; it jumps on every win.
+            addSpacer(bar);
+            mascot = new HeroView(getContext(), hero, HeroArt.STAND);
+            bar.addView(mascot, new LinearLayout.LayoutParams(Ui.dp(64), Ui.dp(72)));
+        } else if (m != null) {
             addSpacer(bar);
             mascot = Ui.text(getContext(), m, 30, Ui.INK, null);
             mascot.setBackground(Ui.oval(new int[]{0xF2FFFFFF, Content.mix(Ui.WHITE, s.colors[1], 0.25f)}));

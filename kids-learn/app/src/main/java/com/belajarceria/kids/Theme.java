@@ -108,6 +108,17 @@ final class Theme {
         for (int i = 0; i < Content.SUBJECTS.length; i++) Content.SUBJECTS[i].colors = t.subjects[i];
     }
 
+    /** In the Hero Squad theme, the hero who looks after each subject (the whole squad cheers together). */
+    private static final int[] HERO_FOR_SUBJECT = {0, 3, 2, 1, 0};
+
+    HeroArt.Hero hero(Content.Subject s) {
+        if (this != HERO) return null;
+        for (int i = 0; i < Content.SUBJECTS.length; i++) {
+            if (Content.SUBJECTS[i] == s) return HeroArt.SQUAD[HERO_FOR_SUBJECT[i]];
+        }
+        return HeroArt.SQUAD[2]; // the test is looked after by Wira Khaizuran
+    }
+
     String mascot(Content.Subject s) {
         if (mascots == null) return null;
         for (int i = 0; i < Content.SUBJECTS.length; i++) if (Content.SUBJECTS[i] == s) return mascots[i];

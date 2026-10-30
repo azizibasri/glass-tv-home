@@ -478,7 +478,11 @@ final class ExamScreen extends Screen {
                     + (q.caption.isEmpty() ? "" : "   " + q.caption), 15, Ui.INK, Ui.BOLD);
             qText.setGravity(Gravity.CENTER_VERTICAL | Gravity.START);
             row.addView(qText, new LinearLayout.LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f));
-            TextView ans = Ui.text(c, "✗ " + q.chosen + "\n✓ " + q.options[q.answer], 18, 0xFF14A05A, Ui.BLACK);
+            // The child's answer in red, the right one in green.
+            String wrongLine = "✗ " + q.chosen;
+            android.text.SpannableString both = new android.text.SpannableString(wrongLine + "\n✓ " + q.options[q.answer]);
+            both.setSpan(new android.text.style.ForegroundColorSpan(0xFFE53935), 0, wrongLine.length(), 0);
+            TextView ans = Ui.text(c, both, 18, 0xFF14A05A, Ui.BLACK);
             ans.setGravity(Gravity.CENTER_VERTICAL | Gravity.END);
             row.addView(ans, new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);

@@ -10,7 +10,7 @@ import android.media.AudioTrack;
  */
 final class Sfx {
     private static final int RATE = 22050;
-    private static volatile AudioTrack pop, tick, ding, oops, fanfare;
+    private static volatile AudioTrack pop, tick, ding, oops, fanfare, zap;
 
     private Sfx() {}
 
@@ -24,6 +24,7 @@ final class Sfx {
             fanfare = track(render(1.4f, new float[][]{
                     {0f, 523.3f, 6f, 0.22f}, {0.11f, 659.3f, 6f, 0.22f}, {0.22f, 784f, 6f, 0.22f},
                     {0.33f, 1046.5f, 3.2f, 0.26f}, {0.33f, 784f, 3.2f, 0.16f}, {0.33f, 659.3f, 3.2f, 0.12f}}));
+            zap = track(sweep(0.32f, 1800f, 420f, 0.22f));
         }, "sfx").start();
     }
 
@@ -32,10 +33,11 @@ final class Sfx {
     static void ding() { play(ding); }
     static void oops() { play(oops); }
     static void fanfare() { play(fanfare); }
+    static void zap() { play(zap); }
 
     static void release() {
-        for (AudioTrack t : new AudioTrack[]{pop, tick, ding, oops, fanfare}) if (t != null) t.release();
-        pop = tick = ding = oops = fanfare = null;
+        for (AudioTrack t : new AudioTrack[]{pop, tick, ding, oops, fanfare, zap}) if (t != null) t.release();
+        pop = tick = ding = oops = fanfare = zap = null;
     }
 
     /** @param notes rows of {start seconds, frequency Hz, decay per second, volume} */
@@ -62,6 +64,22 @@ final class Sfx {
             float fadeOut = Math.min(1f, (n - i) / (0.02f * RATE));
             float v = Math.max(-1f, Math.min(1f, mix[i] * fadeOut));
             pcm[i] = (short) (v * 32000);
+        }
+        return pcm;
+    }
+
+    /** A falling "pew": a tone sliding from f0 down to f1, with a little shimmer, for the heroes' laser. */
+    private static short[] sweep(float seconds, float f0, float f1, float vol) {
+        int n = (int) (seconds * RATE);
+        short[] pcm = new short[n];
+        double phase = 0;
+        for (int i = 0; i < n; i++) {
+            float t = i / (float) n;
+            double f = f0 * Math.pow(f1 / f0, t);
+            phase += 2 * Math.PI * f / RATE;
+            float env = Math.min(1f, i / (0.004f * RATE)) * (1f - t) * (1f - t);
+            double s = Math.sin(phase) * 0.8 + Math.sin(phase * 2.01) * 0.2;
+            pcm[i] = (short) (s * env * vol * 32000);
         }
         return pcm;
     }

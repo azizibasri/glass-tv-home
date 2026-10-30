@@ -132,8 +132,17 @@ final class HomeScreen extends Screen {
         card.addView(labels, lp);
 
         // In a themed look, the subject's mascot peeks over the card's corner.
+        HeroArt.Hero hero = Theme.current.hero(s);
         String m = Theme.current.mascot(s);
-        if (m != null) {
+        if (hero != null) {
+            View peek = new HeroView(getContext(), hero, HeroArt.STAND);
+            int size = Ui.dp(70);
+            FrameLayout.LayoutParams pp = new FrameLayout.LayoutParams(size, size, Gravity.TOP | Gravity.END);
+            pp.topMargin = -size / 2;
+            pp.rightMargin = -size / 4;
+            card.addView(peek, pp);
+            Ui.noClip(card);
+        } else if (m != null) {
             TextView peek = Ui.text(getContext(), m, 26, Ui.INK, null);
             peek.setBackground(Ui.oval(new int[]{0xFFFFFFFF, 0xFFFFFFFF}));
             Ui.lift(peek, 6, s.colors[0]);

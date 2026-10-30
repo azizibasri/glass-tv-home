@@ -101,6 +101,7 @@ final class TraceScreen extends Screen {
             @Override
             public void onTraced() {
                 Sfx.ding();
+                act.heroZap(trace, s);
                 act.voice.item(s, s.items[index]);
                 postDelayed(() -> act.celebrate(() -> go(1)), 900);
             }

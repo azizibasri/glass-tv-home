@@ -239,6 +239,29 @@ def play_exam():
     back()
 
 
+def play_heroes():
+    print("Hero Squad: drag tiles in the hero theme; heroes zap right answers and fly by")
+    sh(f"am start -S -W -n {PKG}/.MainActivity --es theme hero --es open 0,2")
+    time.sleep(6)
+    before = len(events())
+    tiles = [(d[5:], b) for d, b in nodes() if d.startswith("tile:")]
+    slots = {d[5:]: b for d, b in nodes() if d.startswith("slot:")}
+    for k, (word, tb) in enumerate(tiles):
+        if word in slots:
+            swipe(center(tb), center(slots[word]), 1000)
+            time.sleep(1.0 if k else 0.9)
+            if k == 0:
+                shot("p10-hero-zap")
+            time.sleep(1.4)
+    time.sleep(0.6)
+    shot("p11-hero-squad")
+    check("Heroes: a hero zaps each right answer", count("hero zap", before) == len(tiles) > 0,
+          f"{count('hero zap', before)} of {len(tiles)}")
+    time.sleep(16)  # long enough for a hero to run or fly by on its own
+    sh(f"am start -S -W -n {PKG}/.MainActivity --es theme classic")
+    time.sleep(3)
+
+
 def record(name):
     """Starts a screen recording (Android stops each one after 3 minutes)."""
     return subprocess.Popen(["adb", "shell", "screenrecord", "--time-limit", "180", "--bit-rate", "6000000",
@@ -288,6 +311,10 @@ def main():
     time.sleep(1)
     play_exam()
     stop(rec, "exam")
+
+    rec = record("heroes")
+    play_heroes()
+    stop(rec, "heroes")
 
     crash = adb("logcat", "-d", "-b", "crash")
     check("No crash", PKG not in crash, crash.strip()[:300])

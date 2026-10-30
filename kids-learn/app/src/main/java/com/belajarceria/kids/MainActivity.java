@@ -28,6 +28,7 @@ public final class MainActivity extends Activity {
     private FrameLayout host;
     private BlobBackground bg;
     private Confetti confetti;
+    private HeroLayer heroes;
     private TextView badge;
     private long lastNav;
     Voice voice;
@@ -48,6 +49,8 @@ public final class MainActivity extends Activity {
         host = new FrameLayout(this);
         Ui.noClip(host);
         root.addView(host, match());
+        heroes = new HeroLayer(this);
+        root.addView(heroes, match());
         confetti = new Confetti(this);
         root.addView(confetti, match());
 
@@ -64,6 +67,7 @@ public final class MainActivity extends Activity {
         push(new HomeScreen(this));
         String open = getIntent().getStringExtra("open");
         if (open != null) open(open);
+        if ("demo".equals(getIntent().getStringExtra("heroes"))) heroes.demo(); // for screenshots
     }
 
     /**
@@ -187,6 +191,7 @@ public final class MainActivity extends Activity {
         Spring.of(badge, View.ALPHA).config(300f, 1f).to(1f);
         Spring.scale(badge, 1f, 260f, 0.48f);
         Spring.of(badge, View.ROTATION).config(200f, 0.42f).to(0f);
+        if (Theme.current == Theme.HERO) heroes.squad();
         confetti.rain(70);
         confetti.burst(confetti.getWidth() / 2f, confetti.getHeight() * 0.62f, 60);
         Sfx.fanfare();
@@ -266,9 +271,41 @@ public final class MainActivity extends Activity {
         }
     }
 
+    /** In the Hero Squad theme, a hero flies in and zaps a right answer with a star-laser. */
+    void heroZap(View target, Content.Subject s) {
+        if (Theme.current != Theme.HERO || target == null) return;
+        int[] t = new int[2], me = new int[2];
+        target.getLocationOnScreen(t);
+        heroes.getLocationOnScreen(me);
+        HeroArt.Hero h = HeroArt.SQUAD[random.nextInt(HeroArt.SQUAD.length)];
+        heroes.zap(h, t[0] - me[0] + target.getWidth() / 2f, t[1] - me[1] + target.getHeight() / 2f);
+        MainActivity.log("hero zap " + h.name);
+    }
+
+    /** Every so often in the Hero Squad theme, a hero runs along the bottom or flies across the sky. */
+    private final Runnable ambient = new Runnable() {
+        @Override
+        public void run() {
+            if (Theme.current == Theme.HERO && !heroes.busy()) {
+                HeroArt.Hero h = HeroArt.SQUAD[random.nextInt(HeroArt.SQUAD.length)];
+                if (random.nextBoolean()) heroes.runAcross(h);
+                else heroes.flyAcross(h, 0, 0.12f + random.nextFloat() * 0.25f);
+            }
+            heroes.postDelayed(this, 9000 + random.nextInt(9000));
+        }
+    };
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        heroes.removeCallbacks(ambient);
+        heroes.postDelayed(ambient, 4000);
+    }
+
     @Override
     protected void onPause() {
         super.onPause();
+        heroes.removeCallbacks(ambient);
         voice.stop();
     }
 

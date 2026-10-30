@@ -36,7 +36,10 @@ time with big buttons; at the end each part gets a mark out of 25 with the paper
 drawn fresh from banks each time, and the last mark of each part is kept.
 
 Three looks, picked with the round buttons at the top of the home screen and remembered: **🌈 Rainbow**
-(the default), **🦸 Hero Squad** (bold comic colours, a city skyline, hero mascots, "POW!" celebrations) and
+(the default), **🦸 Hero Squad** (bold comic colours, a city skyline, "POW!" celebrations, and a squad of four
+original kid heroes drawn in code: Kapten Ceria, Puteri Bintang, Wira Khaizuran and Si Kilat, who wave from every
+game's top bar, run and fly across the screen, zap each right answer with a star-laser and fly by together at the end
+of a round; never during the test, so it gives nothing away) and
 **❄️ Ice Kingdom** (icy blues and lavender, falling snow, an ice castle, snowflake confetti, wintry mascots).
 They change every subject and every game. All three are original designs using generic emoji: no
 characters or logos from films, comics or cartoons, which belong to their studios.
@@ -79,6 +82,7 @@ drags tiles, draws match lines, traces Alif), records a video and checks each ga
 |---|---|
 | `Content.java` | All the letters, numbers and words |
 | `Exam.java`, `ExamScreen.java` | The Year 1 test: question banks, and the test with its marks |
+| `HeroArt`, `HeroView`, `HeroLayer` | The Hero Squad: drawing, poses, and their runs, flights and lasers |
 | `Theme.java` | The three looks: colours, mascots, celebrations, background decoration |
 | `MainActivity.java` | The screen stack, zoom transitions, celebrations |
 | `HomeScreen`, `SubjectScreen` | The menus |
