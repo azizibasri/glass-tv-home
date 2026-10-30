@@ -64,7 +64,9 @@ final class TraceView extends View {
     private float ox, oy, brushWidth, lastX, lastY, done;
     private Stroke current;
     private boolean traced;
-    private Bitmap letterMask, nearMask, inkMask;
+    private Bitmap letterMask, nearMask, inkMask, wideMask;
+    /** The letter thinned to a one-pixel centre line, in the check's small grid; made once per letter. */
+    private boolean[] spine;
     private ValueAnimator doneAnim;
     Listener listener;
 
@@ -108,12 +110,14 @@ final class TraceView extends View {
             letterMask = Bitmap.createBitmap(w / SCALE + 1, h / SCALE + 1, Bitmap.Config.ARGB_8888);
             nearMask = Bitmap.createBitmap(w / SCALE + 1, h / SCALE + 1, Bitmap.Config.ARGB_8888);
             inkMask = Bitmap.createBitmap(w / SCALE + 1, h / SCALE + 1, Bitmap.Config.ARGB_8888);
+            wideMask = Bitmap.createBitmap(w / SCALE + 1, h / SCALE + 1, Bitmap.Config.ARGB_8888);
         }
         layoutGlyph();
     }
 
     /** Sizes the letter to fill about four fifths of the board and centres it on its actual ink. */
     private void layoutGlyph() {
+        spine = null;
         int w = getWidth(), h = getHeight();
         if (w == 0 || glyph.isEmpty()) return;
         Rect b = new Rect();
@@ -240,13 +244,17 @@ final class TraceView extends View {
         lastY = y;
     }
 
-    /** Coverage: how much of the letter is coloured. Precision: how much of the colour is on (or near) it. */
+    /**
+     * Following: how much of the letter's centre line the crayon has passed near (the child follows the shape, no need
+     * to colour it all in). Precision: how much of the colour is on (or near) the letter, so scribbles don't count.
+     */
     private void check() {
         if (letterMask == null || strokes.isEmpty()) return;
         float k = 1f / SCALE;
         letterMask.eraseColor(Color.TRANSPARENT);
         nearMask.eraseColor(Color.TRANSPARENT);
         inkMask.eraseColor(Color.TRANSPARENT);
+        wideMask.eraseColor(Color.TRANSPARENT);
 
         Canvas lc = new Canvas(letterMask);
         lc.scale(k, k);
@@ -264,28 +272,38 @@ final class TraceView extends View {
         ic.scale(k, k);
         mask.setStrokeWidth(brushWidth);
         for (Stroke s : strokes) ic.drawPath(s.path, mask);
+        // The same lines, much wider: "near the centre line" is anywhere this covers.
+        Canvas wc = new Canvas(wideMask);
+        wc.scale(k, k);
+        mask.setStrokeWidth(brushWidth * 2.2f);
+        for (Stroke s : strokes) wc.drawPath(s.path, mask);
 
         int w = letterMask.getWidth(), h = letterMask.getHeight();
-        int[] l = new int[w * h], n = new int[w * h], i = new int[w * h];
+        int[] l = new int[w * h], n = new int[w * h], i = new int[w * h], wi = new int[w * h];
         letterMask.getPixels(l, 0, w, 0, 0, w, h);
         nearMask.getPixels(n, 0, w, 0, 0, w, h);
         inkMask.getPixels(i, 0, w, 0, 0, w, h);
-        int letter = 0, covered = 0, inked = 0, onLetter = 0;
+        wideMask.getPixels(wi, 0, w, 0, 0, w, h);
+        if (spine == null || spine.length != l.length) {
+            boolean[] solid = new boolean[l.length];
+            for (int p = 0; p < l.length; p++) solid[p] = (l[p] >>> 24) > 127;
+            spine = thin(solid, w, h);
+        }
+        int letter = 0, followed = 0, inked = 0, onLetter = 0;
         for (int p = 0; p < l.length; p++) {
-            boolean isLetter = (l[p] >>> 24) > 127, isInk = (i[p] >>> 24) > 127;
-            if (isLetter) {
+            if (spine[p]) {
                 letter++;
-                if (isInk) covered++;
+                if ((wi[p] >>> 24) > 127) followed++;
             }
-            if (isInk) {
+            if ((i[p] >>> 24) > 127) {
                 inked++;
                 if ((n[p] >>> 24) > 127) onLetter++;
             }
         }
         if (letter == 0 || inked == 0) return;
-        float coverage = covered / (float) letter, precision = onLetter / (float) inked;
+        float coverage = followed / (float) letter, precision = onLetter / (float) inked;
         MainActivity.log(String.format(java.util.Locale.US, "trace check coverage=%.2f precision=%.2f", coverage, precision));
-        if (coverage >= 0.62f && precision >= 0.55f) {
+        if (coverage >= 0.7f && precision >= 0.55f) {
             traced = true;
             doneAnim = ValueAnimator.ofFloat(0f, 1f);
             doneAnim.setDuration(550);
@@ -299,9 +317,45 @@ final class TraceView extends View {
             }
             MainActivity.log("traced " + glyph);
             if (listener != null) listener.onTraced();
-        } else if (precision < 0.4f && inked > letter) {
+        } else if (precision < 0.4f && inked > letter * 8) {
             if (listener != null) listener.onMessy();
         }
+    }
+
+    /**
+     * Zhang-Suen thinning: peels a shape's edges away, layer by layer, until only a one-pixel centre line is left,
+     * keeping the shape connected. That line is the path a child's finger should follow.
+     */
+    static boolean[] thin(boolean[] shape, int w, int h) {
+        boolean[] a = shape.clone();
+        int[] gone = new int[a.length];
+        boolean changed = true;
+        while (changed) {
+            changed = false;
+            for (int pass = 0; pass < 2; pass++) {
+                int count = 0;
+                for (int y = 1; y < h - 1; y++) {
+                    for (int x = 1; x < w - 1; x++) {
+                        int p = y * w + x;
+                        if (!a[p]) continue;
+                        boolean p2 = a[p - w], p3 = a[p - w + 1], p4 = a[p + 1], p5 = a[p + w + 1];
+                        boolean p6 = a[p + w], p7 = a[p + w - 1], p8 = a[p - 1], p9 = a[p - w - 1];
+                        boolean[] ring = {p2, p3, p4, p5, p6, p7, p8, p9, p2};
+                        int neighbours = 0, rises = 0;
+                        for (int k = 0; k < 8; k++) {
+                            if (ring[k]) neighbours++;
+                            if (!ring[k] && ring[k + 1]) rises++;
+                        }
+                        if (neighbours < 2 || neighbours > 6 || rises != 1) continue;
+                        if (pass == 0 ? (p2 && p4 && p6) || (p4 && p6 && p8) : (p2 && p4 && p8) || (p2 && p6 && p8)) continue;
+                        gone[count++] = p;
+                    }
+                }
+                for (int k = 0; k < count; k++) a[gone[k]] = false;
+                if (count > 0) changed = true;
+            }
+        }
+        return a;
     }
 
     @Override

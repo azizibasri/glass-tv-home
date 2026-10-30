@@ -22,7 +22,7 @@ Five subjects, each with four ways to play:
 | Activity | How it plays |
 |---|---|
 | 👀 **Learn** | Big flash cards, read aloud. Swipe them like photos on an iPhone; tap to hear again. |
-| ✏️ **Draw** | Trace the dashed letter with a finger in a crayon colour. When it's traced well enough, it fills with colour and confetti flies. Messy scribbles get a hint to wipe with the sponge. |
+| ✏️ **Draw** | Trace the dashed letter with a finger in a crayon colour. No need to colour it all in: following the letter's shape is enough (the app checks the crayon ran along most of the letter's centre line). Then it fills with colour and confetti flies. Messy scribbles get a hint to wipe with the sponge. |
 | 🧩 **Drag** | Drag each tile into the slot of its picture: 🍎 takes A, three ducklings take 3, the shadow of ب takes ب. |
 | 🔗 **Match** | Draw a line from each picture to its word (or tap one, then the other). |
 
