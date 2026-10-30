@@ -74,9 +74,14 @@ final class LearnScreen extends Screen {
         show();
     }
 
+    void jumpTo(int i) {
+        index = Math.max(0, Math.min(s.items.length - 1, i));
+        show();
+    }
+
     private void show() {
         Content.Item it = s.items[index];
-        pic.setText(it.pic == null ? "" : it.pic);
+        Ui.picture(pic, it.pic);
         // Letters are shown in both cases, "A a", the way they are taught.
         big.setText(s.kind == Content.Kind.LETTERS ? it.big + " " + it.big.toLowerCase() : it.big);
         word.setText(it.word);

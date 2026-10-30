@@ -119,7 +119,9 @@ final class DragScreen extends Screen {
     private View picture(Content.Item it) {
         Context c = getContext();
         if (s.kind == Content.Kind.HIJAIYAH) return Ui.fit(c, it.big, 140, 0x40243B53, Typeface.DEFAULT_BOLD);
-        return Ui.fit(c, it.pic, 120, Ui.INK, null);
+        TextView t = Ui.fit(c, "", 120, Ui.INK, null);
+        Ui.picture(t, it.pic);
+        return t;
     }
 
     private View tile(Content.Item it, int w, int h, float r) {

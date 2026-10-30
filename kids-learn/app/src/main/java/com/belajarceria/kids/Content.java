@@ -67,6 +67,9 @@ final class Content {
                     new int[]{0xFFFF8A1C, 0xFFFFC93F}, Kind.WORDS, arabicWords()),
     };
 
+    /** Stands in for an emoji where none exists: shown as a {@link XylophoneDrawable} (see {@link Ui#picture}). */
+    static final String XYLOPHONE = "[xylophone]";
+
     private Content() {}
 
     static int[] palette(int a, int b) {
@@ -111,14 +114,12 @@ final class Content {
                 {"I", "Ice cream", "🍦"}, {"J", "Jeans", "👖"}, {"K", "Key", "🔑"}, {"L", "Lion", "🦁"},
                 {"M", "Moon", "🌙"}, {"N", "Nose", "👃"}, {"O", "Orange", "🍊"}, {"P", "Penguin", "🐧"},
                 {"Q", "Queen", "👸"}, {"R", "Rainbow", "🌈"}, {"S", "Sun", "☀️"}, {"T", "Tree", "🌳"},
-                {"U", "Umbrella", "☂️"}, {"V", "Van", "🚐"}, {"W", "Whale", "🐳"}, {"X", "Box", "📦"},
+                {"U", "Umbrella", "☂️"}, {"V", "Van", "🚐"}, {"W", "Whale", "🐳"}, {"X", "Xylophone", XYLOPHONE},
                 {"Y", "Yo-yo", "🪀"}, {"Z", "Zebra", "🦓"},
         };
         Item[] out = new Item[d.length];
         for (int i = 0; i < d.length; i++) {
-            // X words for small children start with other sounds, so X is taught as the end of "box".
-            String sub = d[i][0].equals("X") ? "ends with X" : null;
-            out[i] = new Item(d[i][0], d[i][1], sub, d[i][2]);
+            out[i] = new Item(d[i][0], d[i][1], null, d[i][2]);
         }
         return out;
     }

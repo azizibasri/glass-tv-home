@@ -130,7 +130,9 @@ final class MatchScreen extends Screen {
             Ui.gradientText(t, s.colors);
             return t;
         }
-        return Ui.fit(c, it.pic, 90, Ui.INK, null);
+        TextView t = Ui.fit(c, "", 90, Ui.INK, null);
+        Ui.picture(t, it.pic);
+        return t;
     }
 
     /** Right column: the letter, the number, the letter's name, or the Arabic word with its reading. */

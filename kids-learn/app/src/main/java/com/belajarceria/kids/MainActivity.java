@@ -78,7 +78,10 @@ public final class MainActivity extends Activity {
             push(new SubjectScreen(this, s));
             if (p.length > 1) {
                 lastNav = 0;
-                push(SubjectScreen.activity(this, s, Integer.parseInt(p[1].trim())));
+                Screen game = SubjectScreen.activity(this, s, Integer.parseInt(p[1].trim()));
+                // A third number opens Learn at that item: "0,0,23" is the X card.
+                if (p.length > 2 && game instanceof LearnScreen) ((LearnScreen) game).jumpTo(Integer.parseInt(p[2].trim()));
+                push(game);
             }
         } catch (RuntimeException ignored) {
             // a mistyped path just leaves the home screen

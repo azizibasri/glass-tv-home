@@ -103,6 +103,17 @@ final class Ui {
         return t;
     }
 
+    /** Shows a picture: an emoji as text, or a drawing for words that have no emoji. */
+    static void picture(TextView t, String pic) {
+        if (Content.XYLOPHONE.equals(pic)) {
+            t.setText("");
+            t.setBackground(new XylophoneDrawable());
+        } else {
+            t.setText(pic == null ? "" : pic);
+            t.setBackground(null);
+        }
+    }
+
     /** Paints the text with a colour gradient instead of a flat colour. */
     static void gradientText(TextView t, int[] colors) {
         t.addOnLayoutChangeListener((v, l, top, r, b, ol, ot, or, ob) -> {

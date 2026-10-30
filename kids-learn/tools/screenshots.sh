@@ -34,6 +34,7 @@ shot() {
 shot 01-home ""
 shot 02-abc "0"
 shot 03-abc-learn "0,0"
+shot 03x-abc-learn-x "0,0,23"
 shot 04-abc-draw "0,1"
 shot 05-abc-drag "0,2"
 shot 06-abc-match "0,3"
