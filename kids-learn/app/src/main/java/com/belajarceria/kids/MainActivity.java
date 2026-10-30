@@ -200,17 +200,31 @@ public final class MainActivity extends Activity {
         logTree(stack.get(stack.size() - 1));
     };
 
-    private static void logTree(View v) {
+    private void logTree(View v) {
         CharSequence d = v.getContentDescription();
         if (d != null && v.isShown()) {
-            int[] p = new int[2];
-            v.getLocationOnScreen(p);
+            int[] p = restingPlace(v);
             log("view " + d + " " + p[0] + " " + p[1] + " " + (p[0] + v.getWidth()) + " " + (p[1] + v.getHeight()));
         }
         if (v instanceof ViewGroup) {
             ViewGroup g = (ViewGroup) v;
             for (int i = 0; i < g.getChildCount(); i++) logTree(g.getChildAt(i));
         }
+    }
+
+    /** Where the view sits on screen once every animation has settled: layout positions, no movement or scale. */
+    private int[] restingPlace(View v) {
+        int x = 0, y = 0;
+        View c = v;
+        while (c != host && c.getParent() instanceof View) {
+            View parent = (View) c.getParent();
+            x += c.getLeft() - parent.getScrollX();
+            y += c.getTop() - parent.getScrollY();
+            c = parent;
+        }
+        int[] h = new int[2];
+        host.getLocationOnScreen(h);
+        return new int[]{h[0] + x, h[1] + y};
     }
 
     /** One line per game event in logcat (tag Ceria), so automated tests can check what happened. */

@@ -47,7 +47,7 @@ final class HomeScreen extends Screen {
         TextView title = Ui.text(a, "Belajar Ceria", 40, Ui.INK, Ui.BLACK);
         Ui.gradientText(title, Theme.current.title);
         col.addView(title, new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
-        TextView sub = Ui.text(a, "Let's learn and play!  🌈", 18, Ui.MUTED, Ui.BOLD);
+        TextView sub = Ui.text(a, "Let's learn and play!  " + Theme.current.icon, 18, Ui.MUTED, Ui.BOLD);
         col.addView(sub, new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
 
         HorizontalScrollView sv = new HorizontalScrollView(a);
