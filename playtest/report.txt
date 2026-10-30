@@ -1,0 +1,492 @@
+PASS  Learn: flicking shows the next cards  (2 cards)
+PASS  Drag: a wrong drop is refused  (1)
+PASS  Drag: every tile lands in its slot  (3 of 3)
+PASS  Drag: the round ends with a celebration
+PASS  Match: a wrong line is refused  (1)
+PASS  Match: every pair joins by drawing a line  (4 of 4)
+PASS  Match: the round ends with a celebration
+PASS  Draw: tracing the letter is recognised  (trace check coverage=1.00 precision=0.91)
+PASS  Draw: tracing ends with a celebration
+PASS  Match: every pair joins by tapping  (4 of 4)
+PASS  Match: the round ends with a celebration
+PASS  Ujian: the voice button cycles Melayu, English, Senyap  (en off ms)
+PASS  Ujian: all 25 questions answered  (25)
+PASS  Ujian: the mark is 24/25 (one wrong on purpose)  (exam result 0 24/25)
+PASS  Ujian: the result is celebrated
+PASS  Heroes: a hero zaps each right answer  (3 of 3)
+PASS  Babies: a baby pops up for each right answer  (3 of 3)
+PASS  No crash
+
+Events logged by the app:
+layout
+view ABC 217 468 532 877
+view 123 584 468 899 877
+view Alif Ba Ta 951 468 1266 877
+view Islamic Words 1318 468 1633 877
+view Arabic Words 1685 468 2000 877
+view Ujian 2052 468 2367 877
+view theme:classic 1927 37 2053 163
+view theme:hero 2074 37 2200 163
+view theme:baby 2221 37 2347 163
+layout
+view Back 181 32 318 169
+view Learn 342 355 764 883
+view Draw 816 355 1238 883
+view Drag 1290 355 1712 883
+view Match 1764 355 2186 883
+layout
+view Back 181 32 318 169
+view card 877 310 1650 1001
+view Back 202 572 370 740
+view Next 2158 572 2326 740
+card Ball
+card Cat
+layout
+view Back 181 32 318 169
+view Learn 342 355 764 883
+view Draw 816 355 1238 883
+view Drag 1290 355 1712 883
+view Match 1764 355 2186 883
+layout
+view Back 181 32 318 169
+view slot:Moon 372 196 672 720
+view slot:Duck 1114 196 1414 720
+view slot:Apple 1855 196 2155 720
+view tile:Duck 398 774 646 1022
+view tile:Apple 1140 774 1388 1022
+view tile:Moon 1881 774 2129 1022
+drag wrong Duck
+drag right Duck
+drag right Apple
+drag right Moon
+celebrate Masya-Allah!
+layout
+view Back 181 32 318 169
+view slot:Lion 372 196 672 720
+view slot:Sun 1114 196 1414 720
+view slot:Ice cream 1855 196 2155 720
+view tile:Lion 398 774 646 1022
+view tile:Ice cream 1140 774 1388 1022
+view tile:Sun 1881 774 2129 1022
+layout
+view Back 181 32 318 169
+view Learn 342 355 764 883
+view Draw 816 355 1238 883
+view Drag 1290 355 1712 883
+view Match 1764 355 2186 883
+layout
+view Back 181 32 318 169
+view left:Apple 355 218 723 396
+view right:Penguin 1804 218 2172 396
+view left:Key 355 433 723 611
+view right:Apple 1804 433 2172 611
+view left:Penguin 355 648 723 826
+view right:Key 1804 648 2172 826
+view left:Grapes 355 863 723 1041
+view right:Grapes 1804 863 2172 1041
+match wrong Apple / Penguin
+match right Apple
+match right Key
+match right Penguin
+match right Grapes
+celebrate Masya-Allah!
+layout
+view Back 181 32 318 169
+view left:Nose 355 218 723 396
+view right:Nose 1804 218 2172 396
+view left:Cat 355 433 723 611
+view right:Cat 1804 433 2172 611
+view left:Duck 355 648 723 826
+view right:Duck 1804 648 2172 826
+view left:Queen 355 863 723 1041
+view right:Queen 1804 863 2172 1041
+layout
+view Back 181 32 318 169
+view Learn 342 355 764 883
+view Draw 816 355 1238 883
+view Drag 1290 355 1712 883
+view Match 1764 355 2186 883
+layout
+view ABC 217 468 532 877
+view 123 584 468 899 877
+view Alif Ba Ta 951 468 1266 877
+view Islamic Words 1318 468 1633 877
+view Arabic Words 1685 468 2000 877
+view Ujian 2052 468 2367 877
+view theme:classic 1927 37 2053 163
+view theme:hero 2074 37 2200 163
+view theme:baby 2221 37 2347 163
+layout
+view Back 181 32 318 169
+view Learn 342 355 764 883
+view Draw 816 355 1238 883
+view Drag 1290 355 1712 883
+view Match 1764 355 2186 883
+layout
+view Back 181 32 318 169
+view board 181 206 2037 1033
+view Back 218 859 355 996
+view Next 1869 859 2006 996
+view Clear 2108 746 2255 893
+trace check coverage=1.00 precision=0.91
+traced ا
+celebrate Hebat!
+layout
+view Back 181 32 318 169
+view Learn 342 355 764 883
+view Draw 816 355 1238 883
+view Drag 1290 355 1712 883
+view Match 1764 355 2186 883
+layout
+view ABC 217 468 532 877
+view 123 584 468 899 877
+view Alif Ba Ta 951 468 1266 877
+view Islamic Words 1318 468 1633 877
+view Arabic Words 1685 468 2000 877
+view Ujian 2052 468 2367 877
+view theme:classic 1927 37 2053 163
+view theme:hero 2074 37 2200 163
+view theme:baby 2221 37 2347 163
+layout
+view Back 181 32 318 169
+view Learn 342 355 764 883
+view Draw 816 355 1238 883
+view Drag 1290 355 1712 883
+view Match 1764 355 2186 883
+layout
+view Back 181 32 318 169
+view left:Solat 355 218 723 396
+view right:Bismillah 1804 218 2172 396
+view left:Masjid 355 433 723 611
+view right:Subhanallah 1804 433 2172 611
+view left:Subhanallah 355 648 723 826
+view right:Solat 1804 648 2172 826
+view left:Bismillah 355 863 723 1041
+view right:Masjid 1804 863 2172 1041
+match right Solat
+match right Masjid
+match right Subhanallah
+match right Bismillah
+celebrate Awesome!
+layout
+view Back 181 32 318 169
+view left:Masya-Allah 355 218 723 396
+view right:Assalamualaikum 1804 218 2172 396
+view left:Jazakallahu khairan 355 433 723 611
+view right:Al-Quran 1804 433 2172 611
+view left:Al-Quran 355 648 723 826
+view right:Masya-Allah 1804 648 2172 826
+view left:Assalamualaikum 355 863 723 1041
+view right:Jazakallahu khairan 1804 863 2172 1041
+layout
+view Back 181 32 318 169
+view Learn 342 355 764 883
+view Draw 816 355 1238 883
+view Drag 1290 355 1712 883
+view Match 1764 355 2186 883
+layout
+view ABC 217 468 532 877
+view 123 584 468 899 877
+view Alif Ba Ta 951 468 1266 877
+view Islamic Words 1318 468 1633 877
+view Arabic Words 1685 468 2000 877
+view Ujian 2052 468 2367 877
+view theme:classic 1927 37 2053 163
+view theme:hero 2074 37 2200 163
+view theme:baby 2221 37 2347 163
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view start:0 462 376 827 782
+view start:1 875 376 1240 782
+view start:2 1288 376 1653 782
+view start:3 1701 376 2066 782
+view start:all 810 819 1718 977
+exam q 0 2
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 0 right
+exam q 1 0
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam voice en
+exam voice off
+exam voice ms
+exam answer 1 right
+exam q 2 0
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 2 right
+exam q 3 1
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 3 wrong
+exam q 4 2
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 4 right
+exam q 5 1
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 5 right
+exam q 6 2
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 6 right
+exam q 7 2
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 7 right
+exam q 8 2
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 8 right
+exam q 9 1
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 9 right
+exam q 10 1
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 10 right
+exam q 11 2
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 11 right
+exam q 12 2
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 12 right
+exam q 13 0
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 13 right
+exam q 14 2
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 14 right
+exam q 15 2
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 15 right
+exam q 16 1
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 16 right
+exam q 17 1
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 17 right
+exam q 18 0
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 18 right
+exam q 19 1
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 19 right
+exam q 20 0
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 653
+view opt:1 1361 685 2346 1043
+exam answer 20 right
+exam q 21 1
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 653
+view opt:1 1361 685 2346 1043
+exam answer 21 right
+exam q 22 0
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 653
+view opt:1 1361 685 2346 1043
+exam answer 22 right
+exam q 23 0
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 653
+view opt:1 1361 685 2346 1043
+exam answer 23 right
+exam q 24 1
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 653
+view opt:1 1361 685 2346 1043
+exam answer 24 right
+exam result 0 24/25
+exam total 24/25
+celebrate Well done!
+layout
+view Back 181 32 318 169
+view voice 2029 32 2347 169
+view total:24 181 459 1190 680
+view Lihat jawapan 337 795 716 921
+view Cuba lagi 742 795 1033 921
+view score:0:24 2096 202 2309 1032
+layout
+view ABC 217 468 532 877
+view 123 584 468 899 877
+view Alif Ba Ta 951 468 1266 877
+view Islamic Words 1318 468 1633 877
+view Arabic Words 1685 468 2000 877
+view Ujian 2052 468 2367 877
+view theme:classic 1927 37 2053 163
+view theme:hero 2074 37 2200 163
+view theme:baby 2221 37 2347 163
+layout
+view Back 181 58 318 195
+view Kapten Ceria 2179 32 2347 221
+view slot:Cat 381 248 663 740
+view slot:Key 1123 248 1405 740
+view slot:Orange 1864 248 2146 740
+view tile:Cat 407 792 637 1022
+view tile:Orange 1149 792 1379 1022
+view tile:Key 1890 792 2120 1022
+drag right Cat
+hero zap Kapten Ceria
+drag right Orange
+hero zap Wira Khaizuran
+drag right Key
+hero zap Puteri Bintang
+celebrate Hero power!
+layout
+view Back 181 58 318 195
+view Kapten Ceria 2179 32 2347 221
+view slot:Van 381 248 663 740
+view slot:House 1123 248 1405 740
+view slot:Yo-yo 1864 248 2146 740
+view tile:House 407 792 637 1022
+view tile:Van 1149 792 1379 1022
+view tile:Yo-yo 1890 792 2120 1022
+layout
+view ABC 217 468 532 877
+view 123 584 468 899 877
+view Alif Ba Ta 951 468 1266 877
+view Islamic Words 1318 468 1633 877
+view Arabic Words 1685 468 2000 877
+view Ujian 2052 468 2367 877
+view theme:classic 1927 37 2053 163
+view theme:hero 2074 37 2200 163
+view theme:baby 2221 37 2347 163
+layout
+view Back 181 58 318 195
+view baby 2 2189 32 2347 221
+view slot:Seven 381 248 663 740
+view slot:Six 1123 248 1405 740
+view slot:Three 1864 248 2146 740
+view tile:Seven 407 792 637 1022
+view tile:Six 1149 792 1379 1022
+view tile:Three 1890 792 2120 1022
+drag right Seven
+baby pop 1
+drag right Six
+baby pop 1
+drag right Three
+baby pop 1
+celebrate Yay! Pandai!
+layout
+view Back 181 58 318 195
+view baby 2 2189 32 2347 221
+view slot:One 381 248 663 740
+view slot:Ten 1123 248 1405 740
+view slot:Nine 1864 248 2146 740
+view tile:One 407 792 637 1022
+view tile:Nine 1149 792 1379 1022
+view tile:Ten 1890 792 2120 1022
+layout
+view ABC 217 468 532 877
+view 123 584 468 899 877
+view Alif Ba Ta 951 468 1266 877
+view Islamic Words 1318 468 1633 877
+view Arabic Words 1685 468 2000 877
+view Ujian 2052 468 2367 877
+view theme:classic 1927 37 2053 163
+view theme:hero 2074 37 2200 163
+view theme:baby 2221 37 2347 163
