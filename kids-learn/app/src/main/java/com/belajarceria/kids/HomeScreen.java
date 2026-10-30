@@ -76,6 +76,35 @@ final class HomeScreen extends Screen {
         addView(col, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
         addView(themePicker(), new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT,
                 Gravity.TOP | Gravity.END));
+        addView(musicButton(), new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT,
+                Gravity.TOP | Gravity.START));
+    }
+
+    /** Top left: the music corner, a colourful round button that dances a little to invite a tap. */
+    private View musicButton() {
+        LinearLayout box = new LinearLayout(getContext());
+        box.setGravity(Gravity.CENTER_VERTICAL);
+        box.setPadding(Ui.dp(20), Ui.dp(14), Ui.dp(12), Ui.dp(8));
+        Ui.noClip(box);
+        TextView b = Ui.text(getContext(), "🎵", 26, Ui.WHITE, null);
+        b.setBackground(Ui.oval(new int[]{0xFFFF6FB5, 0xFF8338EC}));
+        b.setForeground(Ui.shine(Ui.dp(30)));
+        Ui.lift(b, 8, 0xFF8338EC);
+        b.setContentDescription("music");
+        Ui.press(b, () -> act.push(new MusicScreen(act, 0)));
+        box.addView(b, new LinearLayout.LayoutParams(Ui.dp(56), Ui.dp(56)));
+        TextView t = Ui.text(getContext(), "Muzik", 15, 0xFF8338EC, Ui.BLACK);
+        t.setBackground(Ui.round(Ui.GLASS, Ui.dp(14)));
+        t.setPadding(Ui.dp(12), Ui.dp(4), Ui.dp(12), Ui.dp(4));
+        LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
+        tp.leftMargin = Ui.dp(8);
+        box.addView(t, tp);
+        android.animation.ObjectAnimator wiggle = android.animation.ObjectAnimator.ofFloat(b, ROTATION, -10f, 10f);
+        wiggle.setDuration(700);
+        wiggle.setRepeatMode(android.animation.ValueAnimator.REVERSE);
+        wiggle.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+        wiggle.start();
+        return box;
     }
 
     /** Three round buttons, one per theme; the chosen one is bigger and ringed in its colours. */

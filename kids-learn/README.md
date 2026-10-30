@@ -26,6 +26,13 @@ Five subjects, each with four ways to play:
 | 🧩 **Drag** | Drag each tile into the slot of its picture: 🍎 takes A, three ducklings take 3, the shadow of ب takes ب. |
 | 🔗 **Match** | Draw a line from each picture to its word (or tap one, then the other). |
 
+**🎵 Muzik** (top left of the home screen) is a break from learning: a piano (C4–C6, chords and slides), a drum kit
+(kick, snare, hi-hats, three toms, crash), a guitar (six strings in standard tuning, chord buttons C G D Am Em F, tap a
+string or swipe to strum) and a rainbow xylophone (C5–C7, slide for a glissando), with ♪ ♫ floating up from each note.
+Every sound is synthesised from how the real instrument vibrates (additive piano with inharmonic strings and two-stage
+decay, Karplus-Strong guitar with fractional-delay tuning, modal xylophone bars, modelled drums), in equal temperament
+at A4 = 440 Hz: measured off the device, the guitar is within 0.2 cents of pitch, the xylophone 0.8, the piano 2.
+
 **📝 Ujian** (the last card on the home screen) is the Year 1 diagnostic test (Ujian Diagnostik Tahun 1) as a
 game: Bahasa Melayu, Bahasa Inggeris, Matematik and Jawi, 25 marks each, in the school paper's five question
 types per part (vowels, picture to word, syllables, capital letters, "Ini ___"; capital to small letters, beginning
@@ -85,6 +92,7 @@ drags tiles, draws match lines, traces Alif), records a video and checks each ga
 | File | What it does |
 |---|---|
 | `Content.java` | All the letters, numbers and words |
+| `SoundBank`, `Synth`, `MusicScreen` + `PianoView`, `DrumView`, `GuitarView`, `XyloView` | The music corner: synthesis, the low-latency mixer, and the instruments |
 | `Exam.java`, `ExamScreen.java` | The Year 1 test: question banks, and the test with its marks |
 | `BabyArt`, `BabyView`, `BabyLayer` | The Kawan Comel babies: sprites, mascots, and their games |
 | `HeroArt`, `HeroView`, `HeroLayer` | The Hero Squad: drawing, poses, and their runs, flights and lasers |

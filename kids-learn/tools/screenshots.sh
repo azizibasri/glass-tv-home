@@ -51,6 +51,12 @@ shot 15-arabic-draw "4,1"
 shot 16-123-learn "1,0"
 shot 17-islamic-drag "3,2"
 
+# The music corner: each instrument.
+shot 50-music-piano "music,0"
+shot 51-music-drums "music,1"
+shot 52-music-guitar "music,2"
+shot 53-music-xylophone "music,3"
+
 # The test: its start, and a question from each part (random each time).
 shot 40-exam-intro "exam"
 shot 41-exam-bm "exam,0"

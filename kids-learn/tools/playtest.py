@@ -294,6 +294,60 @@ def play_babies():
     time.sleep(3)
 
 
+def play_music():
+    print("Music corner: piano chord, drums, a guitar strum, a xylophone glissando")
+    before = len(events())
+    tap("music", 3)
+    v = find("piano", exact=True)
+    if v:
+        l, t, r, b = v[0]
+        w = r - l
+        # a C major chord (three fingers at once is not possible with input; play C E G quickly) and a slide
+        for frac in (0.03, 0.17, 0.30, 0.50):
+            sh(f"input tap {int(l + w * frac)} {int(b - (b - t) * 0.2)}")
+        swipe((int(l + w * 0.05), int(b - (b - t) * 0.2)), (int(l + w * 0.6), int(b - (b - t) * 0.2)), 600)
+        time.sleep(0.3)
+        shot("p14-music-piano")
+    tap("instrument:1", 2)
+    v = find("drums", exact=True)
+    if v:
+        l, t, r, b = v[0]
+        for fx, fy in ((0.50, 0.70), (0.27, 0.70), (0.09, 0.30), (0.91, 0.27)):  # kick, snare, hi-hat, crash
+            sh(f"input tap {int(l + (r - l) * fx)} {int(t + (b - t) * fy)}")
+        time.sleep(0.2)
+        shot("p15-music-drums")
+    tap("instrument:2", 2)
+    v = find("guitar", exact=True)
+    if v:
+        l, t, r, b = v[0]
+        h = b - t
+        pw = min((r - l) * 0.22, 190 * 2.625)
+        sh(f"input tap {int(l + pw * 0.25)} {int(t + h * 0.125)}")  # the C chord button
+        time.sleep(0.5)
+        swipe((int(l + (r - l) * 0.6), int(t + h * 0.08)), (int(l + (r - l) * 0.6), int(t + h * 0.92)), 400)  # strum
+        time.sleep(0.3)
+        shot("p16-music-guitar")
+    tap("instrument:3", 2)
+    v = find("xylophone", exact=True)
+    if v:
+        l, t, r, b = v[0]
+        swipe((int(l + (r - l) * 0.03), int((t + b) / 2)), (int(l + (r - l) * 0.97), int((t + b) / 2)), 900)
+        time.sleep(0.3)
+        shot("p17-music-xylophone")
+    ev = events()[before:]
+    piano = sum(1 for e in ev if e.startswith("music piano"))
+    drums = sum(1 for e in ev if e.startswith("music drum"))
+    chord = [e for e in ev if e.startswith("music chord")]
+    strum = sum(1 for e in ev if e.startswith("music guitar"))
+    xylo = sum(1 for e in ev if e.startswith("music xylophone"))
+    check("Music: the piano plays its keys, and a slide plays each key in turn", piano >= 6, f"{piano} notes")
+    check("Music: every drum hit sounds", drums == 4, f"{drums} hits")
+    check("Music: a C chord strum plays its five strings", chord == ["music chord C"] and strum == 5,
+          f"{chord} {strum} strings")
+    check("Music: a xylophone glissando strikes every bar", xylo >= 14, f"{xylo} bars")
+    back()
+
+
 def record(name):
     """Starts a screen recording (Android stops each one after 3 minutes)."""
     return subprocess.Popen(["adb", "shell", "screenrecord", "--time-limit", "180", "--bit-rate", "6000000",
@@ -338,6 +392,10 @@ def main():
     back()
 
     stop(rec, "playtest")
+
+    rec = record("music")
+    play_music()
+    stop(rec, "music")
 
     rec = record("exam")
     time.sleep(1)

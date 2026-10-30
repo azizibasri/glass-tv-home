@@ -80,6 +80,13 @@ public final class MainActivity extends Activity {
      */
     private void open(String path) {
         try {
+            if (path.startsWith("music")) {
+                // "music,2" opens the music corner on the guitar
+                String[] p = path.split(",");
+                lastNav = 0;
+                push(new MusicScreen(this, p.length > 1 ? Integer.parseInt(p[1].trim()) : 0));
+                return;
+            }
             if (path.startsWith("exam")) {
                 // "exam" opens the test; "exam,2" starts its Matematik part straight away.
                 lastNav = 0;
@@ -315,6 +322,7 @@ public final class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (!stack.isEmpty() && stack.get(stack.size() - 1) instanceof MusicScreen) Synth.get().start();
         heroes.removeCallbacks(ambient);
         heroes.postDelayed(ambient, 4000);
     }
@@ -322,6 +330,7 @@ public final class MainActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
+        Synth.get().stop();
         heroes.removeCallbacks(ambient);
         voice.stop();
     }
