@@ -18,8 +18,13 @@ OUT = sys.argv[1] if len(sys.argv) > 1 else "playtest"
 checks = []
 
 
-def adb(*args):
-    return subprocess.run(["adb", *args], capture_output=True, text=True).stdout
+def adb(*args, timeout=60):
+    """Runs one adb command; one that hangs (it happens on a busy emulator) is given up on, not waited for."""
+    try:
+        return subprocess.run(["adb", *args], capture_output=True, text=True, timeout=timeout).stdout
+    except subprocess.TimeoutExpired:
+        print(f"  ! adb {' '.join(args)[:60]} timed out")
+        return ""
 
 
 def sh(cmd):
