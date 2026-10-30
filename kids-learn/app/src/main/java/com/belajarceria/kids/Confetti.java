@@ -14,7 +14,7 @@ final class Confetti extends View {
     private static final class Bit {
         float x, y, vx, vy, rot, vr, flip, vflip, size;
         int color;
-        int shape; // 0 a paper strip, 1 a dot, 2 a snowflake
+        int shape; // 0 a paper strip, 1 a dot, 2 a heart
     }
 
     private final ArrayList<Bit> bits = new ArrayList<>();
@@ -59,7 +59,7 @@ final class Confetti extends View {
         b.size = Ui.dp(7) + rnd.nextFloat() * Ui.dp(8);
         Theme t = Theme.current;
         b.color = t.confetti[rnd.nextInt(t.confetti.length)];
-        b.shape = t.snowflakes && rnd.nextBoolean() ? 2 : rnd.nextInt(4) == 0 ? 1 : 0;
+        b.shape = t.hearts && rnd.nextBoolean() ? 2 : rnd.nextInt(4) == 0 ? 1 : 0;
         bits.add(b);
     }
 
@@ -68,15 +68,16 @@ final class Confetti extends View {
         postInvalidateOnAnimation();
     }
 
-    /** Three crossed bars with little branches: a six-armed snowflake. */
-    private void snowflake(Canvas c, float r) {
-        float w = Math.max(1.5f, r * 0.16f);
-        for (int i = 0; i < 3; i++) {
-            c.drawRect(-r, -w / 2, r, w / 2, paint);
-            c.drawRect(r * 0.45f, -r * 0.3f, r * 0.45f + w, r * 0.3f, paint);
-            c.drawRect(-r * 0.45f - w, -r * 0.3f, -r * 0.45f, r * 0.3f, paint);
-            c.rotate(60);
-        }
+    private final android.graphics.Path heartPath = new android.graphics.Path();
+
+    /** A little heart, centred on the origin. */
+    private void heart(Canvas c, float r) {
+        heartPath.reset();
+        heartPath.moveTo(0, r);
+        heartPath.cubicTo(-r * 1.6f, -r * 0.1f, -r * 0.7f, -r * 1.3f, 0, -r * 0.45f);
+        heartPath.cubicTo(r * 0.7f, -r * 1.3f, r * 1.6f, -r * 0.1f, 0, r);
+        heartPath.close();
+        c.drawPath(heartPath, paint);
     }
 
     @Override
@@ -105,7 +106,7 @@ final class Confetti extends View {
             c.rotate(b.rot);
             c.scale(1f, (float) Math.cos(b.flip));
             if (b.shape == 1) c.drawCircle(0, 0, b.size * 0.45f, paint);
-            else if (b.shape == 2) snowflake(c, b.size * 0.8f);
+            else if (b.shape == 2) heart(c, b.size * 0.75f);
             else c.drawRect(-b.size / 2, -b.size * 0.3f, b.size / 2, b.size * 0.3f, paint);
             c.restore();
         }

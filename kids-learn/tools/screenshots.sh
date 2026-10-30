@@ -21,7 +21,7 @@ shot() {
   extra=""
   [ -n "$2" ] && extra="--es open $2"
   [ -n "$3" ] && extra="$extra --es theme $3"
-  [ -n "${4:-}" ] && extra="$extra --es heroes $4"
+  [ -n "${4:-}" ] && extra="$extra $4" # $4 (optional): more intent extras, e.g. "--es babies demo"
   # shellcheck disable=SC2086
   adb shell am start -S -W -n "$pkg/.MainActivity" $extra >/dev/null
   sleep 6
@@ -63,13 +63,14 @@ shot 20-hero-home "" hero
 shot 21-hero-abc-drag "0,2"
 shot 22-hero-123-match "1,3"
 shot 23-hero-alifbata-draw "2,1"
-shot 24-hero-squad-demo "1,0" hero demo
+shot 24-hero-squad-demo "1,0" hero "--es heroes demo"
 shot 25-hero-subject "0" hero
-shot 30-ice-home "" ice
-shot 31-ice-abc-learn "0,0"
-shot 32-ice-islamic-match "3,3"
-shot 33-ice-arabic-drag "4,2"
-shot 34-ice-subject "1"
+shot 30-baby-home "" baby
+shot 31-baby-abc-learn "0,0"
+shot 32-baby-islamic-match "3,3"
+shot 33-baby-arabic-drag "4,2"
+shot 34-baby-subject "1"
+shot 35-baby-play-demo "2,0" baby "--es babies demo"
 # Back to the default look for whatever runs next.
 adb shell am start -S -W -n "$pkg/.MainActivity" --es theme classic >/dev/null
 

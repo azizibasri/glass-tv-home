@@ -216,7 +216,7 @@ final class DragScreen extends Screen {
                 Spring.scale(v, 1f, 450f, 0.45f);
                 Ui.jelly(hit.card, 1.4f);
                 Sfx.ding();
-                act.heroZap(hit.card, s);
+                act.reward(hit.card, s);
                 v.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
                 act.voice.item(s, item);
                 if (placed == slots.size()) postDelayed(() -> act.celebrate(DragScreen.this::newRound), 1000);

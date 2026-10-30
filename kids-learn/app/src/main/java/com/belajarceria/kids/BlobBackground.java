@@ -85,7 +85,7 @@ final class BlobBackground extends View {
         layoutDecor(w, h);
     }
 
-    /** A made-up skyline and a field of snowflakes, the same every time (fixed seed). */
+    /** A made-up skyline and a field of bubbles, the same every time (fixed seed). */
     private void layoutDecor(int w, int h) {
         java.util.Random r = new java.util.Random(7);
         java.util.ArrayList<float[]> b = new java.util.ArrayList<>();
@@ -125,13 +125,24 @@ final class BlobBackground extends View {
                     }
                 }
             }
-        } else if (d == Theme.DECO_SNOW) {
-            castle(c, w * 0.78f, h, Math.min(w, h) * 0.34f);
-            deco.setColor(0x8C9DBDFF);
-            for (float[] f : flakes) {
-                float y = (f[1] + f[2] * t) % (h + Ui.dp(20)) - Ui.dp(10);
-                float x = f[0] + (float) Math.sin(t * 0.7f + f[4]) * Ui.dp(14);
-                c.drawCircle(x, y, f[3], deco);
+        } else if (d == Theme.DECO_BUBBLES) {
+            blocks(c, w * 0.86f, h, Math.min(w, h) * 0.11f);
+            // Soap bubbles drifting up, wobbling a little: a rim, a soft fill and a shine.
+            for (int i = 0; i < flakes.length; i += 2) {
+                float[] f = flakes[i];
+                float r = f[3] * 2.6f;
+                float y = h + r - (f[1] + f[2] * t * 0.8f) % (h + r * 2);
+                float x = f[0] + (float) Math.sin(t * 0.8f + f[4]) * Ui.dp(16);
+                deco.setStyle(Paint.Style.FILL);
+                deco.setColor(i % 4 == 0 ? 0x1FFF8FB8 : 0x1F7FB8FF);
+                c.drawCircle(x, y, r, deco);
+                deco.setStyle(Paint.Style.STROKE);
+                deco.setStrokeWidth(Ui.dp(1.5f));
+                deco.setColor(i % 4 == 0 ? 0x66FF8FB8 : 0x667FB8FF);
+                c.drawCircle(x, y, r, deco);
+                deco.setStyle(Paint.Style.FILL);
+                deco.setColor(0x99FFFFFF);
+                c.drawCircle(x - r * 0.35f, y - r * 0.35f, r * 0.22f, deco);
             }
         }
     }
@@ -149,23 +160,24 @@ final class BlobBackground extends View {
         c.drawPath(shape, deco);
     }
 
-    /** A simple ice castle: a wall, three towers with pointed roofs. */
-    private void castle(Canvas c, float cx, float bottom, float size) {
-        deco.setColor(0x2E7E6BFF);
-        shape.reset();
-        float wall = size * 0.32f;
-        shape.addRect(cx - size * 0.55f, bottom - wall, cx + size * 0.55f, bottom, Path.Direction.CW);
-        float[][] towers = {{-0.42f, 0.55f, 0.16f}, {0f, 0.85f, 0.2f}, {0.42f, 0.55f, 0.16f}};
-        for (float[] tw : towers) {
-            float x = cx + tw[0] * size, top = bottom - tw[1] * size, half = tw[2] * size / 2;
-            shape.addRect(x - half, top, x + half, bottom, Path.Direction.CW);
-            shape.moveTo(x - half * 1.25f, top);
-            shape.lineTo(x, top - size * 0.22f);
-            shape.lineTo(x + half * 1.25f, top);
-            shape.close();
+    /** Three soft toy blocks, A B C, stacked in a corner. */
+    private void blocks(Canvas c, float cx, float bottom, float s) {
+        int[] colors = {0x40FF6FA5, 0x404F9BFF, 0x40FFB020};
+        float[][] at = {{-0.55f, 1f}, {0.55f, 1f}, {0f, 2f}};
+        String[] letters = {"A", "B", "C"};
+        deco.setTextAlign(Paint.Align.CENTER);
+        deco.setTextSize(s * 0.62f);
+        deco.setFakeBoldText(true);
+        for (int i = 0; i < 3; i++) {
+            float x = cx + at[i][0] * s * 1.05f, y = bottom - at[i][1] * s * 1.02f;
+            deco.setStyle(Paint.Style.FILL);
+            deco.setColor(colors[i]);
+            c.drawRoundRect(x - s / 2, y, x + s / 2, y + s, s * 0.18f, s * 0.18f, deco);
+            deco.setColor(0x66FFFFFF);
+            c.drawText(letters[i], x, y + s * 0.72f, deco);
         }
-        c.drawPath(shape, deco);
     }
+
 
     @Override
     protected void onDraw(Canvas screen) {

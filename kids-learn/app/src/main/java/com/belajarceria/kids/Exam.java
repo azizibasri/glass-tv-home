@@ -86,7 +86,8 @@ final class Exam {
         // 1. Vowels: pick the vowel among consonants.
         List<String> vowels = new ArrayList<>(Arrays.asList("a", "e", "i", "o", "u"));
         Collections.shuffle(vowels, rnd);
-        List<String> consonants = Arrays.asList("b", "c", "d", "g", "k", "l", "m", "n", "p", "r", "s", "t");
+        // No "l": in this font a small L looks just like a capital I.
+        List<String> consonants = Arrays.asList("b", "c", "d", "g", "k", "m", "n", "p", "r", "s", "t");
         for (String v : vowels) {
             Q q = q("Pilih huruf vokal.", "Choose the vowel.", Stem.TEXT, "🔤");
             choices(q, v, consonants, 3);
@@ -125,7 +126,7 @@ final class Exam {
 
     private static final String[][] EN_START = {
             {"🍎", "a"}, {"🐝", "b"}, {"🐱", "c"}, {"🐶", "d"}, {"🥚", "e"}, {"🐟", "f"}, {"🍇", "g"}, {"🏠", "h"},
-            {"🔑", "k"}, {"🦁", "l"}, {"🌙", "m"}, {"🐧", "p"}, {"🌈", "r"}, {"☀️", "s"}, {"🌳", "t"}, {"🐳", "w"},
+            {"🔑", "k"}, {"👃", "n"}, {"🌙", "m"}, {"🐧", "p"}, {"🌈", "r"}, {"☀️", "s"}, {"🌳", "t"}, {"🐳", "w"},
             {"🦓", "z"},
     };
     private static final String[][] EN_CVC = {
@@ -375,15 +376,16 @@ final class Exam {
         return all.subList(0, n);
     }
 
+    /** a to z without l, which looks like a capital I in the app's font (and so does I like l). */
     private static List<String> lowerAlphabet() {
         List<String> out = new ArrayList<>();
-        for (char c = 'a'; c <= 'z'; c++) out.add(String.valueOf(c));
+        for (char c = 'a'; c <= 'z'; c++) if (c != 'l') out.add(String.valueOf(c));
         return out;
     }
 
     private static List<String> upperAlphabet() {
         List<String> out = new ArrayList<>();
-        for (char c = 'A'; c <= 'Z'; c++) out.add(String.valueOf(c));
+        for (char c = 'A'; c <= 'Z'; c++) if (c != 'I') out.add(String.valueOf(c));
         return out;
     }
 

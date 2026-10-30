@@ -41,9 +41,12 @@ Three looks, picked with the round buttons at the top of the home screen and rem
 original kid heroes drawn in code: Kapten Ceria, Puteri Bintang, Wira Khaizuran and Si Kilat, who wave from every
 game's top bar, run and fly across the screen, zap each right answer with a star-laser and fly by together at the end
 of a round; never during the test, so it gives nothing away) and
-**❄️ Ice Kingdom** (icy blues and lavender, falling snow, an ice castle, snowflake confetti, wintry mascots).
-They change every subject and every game. All three are original designs using generic emoji: no
-characters or logos from films, comics or cartoons, which belong to their studios.
+**👶 Kawan Comel** (soft nursery pastels, rising bubbles, heart confetti, and four babies from the owner's own
+artwork, cut out in `res/drawable-nodpi`, who sit in every game's top bar and now and then swing on a swing, munch a
+donut, play with a ball or sneeze; one pops up and sends hearts at each right answer, and all four bounce up when a
+round is won).
+They change every subject and every game. The heroes are original designs and the babies are the owner's own artwork: no characters or logos from films,
+comics or cartoons, which belong to their studios.
 
 The feel is meant to be like Apple's: spring physics on every movement (buttons press in and bounce back,
 cards follow the finger and tilt, tiles lift with a deeper shadow), soft drifting colour blobs behind
@@ -83,6 +86,7 @@ drags tiles, draws match lines, traces Alif), records a video and checks each ga
 |---|---|
 | `Content.java` | All the letters, numbers and words |
 | `Exam.java`, `ExamScreen.java` | The Year 1 test: question banks, and the test with its marks |
+| `BabyArt`, `BabyView`, `BabyLayer` | The Kawan Comel babies: sprites, mascots, and their games |
 | `HeroArt`, `HeroView`, `HeroLayer` | The Hero Squad: drawing, poses, and their runs, flights and lasers |
 | `Theme.java` | The three looks: colours, mascots, celebrations, background decoration |
 | `MainActivity.java` | The screen stack, zoom transitions, celebrations |

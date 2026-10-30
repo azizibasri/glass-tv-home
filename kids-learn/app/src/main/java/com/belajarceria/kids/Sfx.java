@@ -10,7 +10,7 @@ import android.media.AudioTrack;
  */
 final class Sfx {
     private static final int RATE = 22050;
-    private static volatile AudioTrack pop, tick, ding, oops, fanfare, zap;
+    private static volatile AudioTrack pop, tick, ding, oops, fanfare, zap, achoo;
 
     private Sfx() {}
 
@@ -25,6 +25,7 @@ final class Sfx {
                     {0f, 523.3f, 6f, 0.22f}, {0.11f, 659.3f, 6f, 0.22f}, {0.22f, 784f, 6f, 0.22f},
                     {0.33f, 1046.5f, 3.2f, 0.26f}, {0.33f, 784f, 3.2f, 0.16f}, {0.33f, 659.3f, 3.2f, 0.12f}}));
             zap = track(sweep(0.32f, 1800f, 420f, 0.22f));
+            achoo = track(sneeze());
         }, "sfx").start();
     }
 
@@ -34,10 +35,11 @@ final class Sfx {
     static void oops() { play(oops); }
     static void fanfare() { play(fanfare); }
     static void zap() { play(zap); }
+    static void achoo() { play(achoo); }
 
     static void release() {
-        for (AudioTrack t : new AudioTrack[]{pop, tick, ding, oops, fanfare, zap}) if (t != null) t.release();
-        pop = tick = ding = oops = fanfare = zap = null;
+        for (AudioTrack t : new AudioTrack[]{pop, tick, ding, oops, fanfare, zap, achoo}) if (t != null) t.release();
+        pop = tick = ding = oops = fanfare = zap = achoo = null;
     }
 
     /** @param notes rows of {start seconds, frequency Hz, decay per second, volume} */
@@ -80,6 +82,28 @@ final class Sfx {
             float env = Math.min(1f, i / (0.004f * RATE)) * (1f - t) * (1f - t);
             double s = Math.sin(phase) * 0.8 + Math.sin(phase * 2.01) * 0.2;
             pcm[i] = (short) (s * env * vol * 32000);
+        }
+        return pcm;
+    }
+
+    /** A tiny cartoon sneeze: a rising "ah" tone, then a soft hiss of breath. */
+    private static short[] sneeze() {
+        int n = (int) (0.5f * RATE);
+        short[] pcm = new short[n];
+        java.util.Random r = new java.util.Random(3);
+        double phase = 0, smooth = 0;
+        for (int i = 0; i < n; i++) {
+            float t = i / (float) RATE;
+            double s;
+            if (t < 0.16f) {
+                phase += 2 * Math.PI * (380 + 900 * t) / RATE;
+                s = Math.sin(phase) * 0.5 * Math.min(1, t / 0.02f);
+            } else {
+                // noise, softened with a one-pole filter, fading out
+                smooth += 0.35 * ((r.nextDouble() * 2 - 1) - smooth);
+                s = smooth * 1.6 * Math.exp(-(t - 0.16f) * 9);
+            }
+            pcm[i] = (short) (Math.max(-1, Math.min(1, s)) * 0.5 * 32000);
         }
         return pcm;
     }

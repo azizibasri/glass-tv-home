@@ -37,8 +37,14 @@ abstract class Screen extends FrameLayout {
     LinearLayout header(String title, Content.Subject s) {
         LinearLayout bar = header(title, s.colors[0]);
         HeroArt.Hero hero = Theme.current.hero(s);
+        int baby = Theme.current.baby(s);
         String m = Theme.current.mascot(s);
-        if (hero != null) {
+        if (baby >= 0) {
+            // The subject's baby sits at the right of the bar, rocking; it bounces on every win.
+            addSpacer(bar);
+            mascot = new BabyView(getContext(), baby);
+            bar.addView(mascot, new LinearLayout.LayoutParams(Ui.dp(60), Ui.dp(72)));
+        } else if (hero != null) {
             // The subject's hero stands at the right of the bar, waving; it jumps on every win.
             addSpacer(bar);
             mascot = new HeroView(getContext(), hero, HeroArt.STAND);

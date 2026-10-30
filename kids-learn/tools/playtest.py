@@ -271,6 +271,29 @@ def play_heroes():
     time.sleep(3)
 
 
+def play_babies():
+    print("Kawan Comel: drag tiles in the baby theme; a baby pops up for each right answer")
+    sh(f"am start -S -W -n {PKG}/.MainActivity --es theme baby --es open 1,2")
+    time.sleep(6)
+    before = len(events())
+    tiles = [(d[5:], b) for d, b in nodes() if d.startswith("tile:")]
+    slots = {d[5:]: b for d, b in nodes() if d.startswith("slot:")}
+    for k, (word, tb) in enumerate(tiles):
+        if word in slots:
+            swipe(center(tb), center(slots[word]), 1000)
+            time.sleep(1.0)
+            if k == 0:
+                shot("p12-baby-pop")
+            time.sleep(1.2)
+    time.sleep(0.8)
+    shot("p13-baby-wave")
+    check("Babies: a baby pops up for each right answer", count("baby pop", before) == len(tiles) > 0,
+          f"{count('baby pop', before)} of {len(tiles)}")
+    time.sleep(18)  # long enough for a baby to swing, munch, play or sneeze on its own
+    sh(f"am start -S -W -n {PKG}/.MainActivity --es theme classic")
+    time.sleep(3)
+
+
 def record(name):
     """Starts a screen recording (Android stops each one after 3 minutes)."""
     return subprocess.Popen(["adb", "shell", "screenrecord", "--time-limit", "180", "--bit-rate", "6000000",
@@ -324,6 +347,10 @@ def main():
     rec = record("heroes")
     play_heroes()
     stop(rec, "heroes")
+
+    rec = record("babies")
+    play_babies()
+    stop(rec, "babies")
 
     crash = adb("logcat", "-d", "-b", "crash")
     check("No crash", PKG not in crash, crash.strip()[:300])

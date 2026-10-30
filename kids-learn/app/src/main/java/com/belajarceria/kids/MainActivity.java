@@ -29,6 +29,7 @@ public final class MainActivity extends Activity {
     private BlobBackground bg;
     private Confetti confetti;
     private HeroLayer heroes;
+    private BabyLayer babies;
     private TextView badge;
     private long lastNav;
     Voice voice;
@@ -51,6 +52,8 @@ public final class MainActivity extends Activity {
         root.addView(host, match());
         heroes = new HeroLayer(this);
         root.addView(heroes, match());
+        babies = new BabyLayer(this);
+        root.addView(babies, match());
         confetti = new Confetti(this);
         root.addView(confetti, match());
 
@@ -68,6 +71,7 @@ public final class MainActivity extends Activity {
         String open = getIntent().getStringExtra("open");
         if (open != null) open(open);
         if ("demo".equals(getIntent().getStringExtra("heroes"))) heroes.demo(); // for screenshots
+        if ("demo".equals(getIntent().getStringExtra("babies"))) babies.demo();
     }
 
     /**
@@ -192,6 +196,7 @@ public final class MainActivity extends Activity {
         Spring.scale(badge, 1f, 260f, 0.48f);
         Spring.of(badge, View.ROTATION).config(200f, 0.42f).to(0f);
         if (Theme.current == Theme.HERO) heroes.squad();
+        if (Theme.current == Theme.BABY) babies.wave();
         confetti.rain(70);
         confetti.burst(confetti.getWidth() / 2f, confetti.getHeight() * 0.62f, 60);
         Sfx.fanfare();
@@ -271,12 +276,23 @@ public final class MainActivity extends Activity {
         }
     }
 
-    /** In the Hero Squad theme, a hero flies in and zaps a right answer with a star-laser. */
-    void heroZap(View target, Content.Subject s) {
-        if (Theme.current != Theme.HERO || target == null) return;
+    /**
+     * A right answer, in a themed look: a hero flies in and zaps it with a star-laser, or a baby pops up and sends
+     * hearts at it. Never called from the test, so it gives nothing away there.
+     */
+    void reward(View target, Content.Subject s) {
+        if (target == null) return;
         int[] t = new int[2], me = new int[2];
         target.getLocationOnScreen(t);
         heroes.getLocationOnScreen(me);
+        if (Theme.current == Theme.BABY) {
+            int b = Theme.current.baby(s);
+            babies.pop(b < 0 ? random.nextInt(BabyArt.COUNT) : b,
+                    t[0] - me[0] + target.getWidth() / 2f, t[1] - me[1] + target.getHeight() / 2f);
+            MainActivity.log("baby pop " + b);
+            return;
+        }
+        if (Theme.current != Theme.HERO) return;
         HeroArt.Hero h = HeroArt.SQUAD[random.nextInt(HeroArt.SQUAD.length)];
         heroes.zap(h, t[0] - me[0] + target.getWidth() / 2f, t[1] - me[1] + target.getHeight() / 2f);
         MainActivity.log("hero zap " + h.name);
@@ -286,6 +302,7 @@ public final class MainActivity extends Activity {
     private final Runnable ambient = new Runnable() {
         @Override
         public void run() {
+            if (Theme.current == Theme.BABY && !babies.busy()) babies.play();
             if (Theme.current == Theme.HERO && !heroes.busy()) {
                 HeroArt.Hero h = HeroArt.SQUAD[random.nextInt(HeroArt.SQUAD.length)];
                 if (random.nextBoolean()) heroes.runAcross(h);

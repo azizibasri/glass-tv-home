@@ -7,7 +7,7 @@ import android.content.Context;
  * a mascot on every game screen, and how a win is celebrated. All three are original designs.
  */
 final class Theme {
-    static final int DECO_NONE = 0, DECO_CITY = 1, DECO_SNOW = 2;
+    static final int DECO_NONE = 0, DECO_CITY = 1, DECO_BUBBLES = 2;
 
     final String id, icon, label;
     /** A gradient pair per subject, in the order of {@link Content#SUBJECTS}. */
@@ -18,7 +18,8 @@ final class Theme {
     final int[] extras;
     final int[] title;
     final int[] confetti;
-    final boolean snowflakes;
+    /** Hearts among the confetti. */
+    final boolean hearts;
     /** Rows of {shown, spoken}. */
     final String[][] praise;
     final String badge;
@@ -27,7 +28,7 @@ final class Theme {
     final int deco;
 
     private Theme(String id, String icon, String label, int[][] subjects, int[] home, int[] extras, int[] title,
-                  int[] confetti, boolean snowflakes, String[][] praise, String badge, String[] mascots, int deco) {
+                  int[] confetti, boolean hearts, String[][] praise, String badge, String[] mascots, int deco) {
         this.id = id;
         this.icon = icon;
         this.label = label;
@@ -36,7 +37,7 @@ final class Theme {
         this.extras = extras;
         this.title = title;
         this.confetti = confetti;
-        this.snowflakes = snowflakes;
+        this.hearts = hearts;
         this.praise = praise;
         this.badge = badge;
         this.mascots = mascots;
@@ -69,21 +70,21 @@ final class Theme {
                     {"Masya-Allah, hero!", "Masha Allah! Well done, hero!"}},
             "💥", new String[]{"🦸‍♂️", "🦸‍♀️", "🦸", "🦸‍♀️", "🦸‍♂️"}, DECO_CITY);
 
-    /** Icy blues and lavender, falling snow, an ice castle, and wintry friends. */
-    static final Theme ICE = new Theme("ice", "❄️", "Ice Kingdom",
-            new int[][]{{0xFF8E6CFF, 0xFFE07BD0}, {0xFF2F80ED, 0xFF56CCF2}, {0xFF00A3C4, 0xFF5EE7DF},
-                    {0xFF5B6CFF, 0xFF9AA8FF}, {0xFF3A7BD5, 0xFF00D2FF}},
-            new int[]{0xFFF0F7FF, 0xFFF4EEFF, 0xFF9AD0FF, 0xFFC9B6FF, 0xFFB5F2FF, 0xFFE2C6FF},
-            new int[]{0xFFDDF4FF, 0xFFE9DDFF},
-            new int[]{0xFF3A7BD5, 0xFF8E6CFF, 0xFF00B4DB},
-            new int[]{0xFFFFFFFF, 0xFFB3E5FC, 0xFF81D4FA, 0xFFD1C4E9, 0xFFB39DDB, 0xFF4FC3F7},
+    /** Soft nursery pastels, rising bubbles, heart confetti, and four babies who play along (the person's artwork). */
+    static final Theme BABY = new Theme("baby", "👶", "Kawan Comel",
+            new int[][]{{0xFFFF6FA5, 0xFFFFA48A}, {0xFF4F9BFF, 0xFF7FD3FF}, {0xFF2EC4A6, 0xFF8BE3B5},
+                    {0xFFB57BFF, 0xFFFF9BD2}, {0xFFFF9F43, 0xFFFFD166}},
+            new int[]{0xFFFFF5F8, 0xFFFFF9EC, 0xFFFFC2D9, 0xFFBDE0FE, 0xFFFFE5A3, 0xFFCDEAC0},
+            new int[]{0xFFFFE0EC, 0xFFE3F2FF},
+            new int[]{0xFFFF6FA5, 0xFFB57BFF, 0xFF4F9BFF},
+            new int[]{0xFFFF8FB8, 0xFFFFC2D9, 0xFF9CC9FF, 0xFFFFD166, 0xFFB5E8C8, 0xFFD7B8FF},
             true,
-            new String[][]{{"Ice-tastic!", "Ice-tastic!"}, {"Snow good!", "Snow good! Well done!"},
-                    {"Sparkling!", "Sparkling work!"}, {"Cool job!", "Cool job!"},
+            new String[][]{{"Yay! Pandai!", "Yay! Well done!"}, {"Comelnya, bijak!", "So clever!"},
+                    {"Tepuk tangan!", "Clap clap! Great job!"}, {"Hebat, sayang!", "Great job, sweetie!"},
                     {"Masya-Allah!", "Masha Allah! Well done!"}},
-            "❄️", new String[]{"⛄", "👸", "🦌", "⛄", "👸"}, DECO_SNOW);
+            "🧸", new String[]{"👶", "👶", "👶", "👶", "👶"}, DECO_BUBBLES);
 
-    static final Theme[] ALL = {CLASSIC, HERO, ICE};
+    static final Theme[] ALL = {CLASSIC, HERO, BABY};
 
     static Theme current = CLASSIC;
 
@@ -99,6 +100,7 @@ final class Theme {
     }
 
     static Theme byId(String id) {
+        if ("ice".equals(id)) return BABY; // the Ice Kingdom became Kawan Comel
         for (Theme t : ALL) if (t.id.equals(id)) return t;
         return CLASSIC;
     }
@@ -117,6 +119,15 @@ final class Theme {
             if (Content.SUBJECTS[i] == s) return HeroArt.SQUAD[HERO_FOR_SUBJECT[i]];
         }
         return HeroArt.SQUAD[2]; // the test is looked after by Wira Khaizuran
+    }
+
+    /** In the Kawan Comel theme, the baby who looks after each subject. */
+    private static final int[] BABY_FOR_SUBJECT = {0, 1, 2, 3, 1};
+
+    int baby(Content.Subject s) {
+        if (this != BABY) return -1;
+        for (int i = 0; i < Content.SUBJECTS.length; i++) if (Content.SUBJECTS[i] == s) return BABY_FOR_SUBJECT[i];
+        return 2;
     }
 
     String mascot(Content.Subject s) {
