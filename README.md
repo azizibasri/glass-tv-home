@@ -170,6 +170,9 @@ Glass TV clears the TV's caches by itself every 15 days ([how](docs/cache-clean.
 from one computer instead, [`tools/cache-clean.sh`](docs/cache-clean.md) finds the TVs on your network and
 clears their caches, leaving sign-ins and app data untouched.
 
+To block ads and trackers on every device at home, not just the TV, see
+[docs/WHOLE-HOME-ADBLOCK.md](docs/WHOLE-HOME-ADBLOCK.md): one DNS setting on the Wi-Fi router.
+
 ## Which TVs work
 
 Android TV and Google TV, Android 8 or newer, on the TV or on a box plugged into any TV.
