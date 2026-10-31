@@ -2824,8 +2824,10 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             closeMenu(true);
         });
 
+        // The Candy Box has many rows: draw it 30% smaller than the other menus.
+        compactMenu(panel, rows, CANDY_BOX_SCALE);
         panel.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
-        int width = Math.max((int) (230 * density), panel.getMeasuredWidth());
+        int width = Math.max((int) (230 * CANDY_BOX_SCALE * density), panel.getMeasuredWidth());
 
         showMenu(panel, rows, anchor, width, false);
     }
@@ -3434,7 +3436,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         try {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (Exception e) {
-            return "3.1.6";
+            return "3.1.7";
         }
     }
 
@@ -5842,6 +5844,50 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         int m = (int) (6 * density), h = (int) (12 * density);
         lp.setMargins(h, m, h, m);
         rows.addView(line, lp);
+    }
+
+    private static final float CANDY_BOX_SCALE = 0.7f;
+
+    /**
+     * Shrinks a menu built from item_input rows by {@code k}: row height, padding, icon and text. Real
+     * sizes rather than a view scale, so the focus shape and the glass still line up with the rows.
+     */
+    private void compactMenu(FrameLayout panel, LinearLayout rows, float k) {
+        panel.setPadding(Math.round(panel.getPaddingLeft() * k), Math.round(panel.getPaddingTop() * k),
+                Math.round(panel.getPaddingRight() * k), Math.round(panel.getPaddingBottom() * k));
+        for (int i = 0; i < rows.getChildCount(); i++) {
+            View row = rows.getChildAt(i);
+            ViewGroup.LayoutParams lp = row.getLayoutParams();
+            if (lp != null && lp.height > 0) lp.height = Math.round(lp.height * k);
+            row.setPadding(Math.round(row.getPaddingLeft() * k), row.getPaddingTop(),
+                    Math.round(row.getPaddingRight() * k), row.getPaddingBottom());
+            View icon = row.findViewById(R.id.icon);
+            if (icon != null) {
+                ViewGroup.LayoutParams ip = icon.getLayoutParams();
+                ip.width = Math.round(ip.width * k);
+                ip.height = Math.round(ip.height * k);
+                if (icon instanceof ImageView) ((ImageView) icon).setScaleType(ImageView.ScaleType.FIT_CENTER);
+            }
+            for (int id : new int[]{R.id.title, R.id.status}) {
+                View v = row.findViewById(id);
+                if (v instanceof TextView) {
+                    TextView t = (TextView) v;
+                    t.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, t.getTextSize() * k);
+                    if (t.getLayoutParams() instanceof ViewGroup.MarginLayoutParams) {
+                        ViewGroup.MarginLayoutParams m = (ViewGroup.MarginLayoutParams) t.getLayoutParams();
+                        m.setMarginStart(Math.round(m.getMarginStart() * k));
+                        m.setMarginEnd(Math.round(m.getMarginEnd() * k));
+                    }
+                }
+            }
+            View dot = row.findViewById(R.id.dot);
+            if (dot != null) {
+                ViewGroup.LayoutParams dp = dot.getLayoutParams();
+                dp.width = Math.round(dp.width * k);
+                dp.height = Math.round(dp.height * k);
+            }
+            row.setLayoutParams(lp);
+        }
     }
 
     private void addInputRow(LinearLayout rows, Runnable close, int iconRes, String title, int state, Runnable action) {
