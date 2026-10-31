@@ -22,6 +22,7 @@ final class WallBlurView extends View {
     private final Backdrop.Fill fill = new Backdrop.Fill();
     private final RectF rect = new RectF();
     private int tint;               // RGB of the focused app, 0 = none yet
+    private boolean drawBlur = true, drawTint = true;
     private ValueAnimator tintAnim;
 
     WallBlurView(Context context) {
@@ -29,6 +30,14 @@ final class WallBlurView extends View {
         setWillNotDraw(false);
         setFocusable(false);
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_NO);
+    }
+
+    /** Which parts this layer paints: the softened picture, the app's colour wash, or both. */
+    void setParts(boolean blur, boolean tint) {
+        if (blur == drawBlur && tint == drawTint) return;
+        drawBlur = blur;
+        drawTint = tint;
+        invalidate();
     }
 
     /** Moves the wash to {@code color} (the app's colour), blending across over {@code ms}. */
@@ -52,7 +61,7 @@ final class WallBlurView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         rect.set(0, 0, getWidth(), getHeight());
-        fill.draw(canvas, this, rect, 0f, 1f);
-        if (tint != 0) canvas.drawColor((TINT_ALPHA << 24) | tint);
+        if (drawBlur) fill.draw(canvas, this, rect, 0f, 1f);
+        if (drawTint && tint != 0) canvas.drawColor((TINT_ALPHA << 24) | tint);
     }
 }

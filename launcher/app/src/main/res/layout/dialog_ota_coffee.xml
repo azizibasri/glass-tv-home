@@ -40,7 +40,7 @@
                 android:id="@+id/tvVersionSubtitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Glass TV Home v3.1.5 • Enjin Auto-Update (OTA)"
+                android:text="Glass TV Home v3.1.6 • Enjin Auto-Update (OTA)"
                 android:textColor="#B3FFFFFF"
                 android:textSize="12sp"
                 android:fontFamily="@font/outfit"

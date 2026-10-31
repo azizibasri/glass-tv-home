@@ -1023,8 +1023,21 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
     }
 
     /** Softens the wallpaper a little while the cursor is on the apps, and brings it back sharp after. */
+    /** Launcher setting (Candy Box): soften the wallpaper while an app has focus. On by default. */
+    private boolean focusBlurOn() {
+        return getSharedPreferences("wallpaper_prefs", MODE_PRIVATE).getBoolean("focus_blur", true);
+    }
+
+    /** Launcher setting (Candy Box): light the wallpaper in the focused app's colour. On by default. */
+    private boolean focusGlowOn() {
+        return getSharedPreferences("wallpaper_prefs", MODE_PRIVATE).getBoolean("focus_glow", true);
+    }
+
     private void setWallBlur(boolean on) {
         if (wallBlur == null) return;
+        boolean blur = focusBlurOn(), glow = focusGlowOn();
+        wallBlur.setParts(blur, glow);
+        on = on && (blur || glow);
         float target = on ? WALL_BLUR_ALPHA : 0f;
         wallBlur.animate().cancel();
         if (on) wallBlur.setVisibility(View.VISIBLE);
@@ -2032,6 +2045,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
      * back up again.
      */
     private void showAmbient(int color) {
+        if (!focusGlowOn()) {
+            // Glow switched off: keep track of the colour, but the room stays unlit.
+            if (color != ambientColor) setAmbient(color);
+            return;
+        }
         if (!ambientShown) {
             setAmbient(color);
             ambient.animate().alpha(1f).setDuration(reducedMotion ? 160 : 600)
@@ -2733,6 +2751,32 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             showCandyBoxPopup();
         });
 
+        // Blur Wallpaper (ON / OFF): softens the wallpaper while the cursor is on an app
+        boolean isBlur = focusBlurOn();
+        addInputRow(rows, close, R.drawable.ic_wallpaper, "Blur Wallpaper: " + (isBlur ? "ON" : "OFF"), -1, () -> {
+            SoundEffects.playSelect();
+            getSharedPreferences("wallpaper_prefs", MODE_PRIVATE).edit().putBoolean("focus_blur", !isBlur).apply();
+            Toast.makeText(this, !isBlur ? "🌫️ Blur Wallpaper Dihidupkan (ON)" : "🖼️ Blur Wallpaper Dimatikan (OFF)", Toast.LENGTH_SHORT).show();
+            closeMenu(false);
+            showCandyBoxPopup();
+        });
+
+        // Glow Warna Aplikasi (ON / OFF): the app's icon colour over the wallpaper
+        boolean isGlow = focusGlowOn();
+        addInputRow(rows, close, R.drawable.ic_weather_sun, "Glow Warna Aplikasi: " + (isGlow ? "ON" : "OFF"), -1, () -> {
+            SoundEffects.playSelect();
+            getSharedPreferences("wallpaper_prefs", MODE_PRIVATE).edit().putBoolean("focus_glow", !isGlow).apply();
+            if (isGlow) {
+                // Turning it off: fade the room's glow out now.
+                ambientShown = false;
+                ambient.animate().alpha(0f).setDuration(reducedMotion ? 140 : 300)
+                        .setUpdateListener(a -> syncGlassGlow()).start();
+            }
+            Toast.makeText(this, !isGlow ? "🎨 Glow Warna Aplikasi Dihidupkan (ON)" : "⚪ Glow Warna Aplikasi Dimatikan (OFF)", Toast.LENGTH_SHORT).show();
+            closeMenu(false);
+            showCandyBoxPopup();
+        });
+
         // Row 4: Tetapan & Pilihan Azan
         boolean masterAzan = Azan.isMasterEnabled(this);
         addInputRow(rows, close, R.drawable.ic_azan, "Tetapan Azan: " + (masterAzan ? "ON" : "OFF"), -1, () -> {
@@ -3390,7 +3434,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         try {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (Exception e) {
-            return "3.1.5";
+            return "3.1.6";
         }
     }
 
