@@ -473,9 +473,9 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
                 }
                 return false;
             });
+            // Same dark glass as the top-right pills: the focus shape glides onto it.
             weatherAirQualityView.setOnFocusChangeListener((v, hasFocus) -> {
-                float scale = hasFocus ? 1.05f : 1.0f;
-                v.animate().scaleX(scale).scaleY(scale).setDuration(150).start();
+                if (hasFocus && glider != null) moveTopHighlight(v);
             });
         }
         updateWeatherAqi();
@@ -672,6 +672,11 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
             pill.setOnFocusChangeListener((v, has) -> {
                 if (has) moveTopHighlight(v);
             });
+        }
+        if (weatherAirQualityView != null) {
+            weatherAirQualityView.setBackground(new GlassDrawable(weatherAirQualityView, 14f * density, density, glider));
+            glider.addCompanion(weatherAirQualityView);
+            Backdrop.watch(weatherAirQualityView);
         }
         if (prayerTimesView != null) {
             prayerTimesView.setOnFocusChangeListener((v, has) -> {
@@ -1740,7 +1745,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
 
     private boolean isTopPill(View v) {
         int id = v.getId();
-        return id == R.id.btnInputs || id == R.id.btnWifi || id == R.id.btnAssistant || id == R.id.btnCandyBox || id == R.id.btnSettings;
+        return id == R.id.weatherAirQuality || id == R.id.btnInputs || id == R.id.btnWifi || id == R.id.btnAssistant || id == R.id.btnCandyBox || id == R.id.btnSettings;
     }
 
     /** Sends the focus shape onto a pill: from a tile it glides up and narrows into the pill. */
@@ -3436,7 +3441,7 @@ public class MainActivity extends Activity implements AppAdapter.TileListener {
         try {
             return getPackageManager().getPackageInfo(getPackageName(), 0).versionName;
         } catch (Exception e) {
-            return "3.1.7";
+            return "3.1.8";
         }
     }
 
