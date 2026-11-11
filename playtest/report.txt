@@ -1,0 +1,1067 @@
+PASS  Back: a quick tap and the back gesture stay on the screen  (2 taps, 0 held)
+PASS  Back: holding the button for two seconds goes back
+PASS  Learn: flicking shows the next cards  (2 cards)
+PASS  Drag: a wrong drop is refused  (1)
+PASS  Drag: every tile lands in its slot  (3 of 3)
+PASS  Drag: the round ends with a celebration
+PASS  Match: a wrong line is refused  (1)
+PASS  Match: every pair joins by drawing a line  (4 of 4)
+PASS  Match: the round ends with a celebration
+PASS  Back: a menu goes back with a plain tap
+PASS  Draw: tracing the letter is recognised  (trace check coverage=1.00 precision=0.90)
+PASS  Draw: tracing ends with a celebration
+PASS  Match: every pair joins by tapping  (4 of 4)
+PASS  Match: the round ends with a celebration
+PASS  Draw 123: half a number is not accepted  (trace check coverage=0.67 precision=1.00)
+PASS  Mandarin: tapping the microphone again finishes, and it listens again every time  (zh mic listening / zh mic stars 0 / zh mic listening / zh mic stars 0)
+PASS  Mandarin drag: the hint button shows the English meanings
+PASS  Mandarin drag: a wrong drop is refused  (1)
+PASS  Mandarin drag: every tile lands in its slot  (3 of 3)
+PASS  Mandarin drag: the round ends with a celebration
+PASS  Mandarin match: the hint button shows the English meanings
+PASS  Mandarin match: a wrong line is refused  (1)
+PASS  Mandarin match: every pair joins by drawing a line  (4 of 4)
+PASS  Mandarin match: the round ends with a celebration
+PASS  Mandarin test: all 25 questions answered  (25)
+PASS  Mandarin test: the mark is 24/25 (one wrong on purpose)  (exam result 4 24/25)
+PASS  Mandarin: word cards go forward  (3 cards)
+PASS  Mandarin: the microphone listens and scores  (zh mic listening)
+PASS  Mandarin: a wrong reply is refused, a right one goes on  (['zh chat wrong 0', 'zh chat right 0', 'zh chat wrong 1', 'zh chat right 1', 'zh chat wrong 2', 'zh chat right 2', 'zh chat wrong 3', 'zh chat right 3', 'zh chat done 0'])
+PASS  Mandarin: the conversation is finished
+PASS  Mandarin: the speech ends with applause
+PASS  Music: the piano plays its keys, and a slide plays each key in turn  (10 notes)
+PASS  Music: every drum hit sounds  (4 hits)
+PASS  Music: a C chord strum plays its strings  (['music chord C'] 5 strings)
+PASS  Music: a xylophone glissando strikes the bars  (11 bars)
+PASS  Ujian: the voice button cycles Melayu, English, Senyap  (en off ms)
+PASS  Ujian: all 25 questions answered  (25)
+PASS  Ujian: the mark is 24/25 (one wrong on purpose)  (exam result 0 24/25)
+PASS  Ujian: the result is celebrated
+PASS  Heroes: a hero zaps each right answer  (3 of 3)
+PASS  Babies: a baby pops up for each right answer  (3 of 3)
+PASS  No crash
+
+Events logged by the app:
+layout
+view ABC 217 468 532 877
+view 123 584 468 899 877
+view Alif Ba Ta 951 468 1266 877
+view Islamic Words 1318 468 1633 877
+view Arabic Words 1685 468 2000 877
+view Mandarin 2052 468 2367 877
+view Ujian 2419 468 2734 877
+view theme:classic 1927 37 2053 163
+view theme:hero 2074 37 2200 163
+view theme:baby 2221 37 2347 163
+view music 181 37 328 184
+layout
+view nav back 181 32 318 169
+view Learn 342 355 764 883
+view Draw 816 355 1238 883
+view Drag 1290 355 1712 883
+view Match 1764 355 2186 883
+layout
+view nav back 181 32 318 169
+view card 877 310 1650 1001
+view Back 202 572 370 740
+view Next 2158 572 2326 740
+nav back tap
+nav back tap
+nav back held
+screen back
+layout
+view nav back 181 32 318 169
+view Learn 342 355 764 883
+view Draw 816 355 1238 883
+view Drag 1290 355 1712 883
+view Match 1764 355 2186 883
+layout
+view nav back 181 32 318 169
+view card 877 310 1650 1001
+view Back 202 572 370 740
+view Next 2158 572 2326 740
+card Ball
+card Cat
+nav back held
+screen back
+layout
+view nav back 181 32 318 169
+view Learn 342 355 764 883
+view Draw 816 355 1238 883
+view Drag 1290 355 1712 883
+view Match 1764 355 2186 883
+layout
+view nav back 181 32 318 169
+view slot:Rainbow 372 196 672 720
+view slot:Grapes 1114 196 1414 720
+view slot:Tree 1855 196 2155 720
+view tile:Tree 398 774 646 1022
+view tile:Rainbow 1140 774 1388 1022
+view tile:Grapes 1881 774 2129 1022
+drag wrong Tree
+drag right Tree
+drag right Rainbow
+drag right Grapes
+celebrate Masya-Allah!
+layout
+view nav back 181 32 318 169
+view slot:Yo-yo 372 196 672 720
+view slot:Fish 1114 196 1414 720
+view slot:Duck 1855 196 2155 720
+view tile:Fish 398 774 646 1022
+view tile:Duck 1140 774 1388 1022
+view tile:Yo-yo 1881 774 2129 1022
+nav back held
+screen back
+layout
+view nav back 181 32 318 169
+view Learn 342 355 764 883
+view Draw 816 355 1238 883
+view Drag 1290 355 1712 883
+view Match 1764 355 2186 883
+layout
+view nav back 181 32 318 169
+view left:Key 355 218 723 396
+view right:Key 1804 218 2172 396
+view left:Jeans 355 433 723 611
+view right:House 1804 433 2172 611
+view left:House 355 648 723 826
+view right:Jeans 1804 648 2172 826
+view left:Queen 355 863 723 1041
+view right:Queen 1804 863 2172 1041
+match wrong Key / House
+match right Key
+match right Jeans
+match right House
+match right Queen
+celebrate Masya-Allah!
+layout
+view nav back 181 32 318 169
+view left:Yo-yo 355 218 723 396
+view right:House 1804 218 2172 396
+view left:Xylophone 355 433 723 611
+view right:Orange 1804 433 2172 611
+view left:Orange 355 648 723 826
+view right:Yo-yo 1804 648 2172 826
+view left:House 355 863 723 1041
+view right:Xylophone 1804 863 2172 1041
+nav back held
+screen back
+layout
+view nav back 181 32 318 169
+view Learn 342 355 764 883
+view Draw 816 355 1238 883
+view Drag 1290 355 1712 883
+view Match 1764 355 2186 883
+screen back
+layout
+view ABC 217 468 532 877
+view 123 584 468 899 877
+view Alif Ba Ta 951 468 1266 877
+view Islamic Words 1318 468 1633 877
+view Arabic Words 1685 468 2000 877
+view Mandarin 2052 468 2367 877
+view Ujian 2419 468 2734 877
+view theme:classic 1927 37 2053 163
+view theme:hero 2074 37 2200 163
+view theme:baby 2221 37 2347 163
+view music 181 37 328 184
+layout
+view nav back 181 32 318 169
+view Learn 342 355 764 883
+view Draw 816 355 1238 883
+view Drag 1290 355 1712 883
+view Match 1764 355 2186 883
+layout
+view nav back 181 32 318 169
+view board 181 206 2037 1033
+view Back 218 859 355 996
+view Next 1869 859 2006 996
+view Clear 2108 746 2255 893
+trace check coverage=1.00 precision=0.90
+traced ا
+celebrate Awesome!
+nav back held
+screen back
+layout
+view nav back 181 32 318 169
+view Learn 342 355 764 883
+view Draw 816 355 1238 883
+view Drag 1290 355 1712 883
+view Match 1764 355 2186 883
+screen back
+layout
+view ABC 217 468 532 877
+view 123 584 468 899 877
+view Alif Ba Ta 951 468 1266 877
+view Islamic Words 1318 468 1633 877
+view Arabic Words 1685 468 2000 877
+view Mandarin 2052 468 2367 877
+view Ujian 2419 468 2734 877
+view theme:classic 1927 37 2053 163
+view theme:hero 2074 37 2200 163
+view theme:baby 2221 37 2347 163
+view music 181 37 328 184
+layout
+view nav back 181 32 318 169
+view Learn 342 355 764 883
+view Draw 816 355 1238 883
+view Drag 1290 355 1712 883
+view Match 1764 355 2186 883
+layout
+view nav back 181 32 318 169
+view left:Alhamdulillah 355 218 723 396
+view right:Allah 1804 218 2172 396
+view left:Ramadan 355 433 723 611
+view right:Alhamdulillah 1804 433 2172 611
+view left:Insya-Allah 355 648 723 826
+view right:Insya-Allah 1804 648 2172 826
+view left:Allah 355 863 723 1041
+view right:Ramadan 1804 863 2172 1041
+match right Alhamdulillah
+match right Ramadan
+match right Insya-Allah
+match right Allah
+celebrate Awesome!
+layout
+view nav back 181 32 318 169
+view left:Insya-Allah 355 218 723 396
+view right:Jazakallahu khairan 1804 218 2172 396
+view left:Alhamdulillah 355 433 723 611
+view right:Allah 1804 433 2172 611
+view left:Jazakallahu khairan 355 648 723 826
+view right:Insya-Allah 1804 648 2172 826
+view left:Allah 355 863 723 1041
+view right:Alhamdulillah 1804 863 2172 1041
+nav back held
+screen back
+layout
+view nav back 181 32 318 169
+view Learn 342 355 764 883
+view Draw 816 355 1238 883
+view Drag 1290 355 1712 883
+view Match 1764 355 2186 883
+screen back
+layout
+view ABC 217 468 532 877
+view 123 584 468 899 877
+view Alif Ba Ta 951 468 1266 877
+view Islamic Words 1318 468 1633 877
+view Arabic Words 1685 468 2000 877
+view Mandarin 2052 468 2367 877
+view Ujian 2419 468 2734 877
+view theme:classic 1927 37 2053 163
+view theme:hero 2074 37 2200 163
+view theme:baby 2221 37 2347 163
+view music 181 37 328 184
+layout
+view nav back 181 32 318 169
+view board 181 206 2037 1033
+view Back 218 859 355 996
+view Next 1869 859 2006 996
+view Clear 2108 746 2255 893
+trace check coverage=0.67 precision=1.00
+layout
+view ABC 217 468 532 877
+view 123 584 468 899 877
+view Alif Ba Ta 951 468 1266 877
+view Islamic Words 1318 468 1633 877
+view Arabic Words 1685 468 2000 877
+view Mandarin 2052 468 2367 877
+view Ujian 2419 468 2734 877
+view theme:classic 1927 37 2053 163
+view theme:hero 2074 37 2200 163
+view theme:baby 2221 37 2347 163
+view music 181 37 328 184
+layout
+view nav back 181 32 318 169
+view zh level 0 415 348 756 775
+view zh level 1 867 348 1208 775
+view zh level 2 1319 348 1660 775
+view zh level 3 1771 348 2112 775
+view zh game drag 199 901 885 1043
+view zh game match 921 901 1607 1043
+view zh game exam 1643 901 2329 1043
+zh phrase 0 你好
+layout
+view nav back 181 32 318 169
+view Back 207 551 344 688
+view next 1643 551 1780 688
+view 🔊  Dengar 1848 273 2347 404
+view 🐢  Perlahan 1848 430 2347 561
+view mic 1848 587 2347 718
+zh phrase 1 早上好
+zh phrase 2 谢谢
+zh mic listening
+zh mic stars 0
+zh mic listening
+zh mic stars 0
+zh mic listening
+zh mic stars 0
+nav back held
+screen back
+layout
+view nav back 181 32 318 169
+view zh level 0 415 348 756 775
+view zh level 1 867 348 1208 775
+view zh level 2 1319 348 1660 775
+view zh level 3 1771 348 2112 775
+view zh game drag 199 901 885 1043
+view zh game match 921 901 1607 1043
+view zh game exam 1643 901 2329 1043
+screen back
+layout
+view ABC 217 468 532 877
+view 123 584 468 899 877
+view Alif Ba Ta 951 468 1266 877
+view Islamic Words 1318 468 1633 877
+view Arabic Words 1685 468 2000 877
+view Mandarin 2052 468 2367 877
+view Ujian 2419 468 2734 877
+view theme:classic 1927 37 2053 163
+view theme:hero 2074 37 2200 163
+view theme:baby 2221 37 2347 163
+view music 181 37 328 184
+layout
+view nav back 181 32 318 169
+layout
+view nav back 181 32 318 169
+view reply:right 1403 306 2347 661
+view reply:wrong 1403 687 2347 1043
+zh chat wrong 0
+zh chat right 0
+layout
+view nav back 181 32 318 169
+view 🔊  Dengar dulu 1403 478 2347 609
+view mic 1403 635 2347 766
+view skip 1403 792 2347 923
+layout
+view nav back 181 32 318 169
+view reply:wrong 1403 306 2347 661
+view reply:right 1403 687 2347 1043
+zh chat wrong 1
+zh chat right 1
+layout
+view nav back 181 32 318 169
+view 🔊  Dengar dulu 1403 478 2347 609
+view mic 1403 635 2347 766
+view skip 1403 792 2347 923
+layout
+view nav back 181 32 318 169
+view reply:wrong 1403 306 2347 661
+view reply:right 1403 687 2347 1043
+zh chat wrong 2
+zh chat right 2
+layout
+view nav back 181 32 318 169
+view 🔊  Dengar dulu 1403 478 2347 609
+view mic 1403 635 2347 766
+view skip 1403 792 2347 923
+layout
+view nav back 181 32 318 169
+view reply:wrong 1403 306 2347 661
+view reply:right 1403 687 2347 1043
+zh chat wrong 3
+zh chat right 3
+layout
+view nav back 181 32 318 169
+view 🔊  Dengar dulu 1403 478 2347 609
+view mic 1403 635 2347 766
+view skip 1403 792 2347 923
+zh chat done 0
+celebrate You did it!
+layout
+view nav back 181 32 318 169
+view 🔁  Sekali lagi 1403 698 2347 829
+zh stage line 0
+layout
+view nav back 181 32 318 169
+view 🔊  Dengar contoh 1874 191 2347 322
+view mic 1874 348 2347 479
+view next 1874 505 2347 636
+zh stage line 1
+zh stage line 2
+zh stage line 3
+zh stage line 4
+zh stage line 5
+zh stage line 6
+zh stage applause 0
+celebrate You did it!
+zh stage line 0
+layout
+view nav back 181 32 318 169
+view hint 1901 35 2347 166
+view slot:shū 223 196 820 720
+view slot:bǐ 965 196 1562 720
+view slot:huā 1707 196 2304 720
+view tile:bǐ 249 774 794 1022
+view tile:huā 991 774 1536 1022
+view tile:shū 1733 774 2278 1022
+zh hint on
+drag wrong bǐ
+drag right bǐ
+drag right huā
+drag right shū
+celebrate Well done!
+layout
+view nav back 181 32 318 169
+view hint 1901 35 2347 166
+view slot:píngguǒ 223 196 820 720
+view slot:shuǐ 965 196 1562 720
+view slot:bǐ 1707 196 2304 720
+view tile:shuǐ 249 774 794 1022
+view tile:bǐ 991 774 1536 1022
+view tile:píngguǒ 1733 774 2278 1022
+nav back held
+screen back
+layout
+view nav back 181 32 318 169
+view zh level 0 415 348 756 775
+view zh level 1 867 348 1208 775
+view zh level 2 1319 348 1660 775
+view zh level 3 1771 348 2112 775
+view zh game drag 199 901 885 1043
+view zh game match 921 901 1607 1043
+view zh game exam 1643 901 2329 1043
+layout
+view nav back 181 32 318 169
+view hint 1901 35 2347 166
+view left:xīngxing 355 218 723 396
+view right:huā 1804 218 2172 396
+view left:píngguǒ 355 433 723 611
+view right:xīngxing 1804 433 2172 611
+view left:huā 355 648 723 826
+view right:píngguǒ 1804 648 2172 826
+view left:shǒu 355 863 723 1041
+view right:shǒu 1804 863 2172 1041
+zh hint on
+match wrong xīngxing / huā
+match right xīngxing
+match right píngguǒ
+match right huā
+match right shǒu
+celebrate Great job!
+layout
+view nav back 181 32 318 169
+view hint 1901 35 2347 166
+view left:shù 355 218 723 396
+view right:shuǐ 1804 218 2172 396
+view left:huā 355 433 723 611
+view right:huā 1804 433 2172 611
+view left:qiú 355 648 723 826
+view right:qiú 1804 648 2172 826
+view left:shuǐ 355 863 723 1041
+view right:shù 1804 863 2172 1041
+nav back held
+screen back
+layout
+view nav back 181 32 318 169
+view zh level 0 415 348 756 775
+view zh level 1 867 348 1208 775
+view zh level 2 1319 348 1660 775
+view zh level 3 1771 348 2112 775
+view zh game drag 199 901 885 1043
+view zh game match 921 901 1607 1043
+view zh game exam 1643 901 2329 1043
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view start:4 1081 455 1446 861
+exam q 0 2
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 0 right
+exam q 1 2
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 1 right
+exam q 2 0
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 2 right
+exam q 3 1
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 3 right
+exam q 4 2
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 4 right
+exam q 5 1
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 5 right
+exam q 6 2
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 6 right
+exam q 7 1
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 7 wrong
+exam q 8 2
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 8 right
+exam q 9 2
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 9 right
+exam q 10 0
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 10 right
+exam q 11 0
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 11 right
+exam q 12 0
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 12 right
+exam q 13 2
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 13 right
+exam q 14 1
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 14 right
+exam q 15 1
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 15 right
+exam q 16 1
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 16 right
+exam q 17 2
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 17 right
+exam q 18 0
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 18 right
+exam q 19 2
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 19 right
+exam q 20 1
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 653
+view opt:1 1361 685 2346 1043
+exam answer 20 right
+exam q 21 1
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 653
+view opt:1 1361 685 2346 1043
+exam answer 21 right
+exam q 22 1
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 653
+view opt:1 1361 685 2346 1043
+exam answer 22 right
+exam q 23 0
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 653
+view opt:1 1361 685 2346 1043
+exam answer 23 right
+exam q 24 1
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 653
+view opt:1 1361 685 2346 1043
+exam answer 24 right
+exam result 4 24/25
+exam total 24/25
+celebrate Awesome!
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view total:24 181 459 1190 680
+view Lihat jawapan 337 795 716 921
+view Cuba lagi 742 795 1033 921
+view score:4:24 2096 202 2309 1032
+layout
+view ABC 217 468 532 877
+view 123 584 468 899 877
+view Alif Ba Ta 951 468 1266 877
+view Islamic Words 1318 468 1633 877
+view Arabic Words 1685 468 2000 877
+view Mandarin 2052 468 2367 877
+view Ujian 2419 468 2734 877
+view theme:classic 1927 37 2053 163
+view theme:hero 2074 37 2200 163
+view theme:baby 2221 37 2347 163
+view music 181 37 328 184
+music show Piano
+layout
+view nav back 181 32 318 169
+view instrument:0 1151 35 1416 166
+view instrument:1 1437 35 1696 166
+view instrument:2 1717 35 1966 166
+view instrument:3 1987 35 2347 166
+view piano 181 206 2347 1038
+music piano 60
+music piano 64
+music piano 67
+music piano 72
+music piano 60
+music piano 62
+music piano 65
+music piano 71
+music piano 72
+music piano 74
+music show Drum
+layout
+view nav back 181 32 318 169
+view instrument:0 1151 35 1416 166
+view instrument:1 1437 35 1696 166
+view instrument:2 1717 35 1966 166
+view instrument:3 1987 35 2347 166
+view drums 181 206 2347 1038
+music drum Kick
+music drum Snare
+music drum Hi-hat
+music drum Crash
+music show Gitar
+layout
+view nav back 181 32 318 169
+view instrument:0 1151 35 1416 166
+view instrument:1 1437 35 1696 166
+view instrument:2 1717 35 1966 166
+view instrument:3 1987 35 2347 166
+view guitar 181 206 2347 1038
+music chord C
+music guitar 48
+music guitar 52
+music guitar 55
+music guitar 60
+music guitar 64
+music show Xylophone
+layout
+view nav back 181 32 318 169
+view instrument:0 1151 35 1416 166
+view instrument:1 1437 35 1696 166
+view instrument:2 1717 35 1966 166
+view instrument:3 1987 35 2347 166
+view xylophone 181 206 2347 1038
+music xylophone 72
+music xylophone 74
+music xylophone 76
+music xylophone 77
+music xylophone 81
+music xylophone 84
+music xylophone 86
+music xylophone 88
+music xylophone 91
+music xylophone 93
+music xylophone 96
+nav back held
+screen back
+layout
+view ABC 217 468 532 877
+view 123 584 468 899 877
+view Alif Ba Ta 951 468 1266 877
+view Islamic Words 1318 468 1633 877
+view Arabic Words 1685 468 2000 877
+view Mandarin 2052 468 2367 877
+view Ujian 2419 468 2734 877
+view theme:classic 1927 37 2053 163
+view theme:hero 2074 37 2200 163
+view theme:baby 2221 37 2347 163
+view music 181 37 328 184
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view start:0 462 376 827 782
+view start:1 875 376 1240 782
+view start:2 1288 376 1653 782
+view start:3 1701 376 2066 782
+view start:all 810 819 1718 977
+exam q 0 2
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 0 right
+exam q 1 1
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam voice en
+exam voice off
+exam voice ms
+exam answer 1 right
+exam q 2 1
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 2 right
+exam q 3 1
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 3 wrong
+exam q 4 0
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 4 right
+exam q 5 2
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 5 right
+exam q 6 1
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 6 right
+exam q 7 0
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 7 right
+exam q 8 2
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 8 right
+exam q 9 2
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 9 right
+exam q 10 0
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 10 right
+exam q 11 2
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 11 right
+exam q 12 2
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 12 right
+exam q 13 2
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 13 right
+exam q 14 1
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 14 right
+exam q 15 1
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 15 right
+exam q 16 1
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 16 right
+exam q 17 0
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 17 right
+exam q 18 2
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 18 right
+exam q 19 1
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 523
+view opt:1 1361 555 2346 783
+view opt:2 1361 815 2346 1043
+exam answer 19 right
+exam q 20 0
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 653
+view opt:1 1361 685 2346 1043
+exam answer 20 right
+exam q 21 1
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 653
+view opt:1 1361 685 2346 1043
+exam answer 21 right
+exam q 22 0
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 653
+view opt:1 1361 685 2346 1043
+exam answer 22 right
+exam q 23 0
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 653
+view opt:1 1361 685 2346 1043
+exam answer 23 right
+exam q 24 0
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view opt:0 1361 295 2346 653
+view opt:1 1361 685 2346 1043
+exam answer 24 right
+exam result 0 24/25
+exam total 24/25
+celebrate Well done!
+layout
+view nav back 181 32 318 169
+view voice 2029 32 2347 169
+view total:24 181 459 1190 680
+view Lihat jawapan 337 795 716 921
+view Cuba lagi 742 795 1033 921
+view score:0:24 2096 202 2309 1032
+nav back held
+screen back
+layout
+view ABC 217 468 532 877
+view 123 584 468 899 877
+view Alif Ba Ta 951 468 1266 877
+view Islamic Words 1318 468 1633 877
+view Arabic Words 1685 468 2000 877
+view Mandarin 2052 468 2367 877
+view Ujian 2419 468 2734 877
+view theme:classic 1927 37 2053 163
+view theme:hero 2074 37 2200 163
+view theme:baby 2221 37 2347 163
+view music 181 37 328 184
+layout
+view nav back 181 58 318 195
+view Kapten Ceria 2179 32 2347 221
+view slot:Key 381 248 663 740
+view slot:Penguin 1123 248 1405 740
+view slot:Xylophone 1864 248 2146 740
+view tile:Xylophone 407 792 637 1022
+view tile:Key 1149 792 1379 1022
+view tile:Penguin 1890 792 2120 1022
+drag right Xylophone
+hero zap Kapten Ceria
+drag right Key
+hero zap Puteri Bintang
+drag right Penguin
+hero zap Si Kilat
+celebrate ZAP! Amazing!
+layout
+view nav back 181 58 318 195
+view Kapten Ceria 2179 32 2347 221
+view slot:Key 381 248 663 740
+view slot:Rainbow 1123 248 1405 740
+view slot:Penguin 1864 248 2146 740
+view tile:Rainbow 407 792 637 1022
+view tile:Penguin 1149 792 1379 1022
+view tile:Key 1890 792 2120 1022
+layout
+view ABC 217 468 532 877
+view 123 584 468 899 877
+view Alif Ba Ta 951 468 1266 877
+view Islamic Words 1318 468 1633 877
+view Arabic Words 1685 468 2000 877
+view Mandarin 2052 468 2367 877
+view Ujian 2419 468 2734 877
+view theme:classic 1927 37 2053 163
+view theme:hero 2074 37 2200 163
+view theme:baby 2221 37 2347 163
+view music 181 37 328 184
+layout
+view nav back 181 58 318 195
+view baby 2 2189 32 2347 221
+view slot:One 381 248 663 740
+view slot:Six 1123 248 1405 740
+view slot:Nine 1864 248 2146 740
+view tile:Nine 407 792 637 1022
+view tile:One 1149 792 1379 1022
+view tile:Six 1890 792 2120 1022
+drag right Nine
+baby pop 1
+drag right One
+baby pop 1
+drag right Six
+baby pop 1
+celebrate Comelnya, bijak!
+layout
+view nav back 181 58 318 195
+view baby 2 2189 32 2347 221
+view slot:Six 381 248 663 740
+view slot:Eight 1123 248 1405 740
+view slot:Nine 1864 248 2146 740
+view tile:Eight 407 792 637 1022
+view tile:Nine 1149 792 1379 1022
+view tile:Six 1890 792 2120 1022
+layout
+view ABC 217 468 532 877
+view 123 584 468 899 877
+view Alif Ba Ta 951 468 1266 877
+view Islamic Words 1318 468 1633 877
+view Arabic Words 1685 468 2000 877
+view Mandarin 2052 468 2367 877
+view Ujian 2419 468 2734 877
+view theme:classic 1927 37 2053 163
+view theme:hero 2074 37 2200 163
+view theme:baby 2221 37 2347 163
+view music 181 37 328 184
