@@ -24,7 +24,7 @@ caches are cleared through the debugging service rather than the Android 11 dial
 The first page shows a large digital clock, the date, a music widget, engine torque and the speedometer.
 Swipe left for the apps.
 
-- **Clock**: thin large digits filled with a rainbow that flows across them, with a soft glow that shifts
+- **Clock**: in a dark glass box like the music widget; thin large digits filled with a rainbow that flows across them, with a soft glow that shifts
   colour and breathes. It only animates while Home is on screen, and stands still when Android's animations
   are turned off. `"clock_rainbow": false` makes it plain white.
 - **Music widget**: cover art, song, artist, a progress line, and previous / play-pause / next. It follows

@@ -449,7 +449,13 @@ public final class HomeActivity extends Activity {
         left.setBackground(glassFor(left, dp(26)));
         bigClock = new RainbowClock(this, cfg.clockRainbow);
         bigClock.setTextSizePx(Math.min(areaH * 0.24f, areaW * 0.12f));
-        left.addView(bigClock, new LinearLayout.LayoutParams(-1, 0, 1f));
+        // The clock sits in the same dark glass box as the music widget below it.
+        FrameLayout clockBox = new FrameLayout(this);
+        clockBox.setBackground(NowPlaying.darkPanel(this));
+        clockBox.addView(bigClock, new FrameLayout.LayoutParams(-1, -1));
+        LinearLayout.LayoutParams cblp = new LinearLayout.LayoutParams(-1, 0, 1f);
+        cblp.bottomMargin = dp(10);
+        left.addView(clockBox, cblp);
         bigDate = text(18, false);
         bigDate.setAlpha(0.8f);
         left.addView(bigDate, new LinearLayout.LayoutParams(-2, -2));

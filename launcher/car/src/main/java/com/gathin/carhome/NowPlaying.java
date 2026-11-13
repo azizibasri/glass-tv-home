@@ -76,11 +76,7 @@ final class NowPlaying extends LinearLayout {
         setGravity(Gravity.CENTER_VERTICAL);
         int pad = Math.round(10 * d);
         setPadding(pad, pad, pad, pad);
-        GradientDrawable bg = new GradientDrawable();
-        bg.setColor(0x33000000);
-        bg.setCornerRadius(18 * d);
-        bg.setStroke(Math.max(1, Math.round(d)), 0x1FFFFFFF);
-        setBackground(bg);
+        setBackground(darkPanel(ctx));
 
         int artPx = heightPx - 2 * pad;
         art = new ImageView(ctx);
@@ -129,6 +125,16 @@ final class NowPlaying extends LinearLayout {
             if (controller != null) controller.getTransportControls().skipToNext();
         }));
         showEmpty();
+    }
+
+    /** The dark glass box behind the music widget, also used behind the dashboard clock. */
+    static GradientDrawable darkPanel(Context ctx) {
+        float d = ctx.getResources().getDisplayMetrics().density;
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(0x33000000);
+        bg.setCornerRadius(18 * d);
+        bg.setStroke(Math.max(1, Math.round(d)), 0x1FFFFFFF);
+        return bg;
     }
 
     private static TextView line(Context ctx, float sp, boolean bold) {
