@@ -1,0 +1,36 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Glass Car: a touch home screen for Android car head units (landscape, 1024x600 to 1920x720).
+// Plain Android framework only, no libraries, so it stays tiny and starts fast on a slow head unit.
+android {
+    namespace 'com.gathin.carhome'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.gathin.carhome'
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName '1.0.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+}

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Glass Car</string>
+    <string name="clean">Clean</string>
+    <string name="cleaning">Cleaning…</string>
+    <string name="clean_done">Closed %1$d apps · %2$s RAM free</string>
+    <string name="clean_cache_hint">Allow \"All files access\" for Glass Car to clear app caches too</string>
+    <string name="cannot_open">Can\'t open this app</string>
+    <string name="app_info">App info</string>
+    <string name="move_to_dock">Put in dock</string>
+    <string name="remove_from_dock">Remove from dock</string>
+</resources>

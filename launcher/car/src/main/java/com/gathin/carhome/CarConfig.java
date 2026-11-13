@@ -1,0 +1,77 @@
+package com.gathin.carhome;
+
+import android.content.Context;
+import android.util.Log;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Settings from {@code config.json} in the app's external files folder
+ * ({@code /sdcard/Android/data/com.gathin.carhome/files}), pushed by {@code car/theme.sh}. Every key is
+ * optional; a missing or wrongly typed key keeps the default, and a file that doesn't parse is ignored,
+ * so a bad file can never break Home. Keys are listed in car/README.md.
+ */
+final class CarConfig {
+    private static final String TAG = "CarHome";
+
+    /** Dock apps in order; empty means "pick maps, music, CarPlay and phone apps by themselves". */
+    final List<String> dockApps = new ArrayList<>();
+    final List<String> hiddenApps = new ArrayList<>();
+    /** More package-name parts the Clean button must never close, on top of {@link Keep#BUILT_IN}. */
+    final List<String> keepRunning = new ArrayList<>();
+    int columns = 0;
+    /** Close background apps by itself when Home shows and this many minutes passed; 0 = only on tap. */
+    int autoCleanMinutes = 30;
+    boolean showLabels = true;
+    boolean wallpaper = true;
+    /** Accent for the RAM ring and the page dot, #RRGGBB. */
+    int accent = 0xFF0A84FF;
+
+    static File dir(Context ctx) {
+        return ctx.getExternalFilesDir(null);
+    }
+
+    static CarConfig load(Context ctx) {
+        CarConfig c = new CarConfig();
+        File d = dir(ctx);
+        File f = d == null ? null : new File(d, "config.json");
+        if (f == null || !f.isFile()) return c;
+        try (InputStream in = new FileInputStream(f)) {
+            byte[] buf = new byte[(int) Math.min(f.length(), 64 * 1024)];
+            int n = 0, r;
+            while (n < buf.length && (r = in.read(buf, n, buf.length - n)) > 0) n += r;
+            JSONObject o = new JSONObject(new String(buf, 0, n, StandardCharsets.UTF_8));
+            strings(o.optJSONArray("dock_apps"), c.dockApps);
+            strings(o.optJSONArray("hidden_apps"), c.hiddenApps);
+            strings(o.optJSONArray("keep_running"), c.keepRunning);
+            int cols = o.optInt("columns", 0);
+            if (cols >= 3 && cols <= 8) c.columns = cols;
+            int auto = o.optInt("auto_clean_minutes", c.autoCleanMinutes);
+            if (auto >= 0 && auto <= 1440) c.autoCleanMinutes = auto;
+            if (o.opt("show_labels") instanceof Boolean) c.showLabels = o.getBoolean("show_labels");
+            if (o.opt("wallpaper") instanceof Boolean) c.wallpaper = o.getBoolean("wallpaper");
+            String accent = o.optString("accent", "");
+            if (accent.matches("#[0-9a-fA-F]{6}")) c.accent = 0xFF000000 | Integer.parseInt(accent.substring(1), 16);
+        } catch (Exception e) {
+            Log.w(TAG, "config.json ignored: " + e);
+            return new CarConfig();
+        }
+        return c;
+    }
+
+    private static void strings(JSONArray a, List<String> out) {
+        if (a == null) return;
+        for (int i = 0; i < a.length(); i++) {
+            String s = a.optString(i, "").trim();
+            if (!s.isEmpty() && !out.contains(s)) out.add(s);
+        }
+    }
+}

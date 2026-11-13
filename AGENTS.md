@@ -36,6 +36,7 @@ system that matters, not the brand: Hisense, Panasonic, Toshiba, TCL and Philips
 | Android TV 5, 6 or 7 | Debloat only: the launcher needs Android 8 | Steps 1 to 3, then step 7 |
 | Fire TV (Amazon sticks, Fire TV Edition TVs) | Debloat only: Fire OS takes Home back from any other launcher | Steps 1 to 3, then step 7 |
 | **LG (webOS)** | **The webOS app** (preview): an app you open, not the home screen; no debloat, no cache cleaning | [webos/README.md](webos/README.md) only. Not these steps: they are for Android |
+| **Android car head unit** (car player, e.g. A30-V2-A01-CPL), Android 8 or newer | **Glass Car**: a touch home screen with RAM and cache cleaning; debloat from a scan, the car's own launcher stays | [car/README.md](car/README.md) only. Untested on a real unit so far: say so |
 | Samsung (Tizen), Roku, VIDAA, Vizio SmartCast, Panasonic My Home Screen, Apple TV | Nothing: these cannot run any version | Stop |
 
 [docs/DEVICES.md](docs/DEVICES.md) says how far each model has been tested; tell the person which section their

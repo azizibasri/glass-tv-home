@@ -1,0 +1,79 @@
+# Glass Car: for Android car head units
+
+A simple touch home screen for Android car players, in a glass style inspired by in-car phone projection:
+a frosted rail on the left with the time, four dock apps and a **Clean** button, and pages of large
+rounded app icons you swipe sideways. Built for the A30-V2-A01-CPL (1024x600 / 1280x720 class units), and
+for any Android 8+ head unit.
+
+> **Status: not yet run on a real head unit.** The code is written and its logic is unit tested, but nobody
+> has installed it on a car yet. Treat the first install as a test, with the car parked.
+
+| | |
+|---|---|
+| App | `com.gathin.carhome`, source in [`launcher/car/`](../launcher/car/) |
+| Needs | Android 8 or newer, landscape touchscreen |
+| Keeps | the unit's own launcher installed and enabled (it often also runs car features) |
+
+## What the Clean button does
+
+- **RAM**: closes apps sitting in the background, the same as swiping them away. It never closes the app on
+  screen, music or navigation that is playing (they run a foreground service), or anything the car needs:
+  reverse and 360 cameras, CAN bus, MCU, steering-wheel buttons, radio, Bluetooth calls, CarPlay / Android
+  Auto bridges (zLink, AutoKit, CarbitLink…), keyboard, Google services. See `Keep.java`; add your own with
+  `keep_running`. The ring shows how much RAM is in use; it turns orange at 75% and red at 90%.
+- **Automatically**: when Home shows and the last clean was more than 30 minutes ago (`auto_clean_minutes`).
+- **Cache** (Android 11+): after the RAM clean, Android's own "clear the cache of all apps?" dialog. It
+  deletes cache files only: no sign-ins, settings or downloads. `car/install.sh` grants the one permission
+  it needs. On older Android, `tools/cache-clean.sh` (or `pm trim-caches`) does it over ADB.
+- **Long press** Clean: opens Android's storage settings.
+
+## Set it up
+
+Do it parked, engine running or ignition on so the unit doesn't sleep. Connect the unit and your computer to
+the same Wi-Fi (a phone hotspot works).
+
+1. **Developer options**: Settings → About → tap **Build number** 7 times. Many head units ask for a code
+   first (often `8888`, `3368`, `1234` or `0000`, depending on the maker): look it up for your exact model
+   before you try. Then Developer options → **USB debugging** on, and **Wireless / network ADB** if shown.
+2. **Connect**: `python3 -m venv tools/venv && tools/venv/bin/pip install -r tools/requirements.txt`, then
+   `TV_HOST=<unit ip> tools/venv/bin/python -I tools/tv.py --probe`. Tick **Always allow** on the screen.
+   Check `ro.build.version.sdk`: 26 or higher is needed. Many cheap units show a made-up Android version in
+   Settings; this number is the real one.
+3. **Back up and scan** (changes nothing): `CAR_HOST=<ip> tools/venv/bin/python -I car/scan.py`. It saves
+   the package lists, settings and Home owner to `backup/car-<time>/`, and writes `proposal.txt`: a
+   debloat list with candidates, an "ask" section and a `#KEEP` section the car needs.
+4. **Debloat**: read `proposal.txt` with the owner, then apply about 10 lines at a time with
+   `TV_HOST=<ip> tools/disable.sh backup/car-<time>/proposal.txt`. After **every** batch check: reverse
+   camera (shift into R), steering-wheel buttons, radio, Bluetooth call, CarPlay / Android Auto, sound,
+   Wi-Fi, keyboard, and Home. Anything broken: `pm enable <pkg>` for that batch, one by one. Undo all:
+   `TV_HOST=<ip> tools/restore.sh backup/car-<time>/proposal.txt <stock launcher package>`.
+5. **Build and install**: `cd launcher && ./gradlew :car:testReleaseUnitTest :car:assembleRelease`, then
+   `CAR_HOST=<ip> car/install.sh`. It installs, checks Glass Car stays running and in front, and only then
+   makes it Home. If a check fails it uninstalls it and puts the old Home back.
+6. **Choose the dock**: hold an app → **Put in dock**, or push a config:
+   `CAR_HOST=<ip> car/theme.sh car/themes/default`.
+
+Undo Glass Car: `CAR_HOST=<ip> car/restore-home.sh <original home printed by install.sh>`.
+
+## Settings (`config.json`)
+
+All keys optional; a bad file is ignored as a whole.
+
+| Key | Type | Meaning |
+|---|---|---|
+| `dock_apps` | list of packages | Dock apps, up to 4, in order. Empty: maps, music, CarPlay app and phone, guessed. Holding an app → Put in dock wins over this |
+| `hidden_apps` | list of packages | Never shown in the grid |
+| `keep_running` | list of name parts | More apps Clean must never close, e.g. `"com.mycar.dvr"` |
+| `columns` | 3 to 8, or 0 | Icons per row; 0 fits them to the screen (5 x 3 on 1024x600, 5 x 2 on 1280x720 at 1.5x) |
+| `auto_clean_minutes` | 0 to 1440 | Close background apps by itself when Home shows this long after the last clean; 0 = only on tap. Default 30 |
+| `show_labels` | bool | App names under the icons |
+| `wallpaper` | bool | Use `wallpaper.jpg` from the theme folder; otherwise the built-in dark aurora |
+| `accent` | `#RRGGBB` | Colour of the RAM ring |
+
+## Safety
+
+- Never disable anything in the `#KEEP` section, and never anything you haven't checked with
+  `dumpsys package <pkg>`. On head units the reverse camera, the CAN bus link and the steering-wheel buttons
+  are ordinary apps with names that don't say so.
+- Don't set it up while driving, and don't use the screen while driving beyond what the law allows.
+- Firmware updates for these units are rare and maker-specific; Glass Car doesn't touch them.

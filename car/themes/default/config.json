@@ -1,0 +1,10 @@
+{
+  "dock_apps": ["com.waze", "com.google.android.apps.maps", "com.spotify.music", "com.netflix.mediaclient"],
+  "hidden_apps": [],
+  "keep_running": [],
+  "columns": 0,
+  "auto_clean_minutes": 30,
+  "show_labels": true,
+  "wallpaper": true,
+  "accent": "#0A84FF"
+}
