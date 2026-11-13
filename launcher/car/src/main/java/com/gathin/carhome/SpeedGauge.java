@@ -7,14 +7,14 @@ import android.graphics.Path;
 import android.graphics.RadialGradient;
 import android.graphics.RectF;
 import android.graphics.Shader;
-import android.graphics.SweepGradient;
+import android.graphics.LinearGradient;
 import android.graphics.Typeface;
 import android.os.SystemClock;
 import android.view.View;
 
 /**
- * The speedometer, in a sporty dial style: a dark round face inside a brushed-metal rim, slanted numbers,
- * white ticks that turn red in the top sixth of the dial, and a tapered red needle with a glowing tip that
+ * The speedometer: a clear frosted-glass dial that lets the wallpaper show through, a thin bright glass rim,
+ * clean white numbers, white ticks that turn red in the top sixth of the dial, and a tapered red needle with a glowing tip that
  * sweeps from 0 to the top and back when the dashboard opens, like a car's cluster at start-up. The speed
  * in digits, its unit and its source (CAN BUS or GPS) sit under the hub.
  */
@@ -31,6 +31,7 @@ final class SpeedGauge extends View {
     private final Paint needle = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint hub = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint hubRing = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint shine = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF oval = new RectF(), zoneOval = new RectF();
     private final Path needlePath = new Path();
     private final float max, redFrom;
@@ -50,7 +51,7 @@ final class SpeedGauge extends View {
         redZone.setColor(RED);
         redZone.setStrokeCap(Paint.Cap.BUTT);
         tick.setStrokeCap(Paint.Cap.BUTT);
-        Typeface sporty = Typeface.create("sans-serif-condensed", Typeface.BOLD_ITALIC);
+        Typeface sporty = Typeface.create("sans-serif-medium", Typeface.NORMAL);
         num.setTypeface(sporty);
         num.setTextAlign(Paint.Align.CENTER);
         big.setColor(0xFFFFFFFF);
@@ -90,11 +91,12 @@ final class SpeedGauge extends View {
         cy = h / 2f;
         r = size / 2f * 0.96f;
         oval.set(cx - r, cy - r, cx + r, cy + r);
-        face.setShader(new RadialGradient(cx, cy - r * 0.25f, r * 1.1f,
-                new int[]{0xFF262A33, 0xFF101217, 0xFF050608}, new float[]{0f, 0.6f, 1f}, Shader.TileMode.CLAMP));
-        rim.setStrokeWidth(size * 0.022f);
-        rim.setShader(new SweepGradient(cx, cy, new int[]{0xFF8A8F99, 0xFFE6E9EF, 0xFF5A5E66, 0xFFC9CDD6,
-                0xFF4A4D55, 0xFFE6E9EF, 0xFF8A8F99}, null));
+        // Frosted glass: a light veil, brighter at the top, darker towards the edge so the ticks read.
+        face.setShader(new RadialGradient(cx, cy - r * 0.35f, r * 1.25f,
+                new int[]{0x2EFFFFFF, 0x14FFFFFF, 0x1A000000}, new float[]{0f, 0.55f, 1f}, Shader.TileMode.CLAMP));
+        rim.setStrokeWidth(Math.max(1.5f, size * 0.006f));
+        rim.setShader(new LinearGradient(cx - r, cy - r, cx + r, cy + r,
+                new int[]{0xB3FFFFFF, 0x1AFFFFFF, 0x66FFFFFF}, new float[]{0f, 0.55f, 1f}, Shader.TileMode.CLAMP));
         float zr = r * 0.86f;
         zoneOval.set(cx - zr, cy - zr, cx + zr, cy + zr);
         redZone.setStrokeWidth(size * 0.022f);
@@ -102,7 +104,14 @@ final class SpeedGauge extends View {
         big.setTextSize(size * 0.15f);
         small.setTextSize(size * 0.042f);
         hubRing.setStrokeWidth(size * 0.012f);
-        hub.setShader(new RadialGradient(cx, cy - size * 0.01f, size * 0.06f, 0xFF3A3E47, 0xFF0B0C10, Shader.TileMode.CLAMP));
+        shine.setStyle(Paint.Style.STROKE);
+        shine.setStrokeCap(Paint.Cap.ROUND);
+        shine.setStrokeWidth(size * 0.01f);
+        shine.setShader(new LinearGradient(cx - r, 0, cx + r, 0,
+                new int[]{0x00FFFFFF, 0x59FFFFFF, 0x00FFFFFF}, null, Shader.TileMode.CLAMP));
+        big.setShadowLayer(size * 0.012f, 0, size * 0.004f, 0x66000000);
+        num.setShadowLayer(size * 0.008f, 0, size * 0.003f, 0x66000000);
+        hub.setShader(new RadialGradient(cx, cy - size * 0.015f, size * 0.06f, 0xF2FFFFFF, 0xB3D8DCE6, Shader.TileMode.CLAMP));
         needle.setShadowLayer(size * 0.03f, 0, 0, 0xCCFF2D2D);
         if (sweepStart == 0) sweep();
     }
@@ -121,6 +130,9 @@ final class SpeedGauge extends View {
 
         c.drawCircle(cx, cy, r, face);
         c.drawCircle(cx, cy, r - rim.getStrokeWidth() / 2, rim);
+        // A soft shine across the top of the glass.
+        c.drawArc(zoneOval.left - r * 0.06f, zoneOval.top - r * 0.06f, zoneOval.right + r * 0.06f,
+                zoneOval.bottom + r * 0.06f, 200, 140, false, shine);
 
         // Red zone band, then ticks every 5 or 10 and slanted numbers every 20.
         float zoneStart = SpeedMath.START_DEG + SpeedMath.SWEEP_DEG * redFrom / max;
@@ -131,7 +143,7 @@ final class SpeedGauge extends View {
             double a = Math.toRadians(SpeedMath.START_DEG + SpeedMath.SWEEP_DEG * v / max);
             boolean isMajor = v % major == 0, isMid = v % (major / 2) == 0;
             boolean red = v >= redFrom;
-            tick.setColor(red ? RED : isMajor ? 0xFFFFFFFF : 0xB3FFFFFF);
+            tick.setColor(red ? RED : isMajor ? 0xFFFFFFFF : 0x99FFFFFF);
             tick.setStrokeWidth(r * (isMajor ? 0.022f : 0.010f));
             float r1 = r * 0.90f, r2 = r1 - r * (isMajor ? 0.12f : isMid ? 0.07f : 0.045f);
             c.drawLine(cx + (float) Math.cos(a) * r1, cy + (float) Math.sin(a) * r1,
