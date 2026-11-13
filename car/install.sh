@@ -58,6 +58,7 @@ ARMED=1
 log "installed $PKG"
 printf '%s\n' \
   "appops set $PKG MANAGE_EXTERNAL_STORAGE allow; echo cache-permission" \
+  "pm grant $PKG android.permission.ACCESS_FINE_LOCATION; echo gps-permission" \
   "cmd package compile -m speed -f $PKG" \
   "am start -W -n $PKG/.HomeActivity | grep -E '^(Status|Error)'" \
   | car --batch

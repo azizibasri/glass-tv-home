@@ -6,5 +6,9 @@
   "auto_clean_minutes": 30,
   "show_labels": true,
   "wallpaper": true,
-  "accent": "#0A84FF"
+  "accent": "#0A84FF",
+  "dashboard": true,
+  "speed_unit": "km/h",
+  "speed_max": 240,
+  "torque_max": 250
 }

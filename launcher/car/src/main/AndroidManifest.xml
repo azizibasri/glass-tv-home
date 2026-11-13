@@ -15,6 +15,9 @@
 
     <!-- Android 9/10 cache clean: talks to the unit's own debugging service on 127.0.0.1:5555 only. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Dashboard speed from GPS when the CAN bus doesn't send it. Only while Home is on screen. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
 
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 

@@ -19,6 +19,36 @@ for any Android 8+ head unit.
 head units show a made-up version. What it means here: Glass Car runs (it needs 8+), RAM clean works, and
 caches are cleared through the debugging service rather than the Android 11 dialog (below).
 
+## Dashboard: clock, speed and torque
+
+The first page shows a large digital clock and date, the speedometer and engine torque. Swipe left for the apps.
+
+- **Speed** comes from the car's CAN bus when the unit's CAN app shares it, otherwise from GPS. The dial
+  says which one (`CAN BUS`, `GPS`, or `NO SIGNAL` in a tunnel). GPS speed works on any unit with no setup.
+- **Torque** can only come from the CAN bus. It shows `-- Nm` until set up.
+- The car's own instrument cluster stays the speed to drive by. GPS speed lags by about a second.
+
+**Why the CAN bus needs one more step.** Android head units have no standard CAN interface. A small CAN box
+behind the radio (Raise, Hiworld, XBS, Simple Soft…) talks to the maker's own app, and each maker passes the
+data on differently, if at all. On a 2017 Jetta the box sits on the comfort network: it normally knows doors,
+lights, outside temperature and steering angle, and often speed. **Engine torque is on the engine network,
+which these boxes usually don't read.** If yours doesn't send it, torque needs an OBD-II Bluetooth adapter
+(ELM327 type) in the port under the dashboard. Glass Car doesn't read OBD-II yet.
+
+How to wire it up: drive a short way with the unit on, then run `car/scan.py` (step 3). It writes
+`can-discovery.txt`: the CAN apps, the broadcasts they declare, and log lines that mention speed or torque.
+When one carries the value, add it to `config.json`:
+
+```json
+{
+  "can_speed":  { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
+  "can_torque": { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 }
+}
+```
+
+`scale` converts the raw number (e.g. `0.1` when the box sends tenths). A CAN reading older than 3 seconds
+falls back to GPS.
+
 ## What the Clean button does
 
 - **RAM**: closes apps sitting in the background, the same as swiping them away. It never closes the app on
@@ -76,6 +106,11 @@ All keys optional; a bad file is ignored as a whole.
 | `show_labels` | bool | App names under the icons |
 | `wallpaper` | bool | Use `wallpaper.jpg` from the theme folder; otherwise the built-in dark aurora |
 | `accent` | `#RRGGBB` | Colour of the RAM ring |
+| `dashboard` | bool | The first page with clock, speedometer and torque. Default `true` |
+| `speed_unit` | `"km/h"` or `"mph"` | Speedometer unit |
+| `speed_max` | 60 to 400 | Top of the dial. Default 240, like the Jetta's cluster |
+| `torque_max` | 50 to 2000 | End of the torque bar in Nm, about the engine's peak (1.4 TSI: 250, 1.5 MPI: 145) |
+| `can_speed`, `can_torque` | `{action, extra, scale}` | The CAN app's broadcast that carries the value; see Dashboard above |
 
 ## Safety
 

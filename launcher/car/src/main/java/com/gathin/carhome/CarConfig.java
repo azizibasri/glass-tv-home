@@ -34,6 +34,27 @@ final class CarConfig {
     boolean wallpaper = true;
     /** Accent for the RAM ring and the page dot, #RRGGBB. */
     int accent = 0xFF0A84FF;
+    /** First page: big clock, speedometer and torque. */
+    boolean dashboard = true;
+    boolean mph = false;
+    /** Top of the speedometer dial. The 2017 Jetta's own cluster ends at 240 km/h. */
+    int speedMax = 240;
+    /** End of the torque bar, Nm: about the engine's peak (1.4 TSI 250 Nm, 1.5 MPI 145 Nm). */
+    int torqueMax = 250;
+
+    /** One value a head unit's CAN app broadcasts: the intent action, the extra holding it, a factor. */
+    static final class CanKey {
+        final String action, extra;
+        final float scale;
+
+        CanKey(String action, String extra, float scale) {
+            this.action = action;
+            this.extra = extra;
+            this.scale = scale;
+        }
+    }
+
+    CanKey canSpeed, canTorque;
 
     static File dir(Context ctx) {
         return ctx.getExternalFilesDir(null);
@@ -58,6 +79,14 @@ final class CarConfig {
             if (auto >= 0 && auto <= 1440) c.autoCleanMinutes = auto;
             if (o.opt("show_labels") instanceof Boolean) c.showLabels = o.getBoolean("show_labels");
             if (o.opt("wallpaper") instanceof Boolean) c.wallpaper = o.getBoolean("wallpaper");
+            if (o.opt("dashboard") instanceof Boolean) c.dashboard = o.getBoolean("dashboard");
+            c.mph = "mph".equalsIgnoreCase(o.optString("speed_unit", "km/h"));
+            int sm = o.optInt("speed_max", c.speedMax);
+            if (sm >= 60 && sm <= 400) c.speedMax = sm;
+            int tm = o.optInt("torque_max", c.torqueMax);
+            if (tm >= 50 && tm <= 2000) c.torqueMax = tm;
+            c.canSpeed = canKey(o.optJSONObject("can_speed"));
+            c.canTorque = canKey(o.optJSONObject("can_torque"));
             String accent = o.optString("accent", "");
             if (accent.matches("#[0-9a-fA-F]{6}")) c.accent = 0xFF000000 | Integer.parseInt(accent.substring(1), 16);
         } catch (Exception e) {
@@ -65,6 +94,14 @@ final class CarConfig {
             return new CarConfig();
         }
         return c;
+    }
+
+    private static CanKey canKey(JSONObject o) {
+        if (o == null) return null;
+        String action = o.optString("action", "").trim(), extra = o.optString("extra", "").trim();
+        double scale = o.optDouble("scale", 1.0);
+        if (action.isEmpty() || extra.isEmpty() || Double.isNaN(scale) || scale == 0) return null;
+        return new CanKey(action, extra, (float) scale);
     }
 
     private static void strings(JSONArray a, List<String> out) {

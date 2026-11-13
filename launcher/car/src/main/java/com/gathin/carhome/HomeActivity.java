@@ -105,6 +105,18 @@ public final class HomeActivity extends Activity {
     private RamRing ring;
     private int builtW, builtH;
     private boolean resumed;
+    private CarData carData;
+    private SpeedGauge gauge;
+    private TorqueBar torqueBar;
+    private TextView bigClock, bigDate;
+
+    private final Runnable dataTick = new Runnable() {
+        @Override
+        public void run() {
+            if (carData != null) carData.publish();
+            if (resumed) main.postDelayed(this, 1_000);
+        }
+    };
 
     private final Runnable ramTick = new Runnable() {
         @Override
@@ -173,6 +185,14 @@ public final class HomeActivity extends Activity {
         pkgs.addAction(Intent.ACTION_PACKAGE_CHANGED);
         pkgs.addDataScheme("package");
         registerReceiver(packageReceiver, pkgs);
+        carData = new CarData(this, cfg, (speed, src, torque) -> {
+            if (gauge != null) {
+                String status = src == SpeedMath.CAN ? "CAN BUS" : src == SpeedMath.GPS ? "GPS"
+                        : carData.hasGpsPermission() ? "NO SIGNAL" : "NO GPS PERMISSION";
+                gauge.set(speed, src, status);
+            }
+            if (torqueBar != null) torqueBar.set(torque);
+        });
         loadApps();
     }
 
@@ -194,6 +214,24 @@ public final class HomeActivity extends Activity {
         main.post(ramTick);
         main.removeCallbacks(autoClean);
         main.postDelayed(autoClean, 4_000);
+        if (cfg.dashboard) {
+            if (!carData.hasGpsPermission() && !prefs.getBoolean("asked_gps", false)) {
+                prefs.edit().putBoolean("asked_gps", true).apply();
+                requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 3);
+            }
+            carData.start();
+            main.removeCallbacks(dataTick);
+            main.post(dataTick);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int request, String[] perms, int[] results) {
+        super.onRequestPermissionsResult(request, perms, results);
+        if (resumed && cfg.dashboard) {
+            carData.stop();
+            carData.start();
+        }
     }
 
     @Override
@@ -201,6 +239,8 @@ public final class HomeActivity extends Activity {
         resumed = false;
         main.removeCallbacks(ramTick);
         main.removeCallbacks(autoClean);
+        main.removeCallbacks(dataTick);
+        carData.stop();
         super.onPause();
     }
 
@@ -365,11 +405,16 @@ public final class HomeActivity extends Activity {
         int areaH = builtH - dp(24) - dp(22);
         Grid g = Grid.fit(areaW, areaH, density, cfg.columns);
         List<App> list = gridApps();
-        int pages = g.pages(list.size());
+        int dash = cfg.dashboard ? 1 : 0;
+        int pages = g.pages(list.size()) + dash;
+        gauge = null;
+        torqueBar = null;
+        bigClock = bigDate = null;
+        if (dash == 1) pager.addView(dashboard(areaW, areaH));
         int cellW = areaW / g.columns, cellH = areaH / g.rows;
         int labelH = cfg.showLabels ? dp(22) : 0;
         int icon = Math.min(dp(88), Math.min(Math.round(cellW * 0.66f), cellH - labelH - dp(16)));
-        for (int p = 0; p < pages; p++) {
+        for (int p = 0; p < pages - dash; p++) {
             Page page = new Page(this, g.columns, g.rows);
             for (int i = p * g.perPage(); i < Math.min(list.size(), (p + 1) * g.perPage()); i++) {
                 page.addView(cell(list.get(i), icon));
@@ -379,6 +424,46 @@ public final class HomeActivity extends Activity {
         pager.requestLayout();
         if (keepPage > 0) main.post(() -> pager.snapTo(keepPage));
         updateDots(Math.min(keepPage, pages - 1), pages);
+    }
+
+    /** The first page: a large clock and date with engine torque under it, and the speedometer. */
+    private View dashboard(int areaW, int areaH) {
+        LinearLayout d = new LinearLayout(this);
+        d.setOrientation(LinearLayout.HORIZONTAL);
+        int gap = dp(12);
+        d.setPadding(0, 0, 0, gap);
+
+        LinearLayout left = new LinearLayout(this);
+        left.setOrientation(LinearLayout.VERTICAL);
+        left.setGravity(Gravity.CENTER_HORIZONTAL);
+        left.setPadding(dp(24), dp(20), dp(24), dp(20));
+        left.setBackground(glassFor(left, dp(26)));
+        bigClock = text(10, true);
+        bigClock.setTextSize(TypedValue.COMPLEX_UNIT_PX, Math.min(areaH * 0.30f, areaW * 0.13f));
+        bigClock.setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
+        bigClock.setIncludeFontPadding(false);
+        LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(-2, 0, 1f);
+        bigClock.setGravity(Gravity.CENTER);
+        left.addView(bigClock, clp);
+        bigDate = text(18, false);
+        bigDate.setAlpha(0.8f);
+        left.addView(bigDate, new LinearLayout.LayoutParams(-2, -2));
+        torqueBar = new TorqueBar(this, cfg.torqueMax);
+        LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(-1, dp(52));
+        tlp.topMargin = dp(18);
+        left.addView(torqueBar, tlp);
+        d.addView(left, new LinearLayout.LayoutParams(0, -1, 1f));
+
+        FrameLayout right = new FrameLayout(this);
+        right.setPadding(dp(12), dp(12), dp(12), dp(12));
+        right.setBackground(glassFor(right, dp(26)));
+        gauge = new SpeedGauge(this, cfg.accent, cfg.speedMax, cfg.mph ? "mph" : "km/h");
+        right.addView(gauge, new FrameLayout.LayoutParams(-1, -1));
+        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(0, -1, 1.1f);
+        rlp.leftMargin = gap;
+        d.addView(right, rlp);
+        updateClock();
+        return d;
     }
 
     private View cell(App a, int iconPx) {
@@ -463,6 +548,10 @@ public final class HomeActivity extends Activity {
         String pattern = DateFormat.is24HourFormat(this) ? "H:mm" : "h:mm";
         clock.setText(DateFormat.format(pattern, now));
         date.setText(DateFormat.format(DateFormat.getBestDateTimePattern(Locale.getDefault(), "EEEd"), now));
+        if (bigClock != null) {
+            bigClock.setText(DateFormat.format(pattern, now));
+            bigDate.setText(DateFormat.format(DateFormat.getBestDateTimePattern(Locale.getDefault(), "EEEEdMMMM"), now));
+        }
     }
 
     private void showToast(CharSequence msg) {

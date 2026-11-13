@@ -102,6 +102,23 @@ def main():
         else:
             ask.append(f"# {p}")
 
+    # CAN bus discovery for the dashboard: what the CAN apps declare, and what speed/torque they log.
+    can_words = ("can", "mcu", "syu", "fyt", "vehicle", "carinfo", "carservice", "hiworld", "raise", "xbs", "simple")
+    can_pkgs = [p for p in system + sorted(third) if any(w in p.lower() for w in can_words)]
+    with open(os.path.join(out, "can-discovery.txt"), "w") as f:
+        f.write("# CAN-related packages and what they declare. Look for actions or extras with SPEED / TORQUE /\n"
+                "# RPM / VEHICLE in them; they go in config.json as can_speed / can_torque (car/README.md).\n\n")
+        for p in can_pkgs:
+            dump = run(dev, f"dumpsys package {p}")
+            keep_lines = [l.rstrip() for l in dump.splitlines()
+                          if re.search(r"Action:|Receiver|Provider|Service|authority|permission", l, re.I)]
+            f.write(f"===== {p} =====\n" + "\n".join(keep_lines[:300]) + "\n\n")
+        log = run(dev, "logcat -d -v brief -t 4000")
+        hits = [l for l in log.splitlines() if re.search(r"speed|torque|rpm|vehicle|canbus|can_", l, re.I)]
+        f.write("===== logcat lines mentioning speed / torque / rpm / CAN (drive a little first) =====\n")
+        f.write("\n".join(hits[-300:]) + "\n")
+    print(f"  CAN apps found: {', '.join(can_pkgs) or 'none'}  (details in can-discovery.txt)")
+
     prop = dict(re.findall(r"\[([^\]]+)\]: \[([^\]]*)\]", text["getprop.txt"]))
     head = [
         f"# {prop.get('ro.product.manufacturer', '?')} {prop.get('ro.product.model', '?')}"
