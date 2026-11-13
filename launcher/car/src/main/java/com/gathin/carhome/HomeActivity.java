@@ -226,6 +226,7 @@ public final class HomeActivity extends Activity {
             main.post(dataTick);
         }
         if (bigClock != null) bigClock.setRunning(true);
+        if (gauge != null && pager != null && pager.page() == 0) gauge.sweep();
         if (nowPlaying != null) nowPlaying.start();
     }
 

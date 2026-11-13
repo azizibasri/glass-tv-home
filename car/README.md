@@ -33,6 +33,8 @@ Swipe left for the apps.
   your music app. It needs notification access, which `car/install.sh` grants; it reads no notifications.
   `"music_widget": false` hides it.
 
+- **Speedometer**: a sporty dial with a dark face, metal-look rim, slanted numbers, a red zone from 200 km/h and
+  a red needle with a glowing tip that sweeps up and back each time Home opens.
 - **Speed** comes from the car's CAN bus when the unit's CAN app shares it, otherwise from GPS. The dial
   says which one (`CAN BUS`, `GPS`, or `NO SIGNAL` in a tunnel). GPS speed works on any unit with no setup.
 - **Torque** can only come from the CAN bus. It shows `-- Nm` until set up.
