@@ -8,13 +8,15 @@ import android.graphics.RadialGradient;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.LinearGradient;
+import android.graphics.Matrix;
+import android.graphics.SweepGradient;
 import android.graphics.Typeface;
 import android.os.SystemClock;
 import android.view.View;
 
 /**
  * The speedometer: a clear frosted-glass dial that lets the wallpaper show through, a thin bright glass rim,
- * clean white numbers, white ticks that turn red in the top sixth of the dial, and a tapered red needle with a glowing tip that
+ * a rainbow arc that fills with the speed, clean white numbers, white ticks that turn red in the top sixth of the dial, and a tapered red needle with a glowing tip that
  * sweeps from 0 to the top and back when the dashboard opens, like a car's cluster at start-up. The speed
  * in digits, its unit and its source (CAN BUS or GPS) sit under the hub.
  */
@@ -32,6 +34,9 @@ final class SpeedGauge extends View {
     private final Paint hub = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint hubRing = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint shine = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint arcTrack = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint arcLit = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final RectF arcOval = new RectF();
     private final RectF oval = new RectF(), zoneOval = new RectF();
     private final Path needlePath = new Path();
     private final float max, redFrom;
@@ -104,6 +109,24 @@ final class SpeedGauge extends View {
         big.setTextSize(size * 0.15f);
         small.setTextSize(size * 0.042f);
         hubRing.setStrokeWidth(size * 0.012f);
+        // The rainbow speed arc, in the clock's colours: green when slow, through blue and purple, to red.
+        float ar = r * 0.955f;
+        arcOval.set(cx - ar, cy - ar, cx + ar, cy + ar);
+        for (Paint p : new Paint[]{arcTrack, arcLit}) {
+            p.setStyle(Paint.Style.STROKE);
+            p.setStrokeCap(Paint.Cap.ROUND);
+            p.setStrokeWidth(size * 0.03f);
+        }
+        arcTrack.setColor(0x1FFFFFFF);
+        float end = SpeedMath.SWEEP_DEG / 360f;
+        SweepGradient rainbow = new SweepGradient(cx, cy,
+                new int[]{0xFF30D158, 0xFFFFD60A, 0xFF64D2FF, 0xFF0A84FF, 0xFFBF5AF2, 0xFFFF375F, 0xFFFF2D2D, 0xFF30D158},
+                new float[]{0f, end * 0.17f, end * 0.33f, end * 0.5f, end * 0.67f, end * 0.84f, end, 1f});
+        Matrix m = new Matrix();
+        m.setRotate(SpeedMath.START_DEG, cx, cy);
+        rainbow.setLocalMatrix(m);
+        arcLit.setShader(rainbow);
+        arcLit.setShadowLayer(size * 0.025f, 0, 0, 0x80BF5AF2);
         shine.setStyle(Paint.Style.STROKE);
         shine.setStrokeCap(Paint.Cap.ROUND);
         shine.setStrokeWidth(size * 0.01f);
@@ -133,6 +156,10 @@ final class SpeedGauge extends View {
         // A soft shine across the top of the glass.
         c.drawArc(zoneOval.left - r * 0.06f, zoneOval.top - r * 0.06f, zoneOval.right + r * 0.06f,
                 zoneOval.bottom + r * 0.06f, 200, 140, false, shine);
+
+        c.drawArc(arcOval, SpeedMath.START_DEG, SpeedMath.SWEEP_DEG, false, arcTrack);
+        float litFrac = SpeedMath.fraction(value, max);
+        if (litFrac > 0.002f) c.drawArc(arcOval, SpeedMath.START_DEG, SpeedMath.SWEEP_DEG * litFrac, false, arcLit);
 
         // Red zone band, then ticks every 5 or 10 and slanted numbers every 20.
         float zoneStart = SpeedMath.START_DEG + SpeedMath.SWEEP_DEG * redFrom / max;
