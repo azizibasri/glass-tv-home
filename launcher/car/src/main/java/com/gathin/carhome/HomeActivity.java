@@ -639,9 +639,18 @@ public final class HomeActivity extends Activity {
             if (ring != null) ring.setUsed(used, cfg.accent);
             String free = android.text.format.Formatter.formatShortFileSize(this, freed);
             showToast(getString(R.string.clean_done, closed, free));
-            if (!Cleaner.askClearCaches(this) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                main.postDelayed(() -> showToast(getString(R.string.clean_cache_hint)), 3_200);
-            }
+            if (Cleaner.askClearCaches(this)) return;
+            // Android 9/10 (and 11+ without "All files access"): trim through the debugging service.
+            Cleaner.trimCaches(this, true, (result, freedCache) -> main.postDelayed(() -> {
+                if (result == Cleaner.TRIM_DONE) {
+                    showToast(getString(R.string.cache_done,
+                            android.text.format.Formatter.formatShortFileSize(this, freedCache)));
+                } else if (result == Cleaner.TRIM_NOT_ALLOWED) {
+                    showToast(getString(R.string.cache_allow));
+                } else {
+                    showToast(getString(R.string.cache_no_adb));
+                }
+            }, 1_500));
         });
     }
 

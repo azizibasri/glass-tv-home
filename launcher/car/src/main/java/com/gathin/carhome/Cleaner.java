@@ -23,12 +23,22 @@ import java.util.Set;
  * The Clean button. RAM: asks Android to close apps sitting in the background (the same as swiping them
  * away), never the app on screen, music or navigation that is running (they have a foreground service),
  * nor anything the car needs ({@link Keep}). Cache: on Android 11+, shows the system's own "clear the
- * cache of all apps?" dialog, which deletes cache files only: no sign-ins, settings or downloads.
+ * cache of all apps?" dialog; on older units (this A30 runs Android 9) it runs {@code pm trim-caches}
+ * through the unit's debugging service ({@link LocalShell}). Both delete cache files only: no sign-ins,
+ * settings or downloads.
  */
 final class Cleaner {
     private static final String TAG = "CarHome.Clean";
     static final int REQUEST_CLEAR_CACHE = 7;
     private static volatile boolean running;
+
+    /** Result of {@link #trimCaches}. */
+    static final int TRIM_DONE = 0, TRIM_NOT_ALLOWED = 1, TRIM_NO_DEBUGGING = 2;
+    private static volatile boolean trimming;
+
+    interface Trimmed {
+        void onTrimmed(int result, long freedBytes);
+    }
 
     interface Done {
         void onDone(int closed, long freedBytes, float usedFraction);
@@ -114,6 +124,47 @@ final class Cleaner {
         } catch (ActivityNotFoundException | SecurityException e) {
             Log.w(TAG, "no clear-cache dialog on this firmware: " + e);
             return false;
+        }
+    }
+
+    /**
+     * Older Android: asks the unit's debugging service to trim every app's cache. {@code mayAsk} lets it
+     * show "Allow USB debugging?" (only when someone tapped Clean, never on its own).
+     */
+    static void trimCaches(Context ctx, boolean mayAsk, Trimmed done) {
+        if (trimming) return;
+        trimming = true;
+        final Context app = ctx.getApplicationContext();
+        new Thread(() -> {
+            int result;
+            long before = freeBytes();
+            try {
+                String cmd = "shell:pm trim-caches 999999999999";
+                // A key allowed a moment ago is not always let through on the connection that asked.
+                boolean ok = LocalShell.shell(app, false, cmd) || mayAsk && (LocalShell.shell(app, true, cmd)
+                        || LocalShell.shell(app, false, cmd));
+                result = ok ? TRIM_DONE : TRIM_NOT_ALLOWED;
+            } catch (java.io.IOException e) {
+                Log.i(TAG, "debugging service not reachable: " + e);
+                result = TRIM_NO_DEBUGGING;
+            } catch (Exception e) {
+                Log.w(TAG, "trim-caches failed: " + e);
+                result = TRIM_NO_DEBUGGING;
+            } finally {
+                trimming = false;
+            }
+            if (result == TRIM_DONE) Log.i(TAG, "cleared cached files");
+            final int r = result;
+            final long freed = Math.max(0, freeBytes() - before);
+            new Handler(Looper.getMainLooper()).post(() -> done.onTrimmed(r, freed));
+        }, "car-trim").start();
+    }
+
+    private static long freeBytes() {
+        try {
+            return new android.os.StatFs(Environment.getDataDirectory().getPath()).getAvailableBytes();
+        } catch (RuntimeException e) {
+            return 0;
         }
     }
 

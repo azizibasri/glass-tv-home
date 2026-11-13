@@ -14,6 +14,11 @@ for any Android 8+ head unit.
 | Needs | Android 8 or newer, landscape touchscreen |
 | Keeps | the unit's own launcher installed and enabled (it often also runs car features) |
 
+**A30-V2-A01-CPL, as seen on its About screen (2026):** Settings says "Android 16.0", but it is really
+**Android 9**: build `android-trunk-p0` (p = Pie), security patch February 2020, kernel 4.14.116. Many
+head units show a made-up version. What it means here: Glass Car runs (it needs 8+), RAM clean works, and
+caches are cleared through the debugging service rather than the Android 11 dialog (below).
+
 ## What the Clean button does
 
 - **RAM**: closes apps sitting in the background, the same as swiping them away. It never closes the app on
@@ -22,9 +27,11 @@ for any Android 8+ head unit.
   Auto bridges (zLink, AutoKit, CarbitLink…), keyboard, Google services. See `Keep.java`; add your own with
   `keep_running`. The ring shows how much RAM is in use; it turns orange at 75% and red at 90%.
 - **Automatically**: when Home shows and the last clean was more than 30 minutes ago (`auto_clean_minutes`).
-- **Cache** (Android 11+): after the RAM clean, Android's own "clear the cache of all apps?" dialog. It
-  deletes cache files only: no sign-ins, settings or downloads. `car/install.sh` grants the one permission
-  it needs. On older Android, `tools/cache-clean.sh` (or `pm trim-caches`) does it over ADB.
+- **Cache**: after the RAM clean. On Android 11+ it shows Android's own "clear the cache of all apps?"
+  dialog. On Android 9 and 10 (the A30) it runs `pm trim-caches` through the unit's own network debugging
+  service, like Glass TV does: the **first** tap shows "Allow USB debugging?" on the screen; tick **Always
+  allow** and OK, and tap Clean again. It needs network ADB left on in Developer options. Either way it
+  deletes cache files only: no sign-ins, settings or downloads.
 - **Long press** Clean: opens Android's storage settings.
 
 ## Set it up
