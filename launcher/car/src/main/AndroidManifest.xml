@@ -48,5 +48,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Lets the music widget see what is playing. Reads no notifications. -->
+        <service
+            android:name=".MediaListener"
+            android:exported="true"
+            android:label="Glass Car music widget"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>

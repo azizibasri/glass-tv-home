@@ -108,7 +108,9 @@ public final class HomeActivity extends Activity {
     private CarData carData;
     private SpeedGauge gauge;
     private TorqueBar torqueBar;
-    private TextView bigClock, bigDate;
+    private RainbowClock bigClock;
+    private TextView bigDate;
+    private NowPlaying nowPlaying;
 
     private final Runnable dataTick = new Runnable() {
         @Override
@@ -223,6 +225,8 @@ public final class HomeActivity extends Activity {
             main.removeCallbacks(dataTick);
             main.post(dataTick);
         }
+        if (bigClock != null) bigClock.setRunning(true);
+        if (nowPlaying != null) nowPlaying.start();
     }
 
     @Override
@@ -241,6 +245,8 @@ public final class HomeActivity extends Activity {
         main.removeCallbacks(autoClean);
         main.removeCallbacks(dataTick);
         carData.stop();
+        if (bigClock != null) bigClock.setRunning(false);
+        if (nowPlaying != null) nowPlaying.stop();
         super.onPause();
     }
 
@@ -409,7 +415,10 @@ public final class HomeActivity extends Activity {
         int pages = g.pages(list.size()) + dash;
         gauge = null;
         torqueBar = null;
-        bigClock = bigDate = null;
+        if (nowPlaying != null) nowPlaying.stop();
+        bigClock = null;
+        bigDate = null;
+        nowPlaying = null;
         if (dash == 1) pager.addView(dashboard(areaW, areaH));
         int cellW = areaW / g.columns, cellH = areaH / g.rows;
         int labelH = cfg.showLabels ? dp(22) : 0;
@@ -438,19 +447,23 @@ public final class HomeActivity extends Activity {
         left.setGravity(Gravity.CENTER_HORIZONTAL);
         left.setPadding(dp(24), dp(20), dp(24), dp(20));
         left.setBackground(glassFor(left, dp(26)));
-        bigClock = text(10, true);
-        bigClock.setTextSize(TypedValue.COMPLEX_UNIT_PX, Math.min(areaH * 0.30f, areaW * 0.13f));
-        bigClock.setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
-        bigClock.setIncludeFontPadding(false);
-        LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(-2, 0, 1f);
-        bigClock.setGravity(Gravity.CENTER);
-        left.addView(bigClock, clp);
+        bigClock = new RainbowClock(this, cfg.clockRainbow);
+        bigClock.setTextSizePx(Math.min(areaH * 0.24f, areaW * 0.12f));
+        left.addView(bigClock, new LinearLayout.LayoutParams(-1, 0, 1f));
         bigDate = text(18, false);
         bigDate.setAlpha(0.8f);
         left.addView(bigDate, new LinearLayout.LayoutParams(-2, -2));
+        if (cfg.musicWidget) {
+            int npH = Math.max(dp(64), Math.min(dp(84), Math.round(areaH * 0.17f)));
+            nowPlaying = new NowPlaying(this, npH, this::openMusicApp);
+            LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(-1, npH);
+            nlp.topMargin = dp(14);
+            left.addView(nowPlaying, nlp);
+            if (resumed) nowPlaying.start();
+        }
         torqueBar = new TorqueBar(this, cfg.torqueMax);
-        LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(-1, dp(52));
-        tlp.topMargin = dp(18);
+        LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(-1, dp(48));
+        tlp.topMargin = dp(14);
         left.addView(torqueBar, tlp);
         d.addView(left, new LinearLayout.LayoutParams(0, -1, 1f));
 
@@ -463,7 +476,20 @@ public final class HomeActivity extends Activity {
         rlp.leftMargin = gap;
         d.addView(right, rlp);
         updateClock();
+        bigClock.setRunning(resumed);
         return d;
+    }
+
+    /** The music widget's play button when nothing is playing: the dock's music app, else the first one. */
+    private void openMusicApp() {
+        for (String pkg : DOCK_GUESSES[1]) {
+            App a = first(pkg);
+            if (a != null) {
+                launch(a, nowPlaying != null ? nowPlaying : root);
+                return;
+            }
+        }
+        showToast(getString(R.string.nothing_playing));
     }
 
     private View cell(App a, int iconPx) {

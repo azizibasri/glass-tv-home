@@ -11,4 +11,8 @@
     <string name="app_info">App info</string>
     <string name="move_to_dock">Put in dock</string>
     <string name="remove_from_dock">Remove from dock</string>
+    <string name="nothing_playing">Nothing playing</string>
+    <string name="tap_to_play">Tap play to start your music</string>
+    <string name="music_needs_access">Music controls are off</string>
+    <string name="music_access_hint">Tap here and allow Glass Car</string>
 </resources>

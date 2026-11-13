@@ -8,6 +8,8 @@
   "wallpaper": true,
   "accent": "#0A84FF",
   "dashboard": true,
+  "clock_rainbow": true,
+  "music_widget": true,
   "speed_unit": "km/h",
   "speed_max": 240,
   "torque_max": 250

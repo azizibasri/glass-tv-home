@@ -36,6 +36,10 @@ final class CarConfig {
     int accent = 0xFF0A84FF;
     /** First page: big clock, speedometer and torque. */
     boolean dashboard = true;
+    /** The dashboard clock in a flowing, glowing rainbow; false for plain white. */
+    boolean clockRainbow = true;
+    /** The music widget under the clock. */
+    boolean musicWidget = true;
     boolean mph = false;
     /** Top of the speedometer dial. The 2017 Jetta's own cluster ends at 240 km/h. */
     int speedMax = 240;
@@ -80,6 +84,8 @@ final class CarConfig {
             if (o.opt("show_labels") instanceof Boolean) c.showLabels = o.getBoolean("show_labels");
             if (o.opt("wallpaper") instanceof Boolean) c.wallpaper = o.getBoolean("wallpaper");
             if (o.opt("dashboard") instanceof Boolean) c.dashboard = o.getBoolean("dashboard");
+            if (o.opt("clock_rainbow") instanceof Boolean) c.clockRainbow = o.getBoolean("clock_rainbow");
+            if (o.opt("music_widget") instanceof Boolean) c.musicWidget = o.getBoolean("music_widget");
             c.mph = "mph".equalsIgnoreCase(o.optString("speed_unit", "km/h"));
             int sm = o.optInt("speed_max", c.speedMax);
             if (sm >= 60 && sm <= 400) c.speedMax = sm;

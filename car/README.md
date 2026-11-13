@@ -21,7 +21,17 @@ caches are cleared through the debugging service rather than the Android 11 dial
 
 ## Dashboard: clock, speed and torque
 
-The first page shows a large digital clock and date, the speedometer and engine torque. Swipe left for the apps.
+The first page shows a large digital clock, the date, a music widget, engine torque and the speedometer.
+Swipe left for the apps.
+
+- **Clock**: thin large digits filled with a rainbow that flows across them, with a soft glow that shifts
+  colour and breathes. It only animates while Home is on screen, and stands still when Android's animations
+  are turned off. `"clock_rainbow": false` makes it plain white.
+- **Music widget**: cover art, song, artist, a progress line, and previous / play-pause / next. It follows
+  whatever is playing: Spotify, YouTube Music, the radio app or Bluetooth audio from a phone, if that app
+  shares its playback with Android (most do). Tap the song to open the app; with nothing playing, play opens
+  your music app. It needs notification access, which `car/install.sh` grants; it reads no notifications.
+  `"music_widget": false` hides it.
 
 - **Speed** comes from the car's CAN bus when the unit's CAN app shares it, otherwise from GPS. The dial
   says which one (`CAN BUS`, `GPS`, or `NO SIGNAL` in a tunnel). GPS speed works on any unit with no setup.
@@ -107,6 +117,8 @@ All keys optional; a bad file is ignored as a whole.
 | `wallpaper` | bool | Use `wallpaper.jpg` from the theme folder; otherwise the built-in dark aurora |
 | `accent` | `#RRGGBB` | Colour of the RAM ring |
 | `dashboard` | bool | The first page with clock, speedometer and torque. Default `true` |
+| `clock_rainbow` | bool | Flowing, glowing rainbow clock. Default `true`; `false` for plain white |
+| `music_widget` | bool | Music widget under the clock. Default `true` |
 | `speed_unit` | `"km/h"` or `"mph"` | Speedometer unit |
 | `speed_max` | 60 to 400 | Top of the dial. Default 240, like the Jetta's cluster |
 | `torque_max` | 50 to 2000 | End of the torque bar in Nm, about the engine's peak (1.4 TSI: 250, 1.5 MPI: 145) |
