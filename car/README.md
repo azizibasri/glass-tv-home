@@ -21,8 +21,9 @@ caches are cleared through the debugging service rather than the Android 11 dial
 
 ## Dashboard: clock, speed, turbo boost and torque
 
-The first page shows, on the left, a large digital clock, the date, a music widget and engine torque; on the
-right, a big digital speedometer with turbo boost under it, the trip, and tiles for coolant
+The first page shows, on the left, a large digital clock, the date and a big music widget (song on top,
+buttons on their own row); on the right, a big digital speedometer with turbo boost and engine torque under
+it, the trip, and tiles for coolant
 temperature and fuel range.
 Swipe left for the apps.
 

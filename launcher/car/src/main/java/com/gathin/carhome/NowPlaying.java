@@ -80,7 +80,28 @@ final class NowPlaying extends LinearLayout {
         setPadding(pad, pad, pad, pad);
         setBackground(darkPanel(ctx));
 
-        int artPx = heightPx - 2 * pad;
+        int inner = widthPx > 0 ? widthPx - 2 * pad : Integer.MAX_VALUE;
+        int innerH = heightPx - 2 * pad;
+        // Tall widget: art and song on top, the buttons on their own row under them, as on CarPlay.
+        boolean stacked = !narrow && heightPx >= 110 * d;
+        int btnRowH = stacked ? Math.round(innerH * 0.42f) : 0;
+        int topH = innerH - btnRowH;
+        LinearLayout topRow = this, buttonRow = this;
+        if (stacked) {
+            setOrientation(VERTICAL);
+            topRow = new LinearLayout(ctx);
+            topRow.setOrientation(HORIZONTAL);
+            topRow.setGravity(Gravity.CENTER_VERTICAL);
+            addView(topRow, new LayoutParams(-1, topH));
+            buttonRow = new LinearLayout(ctx);
+            buttonRow.setOrientation(HORIZONTAL);
+            buttonRow.setGravity(Gravity.CENTER);
+            addView(buttonRow, new LayoutParams(-1, btnRowH));
+        }
+        // A square art as tall as its row, but never more than a quarter of the width.
+        int artPx = Math.min(topH, inner / 4);
+        // Text and buttons grow with the widget (84 dp is the base size), up to 1.6 times.
+        float k = Math.max(1f, Math.min(stacked ? 1.4f : 1.6f, heightPx / (84 * d)));
 
         art = new ImageView(ctx);
         art.setScaleType(ImageView.ScaleType.CENTER_CROP);
@@ -91,14 +112,14 @@ final class NowPlaying extends LinearLayout {
             }
         });
         art.setClipToOutline(true);
-        addView(art, new LayoutParams(artPx, artPx));
+        topRow.addView(art, new LayoutParams(artPx, artPx));
         if (narrow) art.setVisibility(GONE);   // narrow screens: the song name needs the room more
 
         LinearLayout text = new LinearLayout(ctx);
         text.setOrientation(VERTICAL);
         text.setPadding(Math.round(12 * d), 0, Math.round(8 * d), 0);
-        title = line(ctx, 16, true);
-        artist = line(ctx, 13, false);
+        title = line(ctx, 16 * k, true);
+        artist = line(ctx, 13 * k, false);
         artist.setAlpha(0.7f);
         text.addView(title);
         text.addView(artist);
@@ -113,25 +134,41 @@ final class NowPlaying extends LinearLayout {
         fill.setCornerRadius(2 * d);
         progressFill.setBackground(fill);
         progress.addView(progressFill, new FrameLayout.LayoutParams(0, -1));
-        LayoutParams plp = new LayoutParams(-1, Math.round(3 * d));
-        plp.topMargin = Math.round(8 * d);
+        LayoutParams plp = new LayoutParams(-1, Math.round(3 * k * d));
+        plp.topMargin = Math.round(8 * k * d);
         text.addView(progress, plp);
-        addView(text, new LayoutParams(0, -2, 1f));
+        topRow.addView(text, new LayoutParams(0, -2, 1f));
         text.setOnClickListener(v -> openApp());
 
-        int btn = Math.round(Math.min((narrow ? 34 : 44) * d, artPx * 0.8f));
+        int btn = Math.round(Math.min((narrow ? 34 : 44) * k * d, (stacked ? btnRowH : innerH) * 0.8f));
+        // The buttons (2 or 3, play a bit larger, with gaps) share what the art and a third for the song
+        // name leave.
+        if (widthPx > 0 && !stacked) {
+            int room = inner - (narrow ? 0 : artPx) - inner / 3;
+            btn = Math.max(Math.round(30 * d), Math.min(btn, Math.round(room / (narrow ? 2.5f : 3.65f))));
+        }
         if (!narrow) {
-            addView(button(ctx, R.drawable.ic_prev, btn, v -> {
+            buttonRow.addView(button(ctx, R.drawable.ic_prev, btn, v -> {
                 if (controller != null) controller.getTransportControls().skipToPrevious();
             }));
         }
         playPause = button(ctx, R.drawable.ic_play, Math.round(btn * 1.15f), v -> togglePlay());
-        addView(playPause);
-        addView(button(ctx, R.drawable.ic_next, btn, v -> {
+        buttonRow.addView(playPause);
+        buttonRow.addView(button(ctx, R.drawable.ic_next, btn, v -> {
             if (controller != null) controller.getTransportControls().skipToNext();
         }));
+        if (stacked) {   // room to spread the buttons out, easier to hit while driving
+            for (int i = 0; i < buttonRow.getChildCount(); i++) {
+                LayoutParams lp = (LayoutParams) buttonRow.getChildAt(i).getLayoutParams();
+                lp.leftMargin = lp.rightMargin = btn / 2;
+            }
+        }
+        this.buttonRow = buttonRow;
         showEmpty();
     }
+
+    /** The row that holds the buttons: this widget itself, or its lower row when stacked. */
+    private final LinearLayout buttonRow;
 
     /** The dark glass box behind the music widget, also used behind the dashboard clock. */
     static GradientDrawable darkPanel(Context ctx) {
@@ -382,8 +419,9 @@ final class NowPlaying extends LinearLayout {
     }
 
     private void setControlsEnabled(boolean on) {
-        for (int i = 1; i < getChildCount(); i++) {
-            View v = getChildAt(i);
+        for (int i = 0; i < buttonRow.getChildCount(); i++) {
+            View v = buttonRow.getChildAt(i);
+            if (v == art) continue;
             if (v instanceof ImageView) {
                 v.setEnabled(on);
                 v.setAlpha(on ? 1f : 0.35f);

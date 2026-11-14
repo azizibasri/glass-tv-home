@@ -494,7 +494,7 @@ public final class HomeActivity extends Activity {
         updateDots(Math.min(keepPage, pages - 1), pages);
     }
 
-    /** The first page: a large clock and date with engine torque under it, and the speedometer. */
+    /** The first page: a large clock, date and music widget, and the speedometer with boost and torque. */
     private View dashboard(int areaW, int areaH) {
         LinearLayout d = new LinearLayout(this);
         d.setOrientation(LinearLayout.HORIZONTAL);
@@ -537,20 +537,17 @@ public final class HomeActivity extends Activity {
         bigDate.setAutoSizeTextTypeUniformWithConfiguration(11, 18, 1, TypedValue.COMPLEX_UNIT_SP);
         left.addView(bigDate, new LinearLayout.LayoutParams(-1, dp(compact ? 22 : 28)));
         if (cfg.musicWidget) {
-            int npH = Math.max(dp(64), Math.min(dp(84), Math.round(areaH * 0.17f)));
+            // Big and easy to reach while driving: the room torque had, now under the turbo boost.
+            int npH = Math.max(dp(72), Math.min(dp(140), Math.round(areaH * 0.30f)));
             nowPlaying = new NowPlaying(this, npH, leftW - 2 * lp2, this::openMusicApp);
             LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(-1, npH);
             nlp.topMargin = dp(14);
             left.addView(nowPlaying, nlp);
             if (resumed) nowPlaying.start();
         }
-        torqueBar = new TorqueBar(this, cfg.torqueMax);
-        LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(-1, dp(48));
-        tlp.topMargin = dp(14);
-        left.addView(torqueBar, tlp);
         d.addView(left, new LinearLayout.LayoutParams(0, -1, 1f));
 
-        // Right: the big digital speedometer with turbo boost, trip, coolant and fuel range.
+        // Right: the big digital speedometer with turbo boost, torque, trip, coolant and fuel range.
         LinearLayout right = new LinearLayout(this);
         right.setOrientation(LinearLayout.VERTICAL);
         right.setPadding(dp(12), dp(12), dp(12), dp(12));
@@ -560,6 +557,12 @@ public final class HomeActivity extends Activity {
         LinearLayout.LayoutParams speedLp = new LinearLayout.LayoutParams(-1, 0, 1f);
         speedLp.leftMargin = speedLp.rightMargin = dp(6);
         right.addView(bigSpeed, speedLp);
+        // Torque right under the turbo boost, in the same style.
+        torqueBar = new TorqueBar(this, cfg.torqueMax);
+        LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(-1, dp(44));
+        tlp.topMargin = dp(4);
+        tlp.leftMargin = tlp.rightMargin = dp(12);   // lines up with the boost bar
+        right.addView(torqueBar, tlp);
         LinearLayout.LayoutParams tripLp = new LinearLayout.LayoutParams(-1, dp(52));
         tripLp.topMargin = dp(8);
         right.addView(tripRow(), tripLp);
