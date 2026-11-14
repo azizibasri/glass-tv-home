@@ -668,8 +668,7 @@ public final class HomeActivity extends Activity {
         Object[][] items = {
                 {R.string.wallpaper_pick, (Runnable) () -> pickPicture(REQUEST_WALLPAPER)},
                 {R.string.wallpaper_reset, (Runnable) this::resetWallpaper},
-                {"glass".equals(iconStyle) ? R.string.icons_color : R.string.icons_glass,
-                        (Runnable) () -> setIconStyle("glass".equals(iconStyle) ? "color" : "glass")},
+                {R.string.icons_style, (Runnable) this::iconStyleDialog},
                 {R.string.clock_style, (Runnable) this::clockDialog},
                 {R.string.speed_style, (Runnable) this::speedDialog},
                 {R.string.data_source, (Runnable) this::dataSourceDialog},
@@ -788,6 +787,67 @@ public final class HomeActivity extends Activity {
                 for (View v : glassViews) v.invalidate();
             });
         });
+    }
+
+    /** App icons: colour, colour on clear glass, or clear glass with no colour, each with a preview. */
+    private void iconStyleDialog() {
+        LinearLayout body = new LinearLayout(this);
+        body.setOrientation(LinearLayout.VERTICAL);
+        android.app.Dialog[] holder = new android.app.Dialog[1];
+        Drawable sample = sampleIcon();
+        String[] styles = {"color", "glass", "clear"};
+        int[] names = {R.string.icons_color, R.string.icons_glass, R.string.icons_clear};
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        for (int i = 0; i < styles.length; i++) {
+            String style = styles[i];
+            boolean on = style.equals(iconStyle);
+            LinearLayout opt = new LinearLayout(this);
+            opt.setOrientation(LinearLayout.VERTICAL);
+            opt.setGravity(Gravity.CENTER_HORIZONTAL);
+            opt.setPadding(dp(8), dp(14), dp(8), dp(12));
+            android.graphics.drawable.GradientDrawable g = new android.graphics.drawable.GradientDrawable();
+            g.setColor(on ? 0x330A84FF : 0x1FFFFFFF);
+            g.setCornerRadius(dp(16));
+            g.setStroke(Math.max(1, dp(on ? 2 : 1)), on ? 0xFF0A84FF : 0x40FFFFFF);
+            opt.setBackground(g);
+            android.widget.ImageView preview = new android.widget.ImageView(this);
+            preview.setImageBitmap(renderIcon(sample, dp(64), style));
+            opt.addView(preview, new LinearLayout.LayoutParams(dp(64), dp(64)));
+            TextView name = text(13, on);
+            name.setText(names[i]);
+            name.setSingleLine(false);
+            name.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(-1, -2);
+            nlp.topMargin = dp(8);
+            opt.addView(name, nlp);
+            opt.setOnClickListener(v -> {
+                if (holder[0] != null) holder[0].dismiss();
+                if (!style.equals(iconStyle)) setIconStyle(style);
+            });
+            squish(opt);
+            LinearLayout.LayoutParams olp = new LinearLayout.LayoutParams(0, -2, 1f);
+            if (i > 0) olp.leftMargin = dp(10);
+            row.addView(opt, olp);
+        }
+        body.addView(row, new LinearLayout.LayoutParams(-1, -2));
+        holder[0] = panelDialog(R.string.icons_style, body);
+        holder[0].show();
+    }
+
+    /** An app icon to preview the styles with: Chrome or YouTube when there, else the first app. */
+    private Drawable sampleIcon() {
+        android.content.pm.LauncherApps la = getSystemService(android.content.pm.LauncherApps.class);
+        String[] prefer = {"com.android.chrome", "com.google.android.youtube", "com.android.vending"};
+        for (String pkg : prefer) {
+            List<LauncherActivityInfo> l = la.getActivityList(pkg, Process.myUserHandle());
+            if (!l.isEmpty()) return l.get(0).getIcon(0);
+        }
+        List<LauncherActivityInfo> all = la.getActivityList(null, Process.myUserHandle());
+        for (LauncherActivityInfo i : all) {
+            if (!i.getComponentName().getPackageName().equals(getPackageName())) return i.getIcon(0);
+        }
+        return getDrawable(R.drawable.ic_car_home);
     }
 
     private void setIconStyle(String style) {
@@ -1502,9 +1562,9 @@ public final class HomeActivity extends Activity {
                 }
                 if (cached == null) {
                     try {
-                        cached = renderIcon(info.getIcon(0), iconPx, "glass".equals(iconStyle));
+                        cached = renderIcon(info.getIcon(0), iconPx, iconStyle);
                     } catch (RuntimeException | OutOfMemoryError e) {
-                        cached = renderIcon(getDrawable(R.drawable.ic_car_home), iconPx, "glass".equals(iconStyle));
+                        cached = renderIcon(getDrawable(R.drawable.ic_car_home), iconPx, iconStyle);
                     }
                     synchronized (iconCache) {
                         iconCache.put(key, cached);
@@ -1666,8 +1726,9 @@ public final class HomeActivity extends Activity {
      * Draws an app icon as a full-bleed rounded square with a faint glass rim. Adaptive icons fill the
      * square edge to edge; older icons sit on a dark tile, so every icon has the same shape.
      */
-    static Bitmap renderIcon(Drawable d, int size, boolean glassStyle) {
-        if (glassStyle) return renderGlassIcon(d, size);
+    static Bitmap renderIcon(Drawable d, int size, String style) {
+        if ("glass".equals(style)) return renderGlassIcon(d, size, false);
+        if ("clear".equals(style)) return renderGlassIcon(d, size, true);
         Bitmap content = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(content);
         if (Build.VERSION.SDK_INT >= 26 && d instanceof AdaptiveIconDrawable) {
@@ -1716,7 +1777,7 @@ public final class HomeActivity extends Activity {
      * at the top and a bright rim, with the app's symbol in white. Adaptive icons give their symbol layer;
      * older icons are drawn in soft grey-white so they stay recognisable.
      */
-    static Bitmap renderGlassIcon(Drawable d, int size) {
+    static Bitmap renderGlassIcon(Drawable d, int size, boolean noColour) {
         Bitmap out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(out);
         float r = size * 0.225f;
@@ -1731,8 +1792,21 @@ public final class HomeActivity extends Activity {
         // The app's own icon, in its colours, a little smaller on the glass: every app stays recognisable
         // (a white silhouette turns full-bleed icons like Chrome, YouTube or Play Store into blank tiles).
         int inner = Math.round(size * 0.66f), off = (size - inner) / 2;
-        Bitmap own = renderIcon(d, inner, false);
+        Bitmap own = renderIcon(d, inner, "color");
         Paint ownPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+        if (noColour) {
+            // No colour: the icon in light greys, a little see-through, so it reads as part of the glass
+            // while keeping its shape (a pure white silhouette would blank out full-bleed icons).
+            android.graphics.ColorMatrix m = new android.graphics.ColorMatrix();
+            m.setSaturation(0f);
+            android.graphics.ColorMatrix light = new android.graphics.ColorMatrix(new float[]{
+                    0.75f, 0, 0, 0, 70,
+                    0, 0.75f, 0, 0, 70,
+                    0, 0, 0.75f, 0, 70,
+                    0, 0, 0, 0.85f, 0});
+            m.postConcat(light);
+            ownPaint.setColorFilter(new android.graphics.ColorMatrixColorFilter(m));
+        }
         ownPaint.setShadowLayer(size * 0.04f, 0, size * 0.015f, 0x40000000);
         c.drawBitmap(own, off, off, ownPaint);
         own.recycle();

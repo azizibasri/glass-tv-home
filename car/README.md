@@ -182,8 +182,8 @@ option as a big button (it scrolls on short screens):
   to use, copy it to `Android/data/com.gathin.carhome/files/clock.ttf` and choose **Custom**.
 - **Car data source**: **CAN bus + GPS** (the CAN box, GPS for speed when it has none) or an **OBD-II
   Bluetooth adapter** (see below).
-- **Clear glass icons / Colour icons**: switches every app icon between its own colours and a clear
-  frosted-glass tile with the app's own icon, in its colours, on it.
+- **App icons**: three styles, each with a preview: **Colour** (as the apps draw them), **Glass, colour**
+  (the app's own icon on a clear frosted-glass tile) and **Glass, no colour** (the same in light greys).
 
 ## Settings (`config.json`)
 
@@ -206,7 +206,7 @@ All keys optional; a bad file is ignored as a whole.
 | `car_data_background` | `true` (default) or `false` | Keep the OBD-II, CAN and GPS connection running in the background (reverse camera, other apps, screen off), shown as a *Car data connected* notification. `false` connects only while Home is in front |
 | `obd_address` | Bluetooth address | The paired OBD-II adapter, e.g. `"00:1D:A5:68:98:8B"`; easier to pick in the ⚙ menu |
 | `fuel_tank_l`, `fuel_l_per_100km` | numbers | For fuel range over OBD-II. Default 55 and 7.5 |
-| `icon_style` | `"color"` or `"glass"` | App icons as the apps draw them, or on a clear frosted-glass tile. The ⚙ menu wins over this |
+| `icon_style` | `"color"`, `"glass"` or `"clear"` | App icons as the apps draw them, on a clear frosted-glass tile, or on the glass with no colour. The ⚙ menu wins over this |
 | `accent` | `#RRGGBB` | Colour of the RAM ring |
 | `dashboard` | bool | The first page with clock, music, speedometer, rev counter, torque, coolant and range. Default `true` |
 | `clock_rainbow` | bool | Flowing, glowing rainbow clock. Default `true`; `false` for plain white |

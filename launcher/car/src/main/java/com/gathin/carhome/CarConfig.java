@@ -148,7 +148,7 @@ final class CarConfig {
             if (sh >= 100 && sh <= 250) c.speedHeight = sh;
             if (o.opt("clock_glow") instanceof Boolean) c.clockGlow = o.getBoolean("clock_glow");
             String style = o.optString("icon_style", c.iconStyle);
-            if (style.equals("color") || style.equals("glass")) c.iconStyle = style;
+            if (style.equals("color") || style.equals("glass") || style.equals("clear")) c.iconStyle = style;
             String accent = o.optString("accent", "");
             if (accent.matches("#[0-9a-fA-F]{6}")) c.accent = 0xFF000000 | Integer.parseInt(accent.substring(1), 16);
         } catch (Exception e) {

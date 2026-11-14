@@ -29,8 +29,10 @@
     <string name="wallpaper_set">Wallpaper changed</string>
     <string name="wallpaper_failed">Couldn\'t open that picture. Try another one.</string>
     <string name="no_gallery">No gallery app found on this unit</string>
-    <string name="icons_glass">Clear glass icons</string>
-    <string name="icons_color">Colour icons</string>
+    <string name="icons_style">App icons</string>
+    <string name="icons_glass">Glass, colour</string>
+    <string name="icons_clear">Glass, no colour</string>
+    <string name="icons_color">Colour</string>
     <string name="trip">TRIP</string>
     <string name="trip_reset">Reset</string>
     <string name="trip_confirm">Tap again</string>
