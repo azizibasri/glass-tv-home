@@ -107,16 +107,16 @@ def main():
     can_pkgs = [p for p in system + sorted(third) if any(w in p.lower() for w in can_words)]
     with open(os.path.join(out, "can-discovery.txt"), "w") as f:
         f.write("# CAN-related packages and what they declare. Look for actions or extras with SPEED / TORQUE /\n"
-                "# RPM / TEMP / COOLANT / RANGE / FUEL / DOOR / VEHICLE in them; they go in config.json as can_speed,\n"
-                "# can_rpm, can_torque, can_coolant, can_range, can_odometer, can_doors (car/README.md).\n\n")
+                "# BOOST / PRESSURE / TEMP / COOLANT / RANGE / FUEL / DOOR / VEHICLE in them; they go in config.json as can_speed,\n"
+                "# can_boost, can_torque, can_coolant, can_range, can_odometer, can_doors (car/README.md).\n\n")
         for p in can_pkgs:
             dump = run(dev, f"dumpsys package {p}")
             keep_lines = [l.rstrip() for l in dump.splitlines()
                           if re.search(r"Action:|Receiver|Provider|Service|authority|permission", l, re.I)]
             f.write(f"===== {p} =====\n" + "\n".join(keep_lines[:300]) + "\n\n")
         log = run(dev, "logcat -d -v brief -t 4000")
-        hits = [l for l in log.splitlines() if re.search(r"speed|torque|rpm|coolant|water|temp|range|mileage|fuel|oil|door|trunk|boot|hood|vehicle|canbus|can_", l, re.I)]
-        f.write("===== logcat lines mentioning speed / rpm / torque / temperature / range / fuel / CAN (drive a little first) =====\n")
+        hits = [l for l in log.splitlines() if re.search(r"speed|torque|boost|turbo|pressure|manifold|coolant|water|temp|range|mileage|fuel|oil|door|trunk|boot|hood|vehicle|canbus|can_", l, re.I)]
+        f.write("===== logcat lines mentioning speed / boost / torque / temperature / range / fuel / CAN (drive a little first) =====\n")
         f.write("\n".join(hits[-300:]) + "\n")
     print(f"  CAN apps found: {', '.join(can_pkgs) or 'none'}  (details in can-discovery.txt)")
 

@@ -10,7 +10,11 @@ import java.util.Locale;
 final class ObdParser {
     /** The requests, in the adapter's own words: mode 01 + PID. */
     static final String SPEED = "010D", RPM = "010C", COOLANT = "0105", FUEL_LEVEL = "012F",
-            TORQUE_PERCENT = "0162", TORQUE_REFERENCE = "0163", ODOMETER = "01A6";
+            TORQUE_PERCENT = "0162", TORQUE_REFERENCE = "0163", ODOMETER = "01A6",
+            MANIFOLD_PRESSURE = "010B", BAROMETRIC_PRESSURE = "0133";
+
+    /** Sea-level air pressure, kPa: used for boost until the car reports its own. */
+    static final float STANDARD_AIR_KPA = 101.3f;
 
     private ObdParser() {
     }
@@ -71,6 +75,20 @@ final class ObdParser {
     /** km on the odometer (newer cars only). */
     static float odometer(int[] b) {
         return b != null && b.length >= 4 ? ((long) b[0] << 24 | b[1] << 16 | b[2] << 8 | b[3]) / 10f : Float.NaN;
+    }
+
+    /** Intake manifold absolute pressure, or barometric pressure: kPa. */
+    static float kpa(int[] b) {
+        return b != null && b.length >= 1 ? b[0] : Float.NaN;
+    }
+
+    /**
+     * Turbo boost in bar: manifold pressure over the outside air. Below zero is vacuum (off the throttle);
+     * above zero the turbo is pushing.
+     */
+    static float boostBar(float manifoldKpa, float airKpa) {
+        if (Float.isNaN(manifoldKpa)) return Float.NaN;
+        return (manifoldKpa - (Float.isNaN(airKpa) ? STANDARD_AIR_KPA : airKpa)) / 100f;
     }
 
     /** Fuel range from the tank level: litres left, divided by the car's usual use per 100 km. */

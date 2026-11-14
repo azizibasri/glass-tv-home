@@ -106,10 +106,11 @@ public final class HomeActivity extends Activity {
     private int builtW, builtH;
     private boolean resumed;
     private CarData carData;
-    private Gauge gauge, rpmGauge;
+    private BigSpeedView bigSpeed;
+    private TextView doorStatus;
+    private final String[] doorNames = new String[Doors.COUNT];
     private InfoTile coolantTile, rangeTile;
-    private CarPictureView carModel;
-    private static final int REQUEST_WALLPAPER = 11, REQUEST_CAR_PHOTOS = 12;
+    private static final int REQUEST_WALLPAPER = 11;
     private final TripMeter trip = new TripMeter();
     private TextView tripValue, tripNote, tripReset;
     private boolean tripResetArmed;
@@ -241,10 +242,6 @@ public final class HomeActivity extends Activity {
             main.post(dataTick);
         }
         if (bigClock != null) bigClock.setRunning(true);
-        if (gauge != null && pager != null && pager.page() == 0) {
-            gauge.sweep();
-            rpmGauge.sweep();
-        }
         if (nowPlaying != null) nowPlaying.start();
     }
 
@@ -292,12 +289,6 @@ public final class HomeActivity extends Activity {
                 cfg.wallpaper = true;
                 refreshWallpaper();
                 showToast(getString(R.string.wallpaper_set));
-            });
-        }
-        if (request == REQUEST_CAR_PHOTOS && result == RESULT_OK && data != null && data.getData() != null) {
-            copyPicture(data.getData(), CarPictureView.PICTURE_FILE, () -> {
-                if (carModel != null) carModel.loadPicture();
-                showToast(getString(R.string.car_photos_set));
             });
         }
     }
@@ -457,11 +448,10 @@ public final class HomeActivity extends Activity {
         List<App> list = gridApps();
         int dash = cfg.dashboard ? 1 : 0;
         int pages = g.pages(list.size()) + dash;
-        gauge = null;
-        rpmGauge = null;
+        bigSpeed = null;
+        doorStatus = null;
         coolantTile = null;
         rangeTile = null;
-        carModel = null;
         torqueBar = null;
         if (nowPlaying != null) nowPlaying.stop();
         bigClock = null;
@@ -522,25 +512,23 @@ public final class HomeActivity extends Activity {
         left.addView(torqueBar, tlp);
         d.addView(left, new LinearLayout.LayoutParams(0, -1, 1f));
 
-        // Right: speedometer (top left) and rev counter (top right), coolant and fuel range under them.
+        // Right: the big digital speedometer with turbo boost, door status, trip, coolant and fuel range.
         LinearLayout right = new LinearLayout(this);
         right.setOrientation(LinearLayout.VERTICAL);
         right.setPadding(dp(12), dp(12), dp(12), dp(12));
         right.setBackground(glassFor(right, dp(26)));
-        LinearLayout dials = new LinearLayout(this);
-        dials.setOrientation(LinearLayout.HORIZONTAL);
-        gauge = Gauge.speed(this, cfg.speedMax, cfg.mph ? "mph" : "km/h");
-        rpmGauge = Gauge.rpm(this, cfg.rpmMax, cfg.rpmRed);
-        dials.addView(gauge, new LinearLayout.LayoutParams(0, -1, 1f));
-        LinearLayout.LayoutParams rpmLp = new LinearLayout.LayoutParams(0, -1, 1f);
-        rpmLp.leftMargin = dp(8);
-        dials.addView(rpmGauge, rpmLp);
-        right.addView(dials, new LinearLayout.LayoutParams(-1, 0, 1f));
-        // The car under the dials: the owner's picture and a top view showing open doors.
-        carModel = new CarPictureView(this);
-        LinearLayout.LayoutParams carLp = new LinearLayout.LayoutParams(-1, 0, 1.05f);
-        carLp.topMargin = dp(4);
-        right.addView(carModel, carLp);
+        bigSpeed = new BigSpeedView(this, cfg.mph ? "mph" : "km/h", cfg.boostPsi, cfg.boostMaxBar);
+        bigSpeed.setTypeface(ClockFonts.typeface(this, clockFont));
+        LinearLayout.LayoutParams speedLp = new LinearLayout.LayoutParams(-1, 0, 1f);
+        speedLp.leftMargin = speedLp.rightMargin = dp(6);
+        right.addView(bigSpeed, speedLp);
+        doorStatus = text(13, true);
+        doorStatus.setPadding(dp(14), dp(5), dp(14), dp(5));
+        LinearLayout.LayoutParams doorLp = new LinearLayout.LayoutParams(-2, -2);
+        doorLp.gravity = Gravity.CENTER_HORIZONTAL;
+        doorLp.topMargin = dp(8);
+        right.addView(doorStatus, doorLp);
+        showDoors(null, false);
         LinearLayout.LayoutParams tripLp = new LinearLayout.LayoutParams(-1, dp(52));
         tripLp.topMargin = dp(8);
         right.addView(tripRow(), tripLp);
@@ -650,21 +638,13 @@ public final class HomeActivity extends Activity {
         m.getMenu().add(0, 3, 2, "glass".equals(iconStyle) ? R.string.icons_color : R.string.icons_glass);
         m.getMenu().add(0, 4, 3, R.string.clock_style);
         m.getMenu().add(0, 5, 4, R.string.data_source);
-        m.getMenu().add(0, 6, 5, R.string.car_picture_pick);
-        if (CarPictureView.pictureFile(this) != null) m.getMenu().add(0, 7, 6, R.string.car_photos_reset);
         m.setOnMenuItemClickListener(item -> {
             int id = item.getItemId();
             if (id == 1) pickPicture(REQUEST_WALLPAPER);
             else if (id == 2) resetWallpaper();
             else if (id == 3) setIconStyle("glass".equals(iconStyle) ? "color" : "glass");
             else if (id == 4) clockDialog();
-            else if (id == 5) dataSourceDialog();
-            else if (id == 6) pickPicture(REQUEST_CAR_PHOTOS);
-            else {
-                java.io.File f = CarPictureView.pictureFile(this);
-                if (f != null) f.delete();
-                if (carModel != null) carModel.loadPicture();
-            }
+            else dataSourceDialog();
             return true;
         });
         m.show();
@@ -748,6 +728,29 @@ public final class HomeActivity extends Activity {
         loadApps();
     }
 
+    /** The door status line: what is open (orange), "All doors closed" (green) or no data (grey). */
+    private void showDoors(boolean[] open, boolean known) {
+        if (doorStatus == null) return;
+        if (doorNames[1] == null) {
+            int[] ids = {0, R.string.door_fl, R.string.door_fr, R.string.door_rl, R.string.door_rr, R.string.door_trunk,
+                    R.string.door_hood};
+            doorNames[0] = "";
+            for (int p = 1; p < Doors.COUNT; p++) doorNames[p] = getString(ids[p]);
+        }
+        String s = Doors.status(getString(R.string.door_open), getString(R.string.doors_closed),
+                getString(R.string.doors_no_data), doorNames, open, known);
+        boolean any = false;
+        if (known && open != null) for (int p = 1; p < Doors.COUNT; p++) any |= open[p];
+        if (s.contentEquals(doorStatus.getText()) && doorStatus.getTag() != null && (boolean) doorStatus.getTag() == any) return;
+        doorStatus.setText(s);
+        doorStatus.setTag(any);
+        doorStatus.setTextColor(any ? 0xFF1C1C1E : 0xFFFFFFFF);
+        android.graphics.drawable.GradientDrawable g = new android.graphics.drawable.GradientDrawable();
+        g.setCornerRadius(dp(14));
+        g.setColor(any ? 0xE6FF9F0A : known ? 0x5930D158 : 0x33FFFFFF);
+        doorStatus.setBackground(g);
+    }
+
     private static String obdStateLabel(int state) {
         switch (state) {
             case ObdLink.CONNECTING:
@@ -768,6 +771,7 @@ public final class HomeActivity extends Activity {
     // ---- Clock style dialog ----
 
     private void applyClockStyle() {
+        if (bigSpeed != null) bigSpeed.setTypeface(ClockFonts.typeface(this, clockFont));
         if (bigClock == null) return;
         bigClock.setTypeface(ClockFonts.typeface(this, clockFont));
         bigClock.setTextSizePx(clockBasePx * clockSize / 100f * ClockFonts.widthFactor(clockFont));
@@ -1008,7 +1012,7 @@ public final class HomeActivity extends Activity {
         trip.speed(r.speed, SystemClock.elapsedRealtime());
         showTrip();
         if (SystemClock.elapsedRealtime() - tripSavedAt > 15_000) saveTrip();
-        if (gauge == null) return;
+        if (bigSpeed == null) return;
         if (r.obdState != lastObdState) {
             if (r.obdState == ObdLink.CONNECTED) showToast(getString(R.string.obd_connected));
             else if (r.obdState == ObdLink.FAILED && lastObdState != ObdLink.FAILED) showToast(getString(R.string.obd_failed));
@@ -1016,14 +1020,10 @@ public final class HomeActivity extends Activity {
         }
         int src = r.speedSource;
         String missing = carData.usesObd() ? obdStateLabel(r.obdState) : "NO DATA";
-        gauge.set(r.speed, src, src == SpeedMath.CAN ? r.carLabel : src == SpeedMath.GPS ? "GPS"
-                : carData.usesObd() ? missing : carData.hasGpsPermission() ? "NO SIGNAL" : "NO GPS PERMISSION");
-        boolean hasRpm = !Float.isNaN(r.rpm);
-        rpmGauge.set(r.rpm, hasRpm ? SpeedMath.CAN : SpeedMath.NONE, hasRpm ? r.carLabel : missing);
+        bigSpeed.set(r.speed, src == SpeedMath.CAN ? r.carLabel : src == SpeedMath.GPS ? "GPS"
+                : carData.usesObd() ? missing : carData.hasGpsPermission() ? "NO SIGNAL" : "NO GPS PERMISSION", r.boost);
         if (torqueBar != null) torqueBar.set(r.torque);
-        if (carModel != null) {
-            carModel.setDoors(r.doors < 0 ? null : Doors.open(r.doors, cfg.doorBits), r.doors >= 0);
-        }
+        showDoors(r.doors < 0 ? null : Doors.open(r.doors, cfg.doorBits), r.doors >= 0);
         if (Float.isNaN(r.coolant)) {
             coolantTile.set("-- °C", Float.NaN, 0x80FFFFFF, getString(R.string.no_data));
         } else {

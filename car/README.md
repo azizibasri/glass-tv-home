@@ -19,11 +19,11 @@ for any Android 8+ head unit.
 head units show a made-up version. What it means here: Glass Car runs (it needs 8+), RAM clean works, and
 caches are cleared through the debugging service rather than the Android 11 dialog (below).
 
-## Dashboard: clock, speed and torque
+## Dashboard: clock, speed, turbo boost and torque
 
 The first page shows, on the left, a large digital clock, the date, a music widget and engine torque; on the
-right, the speedometer (top left), the rev counter (top right), and tiles for coolant temperature and fuel
-range under them.
+right, a big digital speedometer with turbo boost under it, the door status, the trip, and tiles for coolant
+temperature and fuel range.
 Swipe left for the apps.
 
 - **Clock**: in a dark glass box like the music widget; thin large digits filled with a rainbow that flows across them, with a soft glow that shifts
@@ -35,19 +35,19 @@ Swipe left for the apps.
   your music app. It needs notification access, which `car/install.sh` grants; it reads no notifications.
   `"music_widget": false` hides it.
 
-- **Speedometer**: a clear frosted-glass dial that lets the background show through, a glowing rainbow arc that
-  fills with the speed (green, yellow, blue, purple, pink, red), a thin bright glass rim,
-  clean white numbers, a red zone from 200 km/h and a red needle with a glowing tip that sweeps up and back
-  each time Home opens.
-- **Your car and its doors**: under the dials, your own picture of the car (⚙ → **Car picture from
-  gallery**; it stays on the unit as `car_picture.jpg`, **Remove car picture** takes it off) with the door
-  status under it: "Front left door open", "Front left door, Boot open", "All doors closed". It turns orange
-  while anything is open. The status needs door data from the CAN bus (`can_doors`); OBD-II has no door
-  data, so in OBD-II mode it says *Door status: no data*.
-- **Trip**: under the car picture, the trip in km with a **Reset** button (tap Reset, then *Tap again* within
+- **Speedometer**: the speed in big digits, in the same font as the clock (⚙ → Clock style), with its unit
+  and where it comes from (CAN BUS, OBD-II or GPS).
+- **Turbo boost**: under the speed, `+0.85 bar` (or psi with `"boost_unit": "psi"`) and a bar from full vacuum
+  on the left, through zero (outside air) to full boost on the right (`boost_max_bar`, default 1.5): blue
+  below zero, orange to red above, and a white mark at the highest boost of the last 10 seconds. From the
+  CAN bus (`can_boost`, in bar above outside air) or over OBD-II from manifold pressure minus air pressure,
+  as OBD apps do. Only the turbo engines (1.4 TSI) go above zero; the 1.6 without a turbo only shows vacuum.
+- **Doors**: under the speed, a status line: "Front left door open", "Front left door, Boot open" in orange,
+  "All doors closed" in green. It needs door data from the CAN bus (`can_doors`); OBD-II has no door data,
+  so in OBD-II mode it says *Door status: no data*.
+- **Trip**: under the door status, the trip in km with a **Reset** button (tap Reset, then *Tap again* within
   3 seconds). With the car's odometer from the CAN bus (`can_odometer`) it counts every km, whatever is on
   screen. Without it, it adds up distance from the speed, and only while Home is open: the row says which.
-- **Rev counter**: the same glass dial, 0 to 7 (x1000 rpm), red from 6000.
 - **Coolant**: °C with a bar and a word: *Warming up* under 70 °C (blue), *Normal* (green), *Hot* over
   110 °C (red). A VW normally sits near 90 °C.
 - **Fuel range**: km left, as the car's own trip computer works it out. Orange *Refuel soon* under 80 km,
@@ -62,7 +62,7 @@ Swipe left for the apps.
 behind the radio (Raise, Hiworld, XBS, Simple Soft…) talks to the maker's own app, and each maker passes the
 data on differently, if at all. On a 2017 Jetta the box sits on the comfort network: it normally knows doors,
 lights, outside temperature and steering angle, and often speed. Many VW boxes also pass on what the
-instrument cluster shows, which can include rpm, coolant temperature and fuel range: the scan will tell.
+instrument cluster shows, which can include turbo boost, coolant temperature and fuel range: the scan will tell.
 **Engine torque is on the engine network, which these boxes usually don't read.** If yours doesn't send it, torque needs an OBD-II Bluetooth adapter
 (ELM327 type) in the port under the dashboard. Glass Car doesn't read OBD-II yet.
 
@@ -73,7 +73,7 @@ When one carries the value, add it to `config.json`:
 ```json
 {
   "can_speed":   { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
-  "can_rpm":     { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
+  "can_boost":   { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
   "can_torque":  { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
   "can_coolant": { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
   "can_range":   { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
@@ -86,18 +86,18 @@ When one carries the value, add it to `config.json`:
 `can_doors` is one number with a bit per door; `door_bits` says which bit is which (the values above are the
 default; CAN boxes differ, so open each door once with the scan running and watch which bit changes).
 `scale` converts the raw number (e.g. `0.1` when the box sends tenths). A CAN speed older than 3 seconds
-falls back to GPS; rpm and torque older than 3 seconds, and coolant and range older than 30, show `--`.
+falls back to GPS; boost and torque older than 3 seconds, and coolant and range older than 30, show `--`.
 
 ## OBD-II Bluetooth adapter (Carista and others)
 
 Instead of the CAN box, every value can come from an OBD-II adapter in the port under the dashboard: speed,
-rpm, coolant, torque (actual % of the engine's reference torque), the odometer where the car has one
+turbo boost (manifold pressure minus air pressure), coolant, torque (actual % of the engine's reference torque), the odometer where the car has one
 (mostly 2019 and newer), and fuel range worked out from the tank level (`fuel_tank_l`, default 55 L for the
 Jetta, and `fuel_l_per_100km`, default 7.5).
 
 1. Plug the adapter in and switch the ignition on.
 2. Pair it in Android's Bluetooth settings (PIN usually `1234` or `0000`).
-3. ⚙ → **Car data source** → pick the adapter → Done. The dials say `OBD-II` once it answers.
+3. ⚙ → **Car data source** → pick the adapter → Done. The speedometer says `OBD-II` once it answers.
 
 What might not work, and why:
 
@@ -105,7 +105,7 @@ What might not work, and why:
   and should answer standard OBD-II requests; the newer **Carista EVO** uses Bluetooth Low Energy, which Glass
   Car does not speak yet. A generic ELM327 Bluetooth adapter (Vgate, Konnwei, OBDLink…) is the safe choice.
 - **The head unit's Bluetooth.** On many units the Bluetooth chip is reserved for calls and music and Android
-  apps can't open a serial connection on it; then the adapter never shows up as paired, or the dials say
+  apps can't open a serial connection on it; then the adapter never shows up as paired, or the speedometer says
   `OBD NO CONNECTION`. Some units have their own "OBD" page in the Bluetooth app instead.
 - Like everything on the dashboard, the adapter is only asked while Home is on screen.
 
@@ -191,11 +191,11 @@ All keys optional; a bad file is ignored as a whole.
 | `clock_rainbow` | bool | Flowing, glowing rainbow clock. Default `true`; `false` for plain white |
 | `music_widget` | bool | Music widget under the clock. Default `true` |
 | `speed_unit` | `"km/h"` or `"mph"` | Speedometer unit |
-| `speed_max` | 60 to 400 | Top of the dial. Default 240, like the Jetta's cluster |
 | `torque_max` | 50 to 2000 | End of the torque bar in Nm, about the engine's peak (1.4 TSI: 250, 1.5 MPI: 145) |
-| `rpm_max`, `rpm_red` | 3000 to 12000 | Top of the rev counter and start of its red zone. Default 7000 and 6000 |
+| `boost_unit` | `"bar"` or `"psi"` | Turbo boost unit. Default bar |
+| `boost_max_bar` | 0.3 to 4 | Right end of the boost bar, in bar. Default 1.5 |
 | `door_bits` | `{front_left, front_right, rear_left, rear_right, boot, bonnet}` | Which bit of `can_doors` is which door |
-| `can_speed`, `can_rpm`, `can_torque`, `can_coolant`, `can_range`, `can_odometer`, `can_doors` | `{action, extra, scale}` | The CAN app's broadcast that carries each value; see Dashboard above |
+| `can_speed`, `can_boost`, `can_torque`, `can_coolant`, `can_range`, `can_odometer`, `can_doors` | `{action, extra, scale}` | The CAN app's broadcast that carries each value; see Dashboard above |
 
 ## Safety
 

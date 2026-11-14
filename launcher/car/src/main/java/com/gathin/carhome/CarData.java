@@ -16,13 +16,13 @@ import android.os.SystemClock;
 import android.util.Log;
 
 /**
- * Car readings for the dashboard, while Home is on screen: speed, rpm, torque, coolant temperature and
+ * Car readings for the dashboard, while Home is on screen: speed, turbo boost, torque, coolant temperature and
  * fuel range.
  *
  * Speed comes from the car's CAN bus when the head unit's CAN app broadcasts it, else from GPS. Everything
- * else (rpm, torque, coolant, fuel range, odometer for the trip) comes from the CAN bus only. Head units have no standard CAN API: the CAN box behind the radio talks
+ * else (turbo boost, torque, coolant, fuel range, odometer for the trip) comes from the CAN bus only. Head units have no standard CAN API: the CAN box behind the radio talks
  * to the maker's own app, and each maker shares the data differently, if at all. So the broadcast to listen
- * to for each value is set in config.json ({@code can_speed}, {@code can_rpm}, {@code can_torque},
+ * to for each value is set in config.json ({@code can_speed}, {@code can_boost}, {@code can_torque},
  * {@code can_coolant}, {@code can_range}, {@code can_odometer}: action, extra, scale), filled in once {@code car/scan.py} has
  * shown what this unit's CAN app sends.
  */
@@ -33,7 +33,9 @@ final class CarData {
 
     /** One snapshot. NaN means "no data". */
     static final class Reading {
-        float speed = Float.NaN, rpm = Float.NaN, torque = Float.NaN, coolant = Float.NaN, range = Float.NaN;
+        /** Turbo boost in bar above the outside air (below zero: vacuum). */
+        float boost = Float.NaN;
+        float speed = Float.NaN, torque = Float.NaN, coolant = Float.NaN, range = Float.NaN;
         /** Total km on the car's odometer, for the trip counter. */
         float odometer = Float.NaN;
         /** The CAN door value (bits per door, see door_bits), or -1 when there is none. */
@@ -75,7 +77,8 @@ final class CarData {
     private ObdLink obd;
     private volatile int obdState = ObdLink.OFF;
     private float torquePercent = Float.NaN, torqueReference = Float.NaN;
-    private final Slot speed, rpm, torque, coolant, range, odometer, doors;
+    private final Slot speed, boost, torque, coolant, range, odometer, doors;
+    private float airKpa = Float.NaN;
     private final Slot[] slots;
     private float gpsSpeed = Float.NaN;
     private long gpsAt;
@@ -90,13 +93,13 @@ final class CarData {
         this.mode = cfg.dataSource;
         this.obdAddress = cfg.obdAddress;
         speed = new Slot(cfg.canSpeed, 0, 400);
-        rpm = new Slot(cfg.canRpm, 0, 12_000);
+        boost = new Slot(cfg.canBoost, -1.2f, 4f);
         torque = new Slot(cfg.canTorque, -500, 2_000);
         coolant = new Slot(cfg.canCoolant, -40, 150);
         range = new Slot(cfg.canRange, 0, 3_000);
         odometer = new Slot(cfg.canOdometer, 0, 3_000_000);
         doors = new Slot(cfg.canDoors, 0, 0xFFFF);
-        slots = new Slot[]{speed, rpm, torque, coolant, range, odometer, doors};
+        slots = new Slot[]{speed, boost, torque, coolant, range, odometer, doors};
     }
 
     boolean hasGpsPermission() {
@@ -212,8 +215,8 @@ final class CarData {
         r.obdState = obdState;
         r.speedSource = SpeedMath.pick(now, speed.at, gpsAt);
         r.speed = r.speedSource == SpeedMath.CAN ? speed.value : r.speedSource == SpeedMath.GPS ? gpsSpeed : Float.NaN;
-        r.rpm = rpm.fresh(now, SpeedMath.CAN_STALE_MS);
-        // Over OBD-II torque is asked for every few seconds, between the speed and rpm requests.
+        r.boost = boost.fresh(now, SpeedMath.CAN_STALE_MS);
+        // Over OBD-II torque is asked for every few seconds, between the speed and boost requests.
         r.torque = torque.fresh(now, usesObd() ? 12_000 : SpeedMath.CAN_STALE_MS);
         r.coolant = coolant.fresh(now, SLOW_STALE_MS);
         r.range = range.fresh(now, SLOW_STALE_MS);
@@ -233,9 +236,13 @@ final class CarData {
                 v = ObdParser.speed(data) * (mph ? 0.621371f : 1f);
                 slot = speed;
                 break;
-            case ObdParser.RPM:
-                v = ObdParser.rpm(data);
-                slot = rpm;
+            case ObdParser.MANIFOLD_PRESSURE:
+                v = ObdParser.boostBar(ObdParser.kpa(data), airKpa);
+                slot = boost;
+                break;
+            case ObdParser.BAROMETRIC_PRESSURE:
+                float air = ObdParser.kpa(data);
+                if (air >= 60 && air <= 110) airKpa = air;
                 break;
             case ObdParser.COOLANT:
                 v = ObdParser.coolant(data);

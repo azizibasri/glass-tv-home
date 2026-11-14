@@ -16,15 +16,14 @@
   "clock_rainbow": true,
   "music_widget": true,
   "speed_unit": "km/h",
-  "speed_max": 240,
   "torque_max": 250,
-  "rpm_max": 7000,
-  "rpm_red": 6000,
   "icon_style": "color",
   "clock_font": "thin",
   "clock_size": 100,
   "data_source": "can",
   "obd_address": "",
   "fuel_tank_l": 55,
-  "fuel_l_per_100km": 7.5
+  "fuel_l_per_100km": 7.5,
+  "boost_unit": "bar",
+  "boost_max_bar": 1.5
 }

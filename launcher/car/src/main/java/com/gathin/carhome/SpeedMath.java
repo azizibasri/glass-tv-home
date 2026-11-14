@@ -81,4 +81,27 @@ final class SpeedMath {
     static float rangeFraction(float km) {
         return Math.max(0f, Math.min(1f, km / 700f));
     }
+
+    // ---- Turbo boost bar ----
+
+    /** The boost bar runs from full vacuum (-1 bar) on the left to {@code maxBar} on the right. */
+    static final float BOOST_MIN_BAR = -1f;
+
+    /** Where {@code bar} sits along the boost bar, 0 to 1. */
+    static float boostFraction(float bar, float maxBar) {
+        if (Float.isNaN(bar) || maxBar <= BOOST_MIN_BAR) return fractionOf(0f, maxBar);
+        return Math.max(0f, Math.min(1f, (bar - BOOST_MIN_BAR) / (maxBar - BOOST_MIN_BAR)));
+    }
+
+    /** Where zero (outside air pressure) sits along the boost bar. */
+    static float fractionOf(float bar, float maxBar) {
+        return Math.max(0f, Math.min(1f, (bar - BOOST_MIN_BAR) / (maxBar - BOOST_MIN_BAR)));
+    }
+
+    /** "+0.85 bar", "-0.42 bar", "+12.3 psi". */
+    static String boostText(float bar, boolean psi) {
+        if (Float.isNaN(bar)) return psi ? "-- psi" : "-- bar";
+        if (psi) return String.format(java.util.Locale.ROOT, "%+.1f psi", bar * 14.5038f);
+        return String.format(java.util.Locale.ROOT, "%+.2f bar", bar);
+    }
 }

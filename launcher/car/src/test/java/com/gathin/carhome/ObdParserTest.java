@@ -37,4 +37,18 @@ public class ObdParserTest {
         assertEquals(366.7f, ObdParser.range(50f, 55f, 7.5f), 0.1f);
         assertTrue(Float.isNaN(ObdParser.range(Float.NaN, 55f, 7.5f)));
     }
+
+    @Test
+    public void turboBoost() {
+        // 190 kPa in the manifold at 100 kPa outside: 0.9 bar of boost.
+        assertEquals(0.9f, ObdParser.boostBar(ObdParser.kpa(ObdParser.data("41 0B BE", "010B")),
+                ObdParser.kpa(ObdParser.data("41 33 64", "0133"))), 0.001f);
+        // Idling: 35 kPa, vacuum. No barometer yet: standard air.
+        assertEquals(-0.663f, ObdParser.boostBar(35f, Float.NaN), 0.001f);
+        assertTrue(Float.isNaN(ObdParser.boostBar(Float.NaN, 100f)));
+        assertEquals("+0.90 bar", SpeedMath.boostText(0.9f, false));
+        assertEquals("+13.1 psi", SpeedMath.boostText(0.9f, true));
+        assertEquals(0.4f, SpeedMath.fractionOf(0f, 1.5f), 0.001f);
+        assertEquals(1f, SpeedMath.boostFraction(3f, 1.5f), 0f);
+    }
 }

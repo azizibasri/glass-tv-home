@@ -14,8 +14,8 @@ import java.util.UUID;
 
 /**
  * Talks to a Bluetooth OBD-II adapter (ELM327 type, e.g. Carista) on its own thread, only while Home is on
- * screen: connects to the paired adapter, sets it up, then asks for speed and rpm about 4 times a second and
- * coolant, fuel level and torque every few seconds. Reports values and its state; reconnects when the
+ * screen: connects to the paired adapter, sets it up, then asks for speed and manifold pressure (for turbo
+ * boost) about 4 times a second, and air pressure, coolant, fuel level and torque every few seconds. Reports values and its state; reconnects when the
  * connection drops (engine off, adapter unplugged), waiting a little longer each time.
  */
 final class ObdLink {
@@ -114,12 +114,12 @@ final class ObdLink {
     }
 
     private void poll() throws IOException, InterruptedException {
-        String[] slow = {ObdParser.COOLANT, ObdParser.FUEL_LEVEL, ObdParser.TORQUE_PERCENT,
-                ObdParser.TORQUE_REFERENCE, ObdParser.ODOMETER};
+        String[] slow = {ObdParser.BAROMETRIC_PRESSURE, ObdParser.COOLANT, ObdParser.FUEL_LEVEL,
+                ObdParser.TORQUE_PERCENT, ObdParser.TORQUE_REFERENCE, ObdParser.ODOMETER};
         int round = 0;
         while (running) {
             report(ObdParser.SPEED);
-            report(ObdParser.RPM);
+            report(ObdParser.MANIFOLD_PRESSURE);
             if (round % 3 == 0) report(slow[(round / 3) % slow.length]);
             round++;
             Thread.sleep(150);
