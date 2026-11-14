@@ -18,6 +18,17 @@ Pelancar skrin utama (*home screen launcher*) ultra-ringan dengan rekaan *froste
 
 ---
 
+### 🚗 Glass Car (Untuk pemain kereta Android / Android car head units)
+Skrin utama sentuh untuk pemain kereta Android: jam, muzik, meter laju digital besar dengan tekanan turbo, status pintu, trip, suhu penyejuk dan jarak minyak, pembersih RAM dan cache. Butiran: [`car/README.md`](../car/README.md).
+
+* **Fail APK**: [`glass-car.apk`](glass-car.apk)
+* **Versi Semasa**: `v1.0.0` (binaan pertama; belum diuji pada unit sebenar / first build, not yet tested on a real unit)
+* **Pasang / Install**: `CAR_HOST=<ip> car/install.sh` (guna fail ini jika tiada binaan baharu / uses this file when there is no fresh build)
+* **Saiz Fail**: ~270 KB
+* **Keserasian**: Android 8.0 ke atas (API 26+), skrin landskap sentuh
+
+---
+
 ### 2. 📱 Glass TV Installer (Untuk Telefon & Tablet Android)
 Aplikasi pembantu telefon pintar untuk memasang Glass TV Home terus ke TV rumah anda secara tanpa wayar (wireless Wi-Fi) **tanpa perlukan komputer (PC), kabel USB, atau terminal**.
 

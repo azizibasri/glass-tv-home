@@ -12,7 +12,9 @@ PY=tools/venv/bin/python
 [ -x "$PY" ] || PY=tools/venv/Scripts/python.exe
 [ -x "$PY" ] || { echo "run: python3 -m venv tools/venv && tools/venv/bin/pip install -r tools/requirements.txt" >&2; exit 1; }
 PKG=com.gathin.carhome
+# A fresh build if there is one, else the prebuilt app in release/ (no Android tools needed), else build.
 APK=${APK:-launcher/car/build/outputs/apk/release/car-release.apk}
+[ -f "$APK" ] || [ ! -f release/glass-car.apk ] || APK=release/glass-car.apk
 mkdir -p backup
 log() { echo "$(date '+%F %T') $*" >> backup/log.txt; }
 car() { "$PY" -I tools/tv.py "$@"; }
@@ -53,7 +55,12 @@ trap 'st=$?; [ $st -ne 0 ] && rollback; exit $st' EXIT
 "$PY" -I tools/b64push.py "$APK" /data/local/tmp/carhome.apk
 OUT=$(car 'pm install -r /data/local/tmp/carhome.apk; rm -f /data/local/tmp/carhome.apk')
 echo "$OUT"
-case "$OUT" in *Success*) ;; *) echo "ERROR: pm install failed; nothing else was changed." >&2; exit 1 ;; esac
+case "$OUT" in
+  *Success*) ;;
+  *UPDATE_INCOMPATIBLE*) echo "ERROR: a Glass Car signed by another computer is already installed. Remove it first:" >&2
+    echo "  CAR_HOST=$CAR_HOST tools/venv/bin/python -I tools/tv.py 'pm uninstall $PKG'   then run this again." >&2; exit 1 ;;
+  *) echo "ERROR: pm install failed; nothing else was changed." >&2; exit 1 ;;
+esac
 ARMED=1
 log "installed $PKG"
 printf '%s\n' \
