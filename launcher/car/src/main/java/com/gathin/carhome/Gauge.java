@@ -183,6 +183,9 @@ final class Gauge extends View {
         float zoneStart = SpeedMath.START_DEG + SpeedMath.SWEEP_DEG * redFrom / max;
         c.drawArc(zoneOval, zoneStart, SpeedMath.START_DEG + SpeedMath.SWEEP_DEG - zoneStart, false, redZone);
         int minor = major / 4;
+        // On a small dial, number every other major tick so the numbers don't run into each other.
+        float sizeDp = Math.min(getWidth(), getHeight()) / getResources().getDisplayMetrics().density;
+        int labelStep = sizeDp < (max / major + 1) * 22f ? major * 2 : major;
         for (int v = 0; v <= max; v += minor) {
             double a = Math.toRadians(SpeedMath.START_DEG + SpeedMath.SWEEP_DEG * v / max);
             boolean isMajor = v % major == 0, isMid = v % (major / 2) == 0;
@@ -192,7 +195,7 @@ final class Gauge extends View {
             float r1 = r * 0.90f, r2 = r1 - r * (isMajor ? 0.12f : isMid ? 0.07f : 0.045f);
             c.drawLine(cx + (float) Math.cos(a) * r1, cy + (float) Math.sin(a) * r1,
                     cx + (float) Math.cos(a) * r2, cy + (float) Math.sin(a) * r2, tick);
-            if (isMajor) {
+            if (isMajor && v % labelStep == 0) {
                 float rn = r * 0.66f;
                 num.setColor(red ? RED : 0xFFFFFFFF);
                 c.drawText(String.valueOf(v / labelDiv), cx + (float) Math.cos(a) * rn,
