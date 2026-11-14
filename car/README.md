@@ -22,15 +22,17 @@ caches are cleared through the debugging service rather than the Android 11 dial
 ## Dashboard: clock, speed, turbo boost and torque
 
 The first page shows, on the left, a large digital clock, the date, a music widget and engine torque; on the
-right, a big digital speedometer with turbo boost under it, the door status, the trip, and tiles for coolant
+right, a big digital speedometer with turbo boost under it, the trip, and tiles for coolant
 temperature and fuel range.
 Swipe left for the apps.
 
 - **Clock**: in a dark glass box like the music widget; thin large digits filled with a rainbow that flows across them, with a soft glow that shifts
   colour and breathes. It only animates while Home is on screen, and stands still when Android's animations
   are turned off. `"clock_rainbow": false` makes it plain white.
-- **Music widget**: cover art, song, artist, a progress line, and previous / play-pause / next. It follows
-  whatever is playing: Spotify, YouTube Music, the radio app or Bluetooth audio from a phone, if that app
+- **Music widget**: cover art, song, artist, a progress line, and previous / play-pause / next. With nothing
+  playing, play starts Glass Car's own player on the music files on the unit and USB sticks (it asks once to
+  read music files; with none it opens your music app). It keeps playing behind other apps, and the
+  steering-wheel media buttons work with it. Otherwise the widget follows whatever is playing: Spotify, YouTube Music, the radio app or Bluetooth audio from a phone, if that app
   shares its playback with Android (most do). Tap the song to open the app; with nothing playing, play opens
   your music app. It needs notification access, which `car/install.sh` grants; it reads no notifications.
   `"music_widget": false` hides it.
@@ -42,10 +44,7 @@ Swipe left for the apps.
   below zero, orange to red above, and a white mark at the highest boost of the last 10 seconds. From the
   CAN bus (`can_boost`, in bar above outside air) or over OBD-II from manifold pressure minus air pressure,
   as OBD apps do. Only the turbo engines (1.4 TSI) go above zero; the 1.6 without a turbo only shows vacuum.
-- **Doors**: under the speed, a status line: "Front left door open", "Front left door, Boot open" in orange,
-  "All doors closed" in green. It needs door data from the CAN bus (`can_doors`); OBD-II has no door data,
-  so in OBD-II mode it says *Door status: no data*.
-- **Trip**: under the door status, the trip in km with a **Reset** button (tap Reset, then *Tap again* within
+- **Trip**: under the speed, the trip in km with a **Reset** button (tap Reset, then *Tap again* within
   3 seconds). With the car's odometer from the CAN bus (`can_odometer`) it counts every km, whatever is on
   screen. Without it, it adds up distance from the speed, and only while Home is open: the row says which.
 - **Coolant**: °C with a bar and a word: *Warming up* under 70 °C (blue), *Normal* (green), *Hot* over
@@ -81,14 +80,10 @@ When one carries the value, add it to `config.json`:
   "can_torque":  { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
   "can_coolant": { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
   "can_range":   { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
-  "can_odometer":{ "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
-  "can_doors":   { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
-  "door_bits":   { "front_left": 1, "front_right": 2, "rear_left": 4, "rear_right": 8, "boot": 16, "bonnet": 32 }
+  "can_odometer":{ "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 }
 }
 ```
 
-`can_doors` is one number with a bit per door; `door_bits` says which bit is which (the values above are the
-default; CAN boxes differ, so open each door once with the scan running and watch which bit changes).
 `scale` converts the raw number (e.g. `0.1` when the box sends tenths). A CAN speed older than 3 seconds
 falls back to GPS; boost and torque older than 3 seconds, and coolant and range older than 30, show `--`.
 
@@ -208,8 +203,7 @@ All keys optional; a bad file is ignored as a whole.
 | `torque_max` | 50 to 2000 | End of the torque bar in Nm, about the engine's peak (1.4 TSI: 250, 1.5 MPI: 145) |
 | `boost_unit` | `"bar"` or `"psi"` | Turbo boost unit. Default bar |
 | `boost_max_bar` | 0.3 to 4 | Right end of the boost bar, in bar. Default 1.5 |
-| `door_bits` | `{front_left, front_right, rear_left, rear_right, boot, bonnet}` | Which bit of `can_doors` is which door |
-| `can_speed`, `can_boost`, `can_torque`, `can_coolant`, `can_range`, `can_odometer`, `can_doors` | `{action, extra, scale}` | The CAN app's broadcast that carries each value; see Dashboard above |
+| `can_speed`, `can_boost`, `can_torque`, `can_coolant`, `can_range`, `can_odometer` | `{action, extra, scale}` | The CAN app's broadcast that carries each value; see Dashboard above |
 
 ## Safety
 

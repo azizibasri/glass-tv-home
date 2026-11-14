@@ -58,9 +58,7 @@ final class CarConfig {
         }
     }
 
-    CanKey canSpeed, canTorque, canBoost, canCoolant, canRange, canOdometer, canDoors;
-    /** Which bit of the CAN door value means which door (index = Doors constant). */
-    int[] doorBits = Doors.DEFAULT_BITS.clone();
+    CanKey canSpeed, canTorque, canBoost, canCoolant, canRange, canOdometer;
     /** Where car data comes from: "can" (CAN bus, GPS for speed when it has none) or "obd" (Bluetooth OBD-II). */
     String dataSource = "can";
     /** The paired OBD-II adapter's Bluetooth address, when dataSource is "obd". */
@@ -121,15 +119,6 @@ final class CarConfig {
             c.canCoolant = canKey(o.optJSONObject("can_coolant"));
             c.canRange = canKey(o.optJSONObject("can_range"));
             c.canOdometer = canKey(o.optJSONObject("can_odometer"));
-            c.canDoors = canKey(o.optJSONObject("can_doors"));
-            JSONObject bits = o.optJSONObject("door_bits");
-            if (bits != null) {
-                String[] keys = {null, "front_left", "front_right", "rear_left", "rear_right", "boot", "bonnet"};
-                for (int p = 1; p < keys.length; p++) {
-                    int b = bits.optInt(keys[p], -1);
-                    if (b >= 0 && b <= 0xFFFF) c.doorBits[p] = b;
-                }
-            }
             String src = o.optString("data_source", c.dataSource);
             if (src.equals("can") || src.equals("obd")) c.dataSource = src;
             c.obdAddress = o.optString("obd_address", c.obdAddress).trim();

@@ -12,7 +12,7 @@
     <string name="move_to_dock">Put in dock</string>
     <string name="remove_from_dock">Remove from dock</string>
     <string name="nothing_playing">Nothing playing</string>
-    <string name="tap_to_play">Tap play to start your music</string>
+    <string name="tap_to_play">Tap play for your music files</string>
     <string name="music_needs_access">Music controls are off</string>
     <string name="music_access_hint">Tap here and allow Glass Car</string>
     <string name="coolant">COOLANT</string>
@@ -51,15 +51,6 @@
     <string name="source_now_can">Car data: CAN bus + GPS</string>
     <string name="obd_connected">OBD-II adapter connected</string>
     <string name="obd_failed">Can\'t reach the OBD-II adapter. Is the ignition on?</string>
-        <string name="door_fl">Front left door</string>
-    <string name="door_fr">Front right door</string>
-    <string name="door_rl">Rear left door</string>
-    <string name="door_rr">Rear right door</string>
-    <string name="door_trunk">Boot</string>
-    <string name="door_hood">Bonnet</string>
-    <string name="door_open">%1$s open</string>
-    <string name="doors_closed">All doors closed</string>
-    <string name="doors_no_data">Door status: no data</string>
     <string name="turbo_boost">TURBO BOOST</string>
     <string name="clock_height">Height: %1$d%%</string>
     <string name="clock_glow">Glow behind the clock</string>
@@ -67,4 +58,6 @@
     <string name="can_finder">Find my CAN app</string>
     <string name="can_finder_hint">Photograph this list (scroll for all of it) and send it, so the CAN readings can be set up for this unit. It only reads; nothing is changed.</string>
     <string name="can_finder_looking">Looking…</string>
+    <string name="music_channel">Music</string>
+    <string name="no_local_music">No music files on this unit: opening your music app</string>
 </resources>

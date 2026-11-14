@@ -23,7 +23,7 @@ import android.util.Log;
  * else (turbo boost, torque, coolant, fuel range, odometer for the trip) comes from the CAN bus only. Head units have no standard CAN API: the CAN box behind the radio talks
  * to the maker's own app, and each maker shares the data differently, if at all. So the broadcast to listen
  * to for each value is set in config.json ({@code can_speed}, {@code can_boost}, {@code can_torque},
- * {@code can_coolant}, {@code can_range}, {@code can_odometer}: action, extra, scale), filled in once {@code car/scan.py} has
+ * {@code can_coolant}, {@code can_range}: action, extra, scale), filled in once {@code car/scan.py} has
  * shown what this unit's CAN app sends.
  */
 final class CarData {
@@ -40,8 +40,6 @@ final class CarData {
         float speed = Float.NaN, torque = Float.NaN, coolant = Float.NaN, range = Float.NaN;
         /** Total km on the car's odometer, for the trip counter. */
         float odometer = Float.NaN;
-        /** The CAN door value (bits per door, see door_bits), or -1 when there is none. */
-        int doors = -1;
         int speedSource = SpeedMath.NONE;
         /** "CAN BUS" or "OBD-II": where the car values come from. */
         String carLabel = "CAN BUS";
@@ -82,7 +80,7 @@ final class CarData {
     /** When the car last gave actual torque; without it for a while, torque comes from engine load. */
     private long actualTorqueAt;
     private volatile boolean torqueEstimated;
-    private final Slot speed, boost, torque, coolant, range, odometer, doors;
+    private final Slot speed, boost, torque, coolant, range, odometer;
     private float airKpa = Float.NaN;
     private final Slot[] slots;
     private float gpsSpeed = Float.NaN;
@@ -103,8 +101,7 @@ final class CarData {
         coolant = new Slot(cfg.canCoolant, -40, 150);
         range = new Slot(cfg.canRange, 0, 3_000);
         odometer = new Slot(cfg.canOdometer, 0, 3_000_000);
-        doors = new Slot(cfg.canDoors, 0, 0xFFFF);
-        slots = new Slot[]{speed, boost, torque, coolant, range, odometer, doors};
+        slots = new Slot[]{speed, boost, torque, coolant, range, odometer};
     }
 
     boolean hasGpsPermission() {
@@ -227,8 +224,6 @@ final class CarData {
         r.coolant = coolant.fresh(now, SLOW_STALE_MS);
         r.range = range.fresh(now, SLOW_STALE_MS);
         r.odometer = odometer.fresh(now, SLOW_STALE_MS);
-        // Doors: many boxes send them only when one changes, so the last value stays good. Not over OBD-II.
-        r.doors = usesObd() || doors.at == 0 ? -1 : Math.round(doors.value);
         listener.onData(r);
     }
 

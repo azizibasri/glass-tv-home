@@ -106,8 +106,6 @@ public final class HomeActivity extends Activity {
     private boolean resumed;
     private CarData carData;
     private BigSpeedView bigSpeed;
-    private TextView doorStatus;
-    private final String[] doorNames = new String[Doors.COUNT];
     private InfoTile coolantTile, rangeTile;
     private static final int REQUEST_WALLPAPER = 11;
     private final TripMeter trip = new TripMeter();
@@ -250,6 +248,11 @@ public final class HomeActivity extends Activity {
     @Override
     public void onRequestPermissionsResult(int request, String[] perms, int[] results) {
         super.onRequestPermissionsResult(request, perms, results);
+        if (request == 6) {
+            // Music files allowed: play them now (or say there are none).
+            if (results.length > 0 && results[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) openMusicApp();
+            return;
+        }
         if (resumed && cfg.dashboard) {
             carData.stop();
             carData.start();
@@ -445,7 +448,6 @@ public final class HomeActivity extends Activity {
         int dash = cfg.dashboard ? 1 : 0;
         int pages = g.pages(list.size()) + dash;
         bigSpeed = null;
-        doorStatus = null;
         coolantTile = null;
         rangeTile = null;
         torqueBar = null;
@@ -514,7 +516,7 @@ public final class HomeActivity extends Activity {
         left.addView(torqueBar, tlp);
         d.addView(left, new LinearLayout.LayoutParams(0, -1, 1f));
 
-        // Right: the big digital speedometer with turbo boost, door status, trip, coolant and fuel range.
+        // Right: the big digital speedometer with turbo boost, trip, coolant and fuel range.
         LinearLayout right = new LinearLayout(this);
         right.setOrientation(LinearLayout.VERTICAL);
         right.setPadding(dp(12), dp(12), dp(12), dp(12));
@@ -524,13 +526,6 @@ public final class HomeActivity extends Activity {
         LinearLayout.LayoutParams speedLp = new LinearLayout.LayoutParams(-1, 0, 1f);
         speedLp.leftMargin = speedLp.rightMargin = dp(6);
         right.addView(bigSpeed, speedLp);
-        doorStatus = text(13, true);
-        doorStatus.setPadding(dp(14), dp(5), dp(14), dp(5));
-        LinearLayout.LayoutParams doorLp = new LinearLayout.LayoutParams(-2, -2);
-        doorLp.gravity = Gravity.CENTER_HORIZONTAL;
-        doorLp.topMargin = dp(8);
-        right.addView(doorStatus, doorLp);
-        showDoors(null, false);
         LinearLayout.LayoutParams tripLp = new LinearLayout.LayoutParams(-1, dp(52));
         tripLp.topMargin = dp(8);
         right.addView(tripRow(), tripLp);
@@ -762,29 +757,6 @@ public final class HomeActivity extends Activity {
             iconCache.clear();
         }
         loadApps();
-    }
-
-    /** The door status line: what is open (orange), "All doors closed" (green) or no data (grey). */
-    private void showDoors(boolean[] open, boolean known) {
-        if (doorStatus == null) return;
-        if (doorNames[1] == null) {
-            int[] ids = {0, R.string.door_fl, R.string.door_fr, R.string.door_rl, R.string.door_rr, R.string.door_trunk,
-                    R.string.door_hood};
-            doorNames[0] = "";
-            for (int p = 1; p < Doors.COUNT; p++) doorNames[p] = getString(ids[p]);
-        }
-        String s = Doors.status(getString(R.string.door_open), getString(R.string.doors_closed),
-                getString(R.string.doors_no_data), doorNames, open, known);
-        boolean any = false;
-        if (known && open != null) for (int p = 1; p < Doors.COUNT; p++) any |= open[p];
-        if (s.contentEquals(doorStatus.getText()) && doorStatus.getTag() != null && (boolean) doorStatus.getTag() == any) return;
-        doorStatus.setText(s);
-        doorStatus.setTag(any);
-        doorStatus.setTextColor(any ? 0xFF1C1C1E : 0xFFFFFFFF);
-        android.graphics.drawable.GradientDrawable g = new android.graphics.drawable.GradientDrawable();
-        g.setCornerRadius(dp(14));
-        g.setColor(any ? 0xE6FF9F0A : known ? 0x5930D158 : 0x33FFFFFF);
-        doorStatus.setBackground(g);
     }
 
     private static String obdStateLabel(int state) {
@@ -1189,7 +1161,6 @@ public final class HomeActivity extends Activity {
         bigSpeed.set(r.speed, src == SpeedMath.CAN ? r.carLabel : src == SpeedMath.GPS ? "GPS"
                 : carData.usesObd() ? missing : carData.hasGpsPermission() ? "NO SIGNAL" : "NO GPS PERMISSION", r.boost);
         if (torqueBar != null) torqueBar.set(r.torque, r.torqueEstimated);
-        showDoors(r.doors < 0 ? null : Doors.open(r.doors, cfg.doorBits), r.doors >= 0);
         if (Float.isNaN(r.coolant)) {
             coolantTile.set("-- °C", Float.NaN, 0x80FFFFFF, getString(R.string.no_data));
         } else {
@@ -1210,7 +1181,28 @@ public final class HomeActivity extends Activity {
     }
 
     /** The music widget's play button when nothing is playing: the dock's music app, else the first one. */
+    /**
+     * The music widget's play button when nothing is playing: the music files on the unit and USB sticks,
+     * with Glass Car's own player; with none, the dock's music app.
+     */
     private void openMusicApp() {
+        String perm = Build.VERSION.SDK_INT >= 33 ? "android.permission.READ_MEDIA_AUDIO"
+                : android.Manifest.permission.READ_EXTERNAL_STORAGE;
+        if (checkSelfPermission(perm) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{perm}, 6);
+            return;
+        }
+        worker.execute(() -> {
+            boolean any = !LocalMusic.songs(this).isEmpty();
+            main.post(() -> {
+                if (any) LocalPlayerService.play(this);
+                else openOtherMusicApp();
+            });
+        });
+    }
+
+    private void openOtherMusicApp() {
+        showToast(getString(R.string.no_local_music));
         for (String pkg : DOCK_GUESSES[1]) {
             App a = first(pkg);
             if (a != null) {
