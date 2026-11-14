@@ -114,10 +114,12 @@ final class CarPictureView extends View {
         rect.set(0, 0, w, area);
         float r = 14 * d;
         if (picture != null) {
-            // Fill the box, cropping the picture's edges if its shape differs.
-            float scale = Math.max(w / (float) picture.getWidth(), area / picture.getHeight());
+            // The whole picture, as large as fits, centred, with rounded corners.
+            float scale = Math.min(w / (float) picture.getWidth(), area / picture.getHeight());
+            float pw = picture.getWidth() * scale, ph = picture.getHeight() * scale;
+            rect.set(w / 2f - pw / 2, area / 2f - ph / 2, w / 2f + pw / 2, area / 2f + ph / 2);
             matrix.setScale(scale, scale);
-            matrix.postTranslate(w / 2f - picture.getWidth() * scale / 2, area / 2f - picture.getHeight() * scale / 2);
+            matrix.postTranslate(rect.left, rect.top);
             picPaint.getShader().setLocalMatrix(matrix);
             c.drawRoundRect(rect, r, r, picPaint);
         } else {
