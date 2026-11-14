@@ -1,6 +1,9 @@
 package com.gathin.carhome;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.BitmapShader;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Path;
@@ -12,14 +15,25 @@ import android.os.SystemClock;
 import android.view.MotionEvent;
 import android.view.View;
 
+import java.io.File;
 import java.util.List;
 
 /**
  * The 3D car under the dials. Drag to turn it (sideways) or tilt it (up and down); left alone it turns
  * slowly. Open doors, boot and bonnet swing open on the model and turn orange, the car turns to show
  * them, and a label says which are open. Draws only while Home is on screen.
+ *
+ * With the owner's four-view photo sheet ({@link #PHOTO_FILE} in the Glass Car folder, picked in the menu),
+ * each face shows the photo of the view it faces, so the car looks like the real one; without it, plain
+ * colours. Photos are drawn with Canvas.drawVertices, which this Android draws in software, so the view
+ * switches to a software layer only while photos are on.
  */
 final class CarModelView extends View {
+    static final String PHOTO_FILE = "car_photos.jpg";
+    private Bitmap photo;
+    private final Paint tex = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+    private final Paint tint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private float[] verts = new float[64], texs = new float[64];
     private static final int ORANGE = 0xFFFF9F0A;
     private final CarMesh mesh = CarMesh.jetta();
     private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -55,6 +69,53 @@ final class CarModelView extends View {
         label.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         setContentDescription(ctx.getString(R.string.car_model));
         status = ctx.getString(R.string.doors_no_data);
+        loadPhotos();
+    }
+
+    static File photoFile(Context ctx) {
+        File dir = CarConfig.dir(ctx);
+        File f = dir == null ? null : new File(dir, PHOTO_FILE);
+        return f != null && f.isFile() ? f : null;
+    }
+
+    /** Loads the photo sheet (if there is one) off the main thread, at most 2048 pixels wide. */
+    void loadPhotos() {
+        File f = photoFile(getContext());
+        if (f == null) {
+            setPhoto(null);
+            return;
+        }
+        new Thread(() -> {
+            Bitmap b = null;
+            try {
+                BitmapFactory.Options o = new BitmapFactory.Options();
+                o.inJustDecodeBounds = true;
+                BitmapFactory.decodeFile(f.getPath(), o);
+                o.inSampleSize = 1;
+                while (o.outWidth / o.inSampleSize > 2048) o.inSampleSize *= 2;
+                o.inJustDecodeBounds = false;
+                b = BitmapFactory.decodeFile(f.getPath(), o);
+            } catch (OutOfMemoryError | RuntimeException ignored) {
+                // Too big or not a picture: plain colours.
+            }
+            Bitmap done = b;
+            post(() -> setPhoto(done));
+        }, "car-photos").start();
+    }
+
+    private void setPhoto(Bitmap b) {
+        if (photo != null && photo != b) photo.recycle();
+        photo = b;
+        if (b != null) {
+            mesh.applyPhotos(PhotoMap.ownerSheet());
+            tex.setShader(new BitmapShader(b, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP));
+            setLayerType(LAYER_TYPE_SOFTWARE, null);
+        } else {
+            mesh.clearPhotos();
+            tex.setShader(null);
+            setLayerType(LAYER_TYPE_NONE, null);
+        }
+        invalidate();
     }
 
     /** Runs the animation while Home is resumed. */
@@ -160,9 +221,20 @@ final class CarModelView extends View {
             path.moveTo(f.xy[0], f.xy[1]);
             for (int i = 2; i < f.xy.length; i += 2) path.lineTo(f.xy[i], f.xy[i + 1]);
             path.close();
+            boolean opening = f.part != CarMesh.BODY && openNow[f.part] > 0.02f;
+            if (photo != null && f.uv != null) {
+                drawPhoto(c, f);
+                // Faces turned from the light get a little darker; open panels an orange tint.
+                float dark = Math.max(0f, Math.min(0.35f, (0.92f - f.light) * 0.8f));
+                if (opening || dark > 0.01f) {
+                    tint.setColor(opening ? ORANGE : 0xFF000000);
+                    tint.setAlpha(Math.round(255 * (opening ? 0.45f * openNow[f.part] : dark)));
+                    c.drawPath(path, tint);
+                }
+                continue;
+            }
             // Open panels take on an orange tint as they swing out.
-            int color = f.part != CarMesh.BODY && openNow[f.part] > 0.02f
-                    ? CarMesh.toward(f.color, ORANGE, 0.45f * openNow[f.part]) : f.color;
+            int color = opening ? CarMesh.toward(f.color, ORANGE, 0.45f * openNow[f.part]) : f.color;
             fill.setColor(color);
             c.drawPath(path, fill);
             // A hairline in the same colour hides the seams between faces.
@@ -181,6 +253,30 @@ final class CarModelView extends View {
         c.drawText(status, w / 2f, rect.centerY() - (label.ascent() + label.descent()) / 2, label);
 
         if (running) postInvalidateDelayed(33);
+    }
+
+    /** The face as triangles from its first point, each textured from the photo sheet. */
+    private void drawPhoto(Canvas c, CarMesh.Flat f) {
+        int n = f.xy.length / 2, tris = n - 2;
+        if (tris < 1) return;
+        int len = tris * 6;
+        if (verts.length < len) {
+            verts = new float[len];
+            texs = new float[len];
+        }
+        float pw = photo.getWidth(), ph = photo.getHeight();
+        int k = 0;
+        for (int i = 1; i + 1 < n; i++) {
+            int[] idx = {0, i, i + 1};
+            for (int j : idx) {
+                verts[k] = f.xy[2 * j];
+                verts[k + 1] = f.xy[2 * j + 1];
+                texs[k] = f.uv[2 * j] * pw;
+                texs[k + 1] = f.uv[2 * j + 1] * ph;
+                k += 2;
+            }
+        }
+        c.drawVertices(Canvas.VertexMode.TRIANGLES, len, verts, 0, texs, 0, null, 0, null, 0, 0, tex);
     }
 
     private void step(long now, float dt) {

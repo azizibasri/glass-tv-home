@@ -109,7 +109,7 @@ public final class HomeActivity extends Activity {
     private Gauge gauge, rpmGauge;
     private InfoTile coolantTile, rangeTile;
     private CarModelView carModel;
-    private static final int REQUEST_WALLPAPER = 11;
+    private static final int REQUEST_WALLPAPER = 11, REQUEST_CAR_PHOTOS = 12;
     private final TripMeter trip = new TripMeter();
     private TextView tripValue, tripNote, tripReset;
     private boolean tripResetArmed;
@@ -290,7 +290,17 @@ public final class HomeActivity extends Activity {
         super.onActivityResult(request, result, data);
         if (request == Cleaner.REQUEST_CLEAR_CACHE && result == RESULT_OK) showToast(getString(R.string.clean) + " ✓");
         if (request == REQUEST_WALLPAPER && result == RESULT_OK && data != null && data.getData() != null) {
-            setWallpaperFrom(data.getData());
+            copyPicture(data.getData(), "wallpaper.jpg", () -> {
+                cfg.wallpaper = true;
+                refreshWallpaper();
+                showToast(getString(R.string.wallpaper_set));
+            });
+        }
+        if (request == REQUEST_CAR_PHOTOS && result == RESULT_OK && data != null && data.getData() != null) {
+            copyPicture(data.getData(), CarModelView.PHOTO_FILE, () -> {
+                if (carModel != null) carModel.loadPhotos();
+                showToast(getString(R.string.car_photos_set));
+            });
         }
     }
 
@@ -643,24 +653,32 @@ public final class HomeActivity extends Activity {
         m.getMenu().add(0, 3, 2, "glass".equals(iconStyle) ? R.string.icons_color : R.string.icons_glass);
         m.getMenu().add(0, 4, 3, R.string.clock_style);
         m.getMenu().add(0, 5, 4, R.string.data_source);
+        m.getMenu().add(0, 6, 5, R.string.car_photos_pick);
+        if (CarModelView.photoFile(this) != null) m.getMenu().add(0, 7, 6, R.string.car_photos_reset);
         m.setOnMenuItemClickListener(item -> {
             int id = item.getItemId();
-            if (id == 1) pickWallpaper();
+            if (id == 1) pickPicture(REQUEST_WALLPAPER);
             else if (id == 2) resetWallpaper();
             else if (id == 3) setIconStyle("glass".equals(iconStyle) ? "color" : "glass");
             else if (id == 4) clockDialog();
-            else dataSourceDialog();
+            else if (id == 5) dataSourceDialog();
+            else if (id == 6) pickPicture(REQUEST_CAR_PHOTOS);
+            else {
+                java.io.File f = CarModelView.photoFile(this);
+                if (f != null) f.delete();
+                if (carModel != null) carModel.loadPhotos();
+            }
             return true;
         });
         m.show();
     }
 
-    private void pickWallpaper() {
+    private void pickPicture(int request) {
         Intent pick = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         Intent any = new Intent(Intent.ACTION_GET_CONTENT).setType("image/*").addCategory(Intent.CATEGORY_OPENABLE);
         for (Intent i : new Intent[]{pick, any}) {
             try {
-                startActivityForResult(i, REQUEST_WALLPAPER);
+                startActivityForResult(i, request);
                 return;
             } catch (RuntimeException ignored) {
                 // No app for this one: try the next.
@@ -669,15 +687,15 @@ public final class HomeActivity extends Activity {
         showToast(getString(R.string.no_gallery));
     }
 
-    /** Copies the chosen picture next to config.json as wallpaper.jpg, then redraws everything with it. */
-    private void setWallpaperFrom(Uri uri) {
+    /** Copies the chosen picture next to config.json as {@code name}, checks it is a picture, then runs done. */
+    private void copyPicture(Uri uri, String name, Runnable done) {
         java.io.File dir = CarConfig.dir(this);
         if (dir == null) {
             showToast(getString(R.string.wallpaper_failed));
             return;
         }
         worker.execute(() -> {
-            java.io.File tmp = new java.io.File(dir, "wallpaper.tmp"), dst = new java.io.File(dir, "wallpaper.jpg");
+            java.io.File tmp = new java.io.File(dir, name + ".tmp"), dst = new java.io.File(dir, name);
             boolean ok = false;
             try (java.io.InputStream in = getContentResolver().openInputStream(uri);
                  java.io.OutputStream out = new java.io.FileOutputStream(tmp)) {
@@ -700,15 +718,13 @@ public final class HomeActivity extends Activity {
             if (ok) android.graphics.BitmapFactory.decodeFile(tmp.getPath(), o);
             ok = ok && o.outWidth > 0 && tmp.renameTo(dst);
             if (!ok) tmp.delete();
-            final boolean done = ok;
+            final boolean copied = ok;
             main.post(() -> {
-                if (!done) {
+                if (!copied) {
                     showToast(getString(R.string.wallpaper_failed));
                     return;
                 }
-                cfg.wallpaper = true;
-                refreshWallpaper();
-                showToast(getString(R.string.wallpaper_set));
+                done.run();
             });
         });
     }

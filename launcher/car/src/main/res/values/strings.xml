@@ -62,4 +62,7 @@
     <string name="doors_open">%1$d doors open</string>
     <string name="doors_closed">All doors closed</string>
     <string name="doors_no_data">Door status: no data</string>
+    <string name="car_photos_pick">3D car photos from gallery</string>
+    <string name="car_photos_reset">Plain 3D car</string>
+    <string name="car_photos_set">Your car photos are on the 3D car</string>
 </resources>

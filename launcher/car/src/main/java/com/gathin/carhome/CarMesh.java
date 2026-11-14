@@ -31,6 +31,8 @@ final class CarMesh {
         final boolean twoSided;
         /** Pulled toward the viewer when sorting, so decals (lamps, grille) draw over the panel under them. */
         final float bias;
+        /** Where each point is on the photo sheet (u, v fractions), or null for a plain colour. */
+        float[] uv;
 
         Face(float[] p, int color, int part, boolean twoSided, float bias) {
             this.p = twoSided ? p : outward(p);
@@ -46,6 +48,10 @@ final class CarMesh {
         final float[] xy;
         final int color, part;
         final float depth;
+        /** Photo coordinates for each point (fractions), or null: fill with {@link #color}. */
+        float[] uv;
+        /** Light on this face, 0 to about 1, for darkening a photo a little on faces turned away. */
+        float light = 1f;
 
         Flat(float[] xy, int color, int part, float depth) {
             this.xy = xy;
@@ -480,7 +486,10 @@ final class CarMesh {
                 xy[2 * i] = w / 2 + cam[3 * i] * s * scale;
                 xy[2 * i + 1] = h * 0.50f - cam[3 * i + 1] * s * scale;
             }
-            out.add(new Flat(xy, color, f.part, cz + f.bias));
+            Flat flat = new Flat(xy, color, f.part, cz + f.bias);
+            if (!back) flat.uv = f.uv;     // the inside of an open door stays a plain colour
+            flat.light = lit;
+            out.add(flat);
         }
         Collections.sort(out, (p, q) -> Float.compare(p.depth, q.depth));
         return out;
@@ -514,6 +523,41 @@ final class CarMesh {
         int g = Math.min(255, Math.round(((argb >> 8) & 0xFF) * k));
         int b = Math.min(255, Math.round((argb & 0xFF) * k));
         return (argb & 0xFF000000) | r << 16 | g << 8 | b;
+    }
+
+    /**
+     * Lays the owner's photos on the model: each face takes the photo of the view it faces most (sides,
+     * front, rear, top), at its closed position, so a door keeps its own picture as it swings open. The
+     * underside stays plain.
+     */
+    void applyPhotos(PhotoMap map) {
+        for (Face f : faces) {
+            int n = f.p.length / 3;
+            float nx = 0, ny = 0, nz = 0;
+            for (int i = 0; i < n; i++) {
+                int j = (i + 1) % n;
+                nx += (f.p[3 * i + 1] - f.p[3 * j + 1]) * (f.p[3 * i + 2] + f.p[3 * j + 2]);
+                ny += (f.p[3 * i + 2] - f.p[3 * j + 2]) * (f.p[3 * i] + f.p[3 * j]);
+                nz += (f.p[3 * i] - f.p[3 * j]) * (f.p[3 * i + 1] + f.p[3 * j + 1]);
+            }
+            float len = (float) Math.sqrt(nx * nx + ny * ny + nz * nz);
+            if (len < 1e-6f) continue;
+            int view = PhotoMap.viewFor(nx / len, ny / len, nz / len);
+            // Thin black add-ons (front lip, tyre treads, mirror boxes) keep their own colour: the photos
+            // already show the real ones in place.
+            boolean addOn = (f.twoSided && f.part == BODY) || (f.color == BLACK && f.part != BODY);
+            if (view == PhotoMap.NONE || addOn) {
+                f.uv = null;
+                continue;
+            }
+            float[] uv = new float[2 * n];
+            for (int i = 0; i < n; i++) map.uv(view, f.p[3 * i], f.p[3 * i + 1], f.p[3 * i + 2], uv, 2 * i);
+            f.uv = uv;
+        }
+    }
+
+    void clearPhotos() {
+        for (Face f : faces) f.uv = null;
     }
 
     /** Door bits as most CAN boxes send them, unless config.json says otherwise. */
