@@ -69,6 +69,8 @@ final class CarConfig {
     String clockFont = "thin";
     /** Dashboard clock size, 60 to 140 % of the size that fits. */
     int clockSize = 100;
+    /** The words under the dashboard clock: the owner's car. Empty hides the line. */
+    String carName = "VW Jetta 1.4 TSI";
     /** Dashboard clock height, 100 (normal) to 250 % taller, same width. */
     int clockHeight = 100;
     /** The soft glow behind the rainbow clock. */
@@ -130,6 +132,7 @@ final class CarConfig {
             if (ClockFonts.isKnown(font)) c.clockFont = font;
             int cs = o.optInt("clock_size", c.clockSize);
             if (cs >= 60 && cs <= 140) c.clockSize = cs;
+            if (o.has("car_name")) c.carName = o.optString("car_name", c.carName).trim();
             int ch = o.optInt("clock_height", c.clockHeight);
             if (ch >= 100 && ch <= 250) c.clockHeight = ch;
             if (o.opt("clock_glow") instanceof Boolean) c.clockGlow = o.getBoolean("clock_glow");

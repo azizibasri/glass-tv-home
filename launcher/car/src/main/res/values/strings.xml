@@ -60,4 +60,6 @@
     <string name="can_finder_looking">Looking…</string>
     <string name="music_channel">Music</string>
     <string name="no_local_music">No music files on this unit: opening your music app</string>
+    <string name="car_name_label">Name under the clock</string>
+    <string name="car_name_hint">e.g. VW Jetta 1.4 TSI (empty: no name)</string>
 </resources>

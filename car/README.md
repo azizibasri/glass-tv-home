@@ -26,6 +26,8 @@ right, a big digital speedometer with turbo boost under it, the trip, and tiles 
 temperature and fuel range.
 Swipe left for the apps.
 
+- **Car name**: under the clock, in white, inside its box: "VW Jetta 1.4 TSI" by default. Change it (or
+  empty it to hide the line) in ⚙ → Clock style → *Name under the clock*, or with `"car_name"`.
 - **Clock**: in a dark glass box like the music widget; thin large digits filled with a rainbow that flows across them, with a soft glow that shifts
   colour and breathes. It only animates while Home is on screen, and stands still when Android's animations
   are turned off. `"clock_rainbow": false` makes it plain white.
@@ -172,7 +174,7 @@ option as a big button (it scrolls on short screens):
 - **Car data source**: **CAN bus + GPS** (the CAN box, GPS for speed when it has none) or an **OBD-II
   Bluetooth adapter** (see below).
 - **Clear glass icons / Colour icons**: switches every app icon between its own colours and a clear
-  frosted-glass tile with the app's symbol in white.
+  frosted-glass tile with the app's own icon, in its colours, on it.
 
 ## Settings (`config.json`)
 
@@ -194,7 +196,7 @@ All keys optional; a bad file is ignored as a whole.
 | `data_source` | `"can"` or `"obd"` | Car data from the CAN box (and GPS) or a Bluetooth OBD-II adapter |
 | `obd_address` | Bluetooth address | The paired OBD-II adapter, e.g. `"00:1D:A5:68:98:8B"`; easier to pick in the ⚙ menu |
 | `fuel_tank_l`, `fuel_l_per_100km` | numbers | For fuel range over OBD-II. Default 55 and 7.5 |
-| `icon_style` | `"color"` or `"glass"` | App icons as the apps draw them, or clear frosted glass with a white symbol. The ⚙ menu wins over this |
+| `icon_style` | `"color"` or `"glass"` | App icons as the apps draw them, or on a clear frosted-glass tile. The ⚙ menu wins over this |
 | `accent` | `#RRGGBB` | Colour of the RAM ring |
 | `dashboard` | bool | The first page with clock, music, speedometer, rev counter, torque, coolant and range. Default `true` |
 | `clock_rainbow` | bool | Flowing, glowing rainbow clock. Default `true`; `false` for plain white |

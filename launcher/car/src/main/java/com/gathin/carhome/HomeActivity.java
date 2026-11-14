@@ -118,6 +118,8 @@ public final class HomeActivity extends Activity {
     private String clockFont, dataSource, obdAddress;
     private int clockSize, clockHeight;
     private boolean clockGlow, clockRainbow;
+    private String carName;
+    private TextView carNameView;
     private float clockBasePx;
     private int lastObdState = ObdLink.OFF;
     private TorqueBar torqueBar;
@@ -206,6 +208,7 @@ public final class HomeActivity extends Activity {
         clockHeight = prefs.getInt("clock_height", cfg.clockHeight);
         clockGlow = prefs.getBoolean("clock_glow", cfg.clockGlow);
         clockRainbow = prefs.getBoolean("clock_rainbow", cfg.clockRainbow);
+        carName = prefs.getString("car_name", cfg.carName);
         dataSource = prefs.getString("data_source", cfg.dataSource);
         obdAddress = prefs.getString("obd_address", cfg.obdAddress);
         carData.setSource(dataSource, obdAddress);
@@ -491,9 +494,20 @@ public final class HomeActivity extends Activity {
         clockBasePx = Math.min(areaH * 0.24f, areaW * 0.12f);
         applyClockStyle();
         // The clock sits in the same dark glass box as the music widget below it.
-        FrameLayout clockBox = new FrameLayout(this);
+        // Clock on top, the car's name in white under it, in one dark glass box.
+        LinearLayout clockBox = new LinearLayout(this);
+        clockBox.setOrientation(LinearLayout.VERTICAL);
         clockBox.setBackground(NowPlaying.darkPanel(this));
-        clockBox.addView(bigClock, new FrameLayout.LayoutParams(-1, -1));
+        clockBox.addView(bigClock, new LinearLayout.LayoutParams(-1, 0, 1f));
+        carNameView = text(compact ? 14 : 17, true);
+        carNameView.setTextColor(0xFFFFFFFF);
+        carNameView.setLetterSpacing(0.06f);
+        carNameView.setAutoSizeTextTypeUniformWithConfiguration(10, compact ? 14 : 17, 1, TypedValue.COMPLEX_UNIT_SP);
+        LinearLayout.LayoutParams nlp2 = new LinearLayout.LayoutParams(-1, dp(compact ? 24 : 30));
+        nlp2.bottomMargin = dp(compact ? 6 : 10);
+        nlp2.leftMargin = nlp2.rightMargin = dp(10);
+        clockBox.addView(carNameView, nlp2);
+        showCarName();
         LinearLayout.LayoutParams cblp = new LinearLayout.LayoutParams(-1, 0, 1f);
         cblp.bottomMargin = dp(10);
         left.addView(clockBox, cblp);
@@ -778,6 +792,12 @@ public final class HomeActivity extends Activity {
 
     // ---- Clock style dialog ----
 
+    private void showCarName() {
+        if (carNameView == null) return;
+        carNameView.setText(carName);
+        carNameView.setVisibility(carName == null || carName.isEmpty() ? View.GONE : View.VISIBLE);
+    }
+
     private void applyClockStyle() {
         if (bigSpeed != null) bigSpeed.setTypeface(ClockFonts.typeface(this, clockFont));
         if (bigClock == null) return;
@@ -989,6 +1009,45 @@ public final class HomeActivity extends Activity {
         LinearLayout.LayoutParams glp = new LinearLayout.LayoutParams(-1, -2);
         glp.bottomMargin = dp(8);
         body.addView(glowSwitch, glp);
+        // The words under the clock.
+        TextView nameLabel = text(14, false);
+        nameLabel.setGravity(Gravity.START);
+        nameLabel.setText(R.string.car_name_label);
+        body.addView(nameLabel, new LinearLayout.LayoutParams(-1, -2));
+        android.widget.EditText nameEdit = new android.widget.EditText(this);
+        nameEdit.setSingleLine(true);
+        nameEdit.setText(carName);
+        nameEdit.setTextColor(0xFFFFFFFF);
+        nameEdit.setHintTextColor(0x80FFFFFF);
+        nameEdit.setHint(R.string.car_name_hint);
+        nameEdit.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        nameEdit.setImeOptions(android.view.inputmethod.EditorInfo.IME_ACTION_DONE);
+        android.graphics.drawable.GradientDrawable field = new android.graphics.drawable.GradientDrawable();
+        field.setColor(0x1FFFFFFF);
+        field.setCornerRadius(dp(12));
+        field.setStroke(Math.max(1, dp(1)), 0x40FFFFFF);
+        nameEdit.setBackground(field);
+        nameEdit.setPadding(dp(12), dp(8), dp(12), dp(8));
+        nameEdit.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence t, int a, int b, int c) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence t, int a, int b, int c) {
+            }
+
+            @Override
+            public void afterTextChanged(android.text.Editable e) {
+                carName = e.toString().trim();
+                prefs.edit().putString("car_name", carName).apply();
+                showCarName();
+            }
+        });
+        LinearLayout.LayoutParams elp = new LinearLayout.LayoutParams(-1, -2);
+        elp.topMargin = dp(6);
+        elp.bottomMargin = dp(10);
+        body.addView(nameEdit, elp);
         TextView hint = text(11, false);
         hint.setGravity(Gravity.START);
         hint.setSingleLine(false);
@@ -1558,36 +1617,14 @@ public final class HomeActivity extends Activity {
         shine.setShader(new LinearGradient(0, 0, 0, size * 0.5f, 0x33FFFFFF, 0x00FFFFFF, Shader.TileMode.CLAMP));
         c.drawRoundRect(new RectF(size * 0.04f, size * 0.03f, size * 0.96f, size * 0.5f), r * 0.85f, r * 0.85f, shine);
 
-        Bitmap glyph = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
-        Canvas g = new Canvas(glyph);
-        boolean adaptive = Build.VERSION.SDK_INT >= 26 && d instanceof AdaptiveIconDrawable
-                && ((AdaptiveIconDrawable) d).getForeground() != null;
-        if (adaptive) {
-            int pad = size / 4;
-            Drawable fg = ((AdaptiveIconDrawable) d).getForeground();
-            fg.setBounds(-pad, -pad, size + pad, size + pad);
-            fg.draw(g);
-        } else if (d != null) {
-            int inset = Math.round(size * 0.18f);
-            d.setBounds(inset, inset, size - inset, size - inset);
-            d.draw(g);
-        }
-        Paint glyphPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
-        if (adaptive) {
-            // The symbol's shape in white.
-            glyphPaint.setColorFilter(new android.graphics.PorterDuffColorFilter(0xF2FFFFFF,
-                    android.graphics.PorterDuff.Mode.SRC_IN));
-        } else {
-            android.graphics.ColorMatrix cm = new android.graphics.ColorMatrix();
-            cm.setSaturation(0f);
-            android.graphics.ColorMatrix lift = new android.graphics.ColorMatrix(new float[]{
-                    0.6f, 0, 0, 0, 100, 0, 0.6f, 0, 0, 100, 0, 0, 0.6f, 0, 100, 0, 0, 0, 0.9f, 0});
-            cm.postConcat(lift);
-            glyphPaint.setColorFilter(new android.graphics.ColorMatrixColorFilter(cm));
-        }
-        glyphPaint.setShadowLayer(size * 0.03f, 0, size * 0.01f, 0x40000000);
-        c.drawBitmap(glyph, 0, 0, glyphPaint);
-        glyph.recycle();
+        // The app's own icon, in its colours, a little smaller on the glass: every app stays recognisable
+        // (a white silhouette turns full-bleed icons like Chrome, YouTube or Play Store into blank tiles).
+        int inner = Math.round(size * 0.66f), off = (size - inner) / 2;
+        Bitmap own = renderIcon(d, inner, false);
+        Paint ownPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+        ownPaint.setShadowLayer(size * 0.04f, 0, size * 0.015f, 0x40000000);
+        c.drawBitmap(own, off, off, ownPaint);
+        own.recycle();
 
         Paint rim = new Paint(Paint.ANTI_ALIAS_FLAG);
         rim.setStyle(Paint.Style.STROKE);
