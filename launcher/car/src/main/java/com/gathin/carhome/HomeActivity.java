@@ -213,7 +213,7 @@ public final class HomeActivity extends Activity {
         clockFont = prefs.getString("clock_font", cfg.clockFont);
         clockSize = prefs.getInt("clock_size", cfg.clockSize);
         clockHeight = prefs.getInt("clock_height", cfg.clockHeight);
-        clockGlow = prefs.getBoolean("clock_glow", cfg.clockGlow);
+        clockGlow = prefs.getBoolean("clock_glow_v2", cfg.clockGlow);
         clockRainbow = prefs.getBoolean("clock_rainbow", cfg.clockRainbow);
         carName = prefs.getString("car_name", cfg.carName);
         dataSource = prefs.getString("data_source", cfg.dataSource);
@@ -512,11 +512,9 @@ public final class HomeActivity extends Activity {
         bigClock = new RainbowClock(this, cfg.clockRainbow);
         clockBasePx = Math.min(areaH * 0.24f, areaW * 0.12f);
         applyClockStyle();
-        // The clock sits in the same dark glass box as the music widget below it.
-        // Clock on top, the car's name in white under it, in one dark glass box.
+        // Clock on top, the car's name in white under it, straight on the glass panel (no dark box).
         LinearLayout clockBox = new LinearLayout(this);
         clockBox.setOrientation(LinearLayout.VERTICAL);
-        clockBox.setBackground(NowPlaying.darkPanel(this));
         clockBox.addView(bigClock, new LinearLayout.LayoutParams(-1, 0, 1f));
         carNameView = text(compact ? 14 : 17, true);
         carNameView.setTextColor(0xFFFFFFFF);
@@ -1031,7 +1029,7 @@ public final class HomeActivity extends Activity {
         glassSwitch(glowSwitch);
         glowSwitch.setOnCheckedChangeListener((v, on) -> {
             clockGlow = on;
-            prefs.edit().putBoolean("clock_glow", on).apply();
+            prefs.edit().putBoolean("clock_glow_v2", on).apply();
             applyClockStyle();
         });
         LinearLayout.LayoutParams glp = new LinearLayout.LayoutParams(-1, -2);

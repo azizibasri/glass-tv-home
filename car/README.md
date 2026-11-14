@@ -29,8 +29,8 @@ Swipe left for the apps.
 
 - **Car name**: under the clock, in white, inside its box: "VW Jetta 1.4 TSI" by default. Change it (or
   empty it to hide the line) in ⚙ → Clock style → *Name under the clock*, or with `"car_name"`.
-- **Clock**: in a dark glass box like the music widget; thin large digits filled with a rainbow that flows across them, with a soft glow that shifts
-  colour and breathes. It only animates while Home is on screen, and stands still when Android's animations
+- **Clock**: straight on the glass panel; thin large digits filled with a rainbow that flows across them. A soft
+  glow behind them that shifts colour and breathes is off by default (⚙ → Clock style → Glow). It only animates while Home is on screen, and stands still when Android's animations
   are turned off. `"clock_rainbow": false` makes it plain white.
 - **Music widget**: cover art, song, artist, a progress line, and previous / play-pause / next. With nothing
   playing, play starts Glass Car's own player on the music files on the unit and USB sticks (it asks once to
@@ -200,7 +200,7 @@ All keys optional; a bad file is ignored as a whole.
 | `clock_font` | `thin`, `light`, `regular`, `heavy`, `condensed`, `serif`, `inter`, `custom` | Clock font. The ⚙ menu wins over this |
 | `clock_size` | 60 to 140 | Clock size in %. Default 100 |
 | `clock_height` | 100 to 250 | Clock digits stretched taller, in %. Default 100 |
-| `clock_glow` | bool | The glow behind the clock. Default `true` |
+| `clock_glow` | bool | The glow behind the clock (also a switch in ⚙ → Clock style). Default `false` |
 | `data_source` | `"can"` or `"obd"` | Car data from the CAN box (and GPS) or a Bluetooth OBD-II adapter |
 | `car_data_background` | `true` (default) or `false` | Keep the OBD-II, CAN and GPS connection running in the background (reverse camera, other apps, screen off), shown as a *Car data connected* notification. `false` connects only while Home is in front |
 | `obd_address` | Bluetooth address | The paired OBD-II adapter, e.g. `"00:1D:A5:68:98:8B"`; easier to pick in the ⚙ menu |

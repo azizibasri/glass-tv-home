@@ -76,7 +76,7 @@ final class CarConfig {
     /** Dashboard clock height, 100 (normal) to 250 % taller, same width. */
     int clockHeight = 100;
     /** The soft glow behind the rainbow clock. */
-    boolean clockGlow = true;
+    boolean clockGlow = false;
     /** App icons: "color" (as the apps draw them) or "glass" (clear frosted glass, white symbol). */
     String iconStyle = "color";
     /** Turbo boost: shown in "bar" or "psi"; the bar's top in bar (the 1.4 TSI peaks near 1.2 bar). */

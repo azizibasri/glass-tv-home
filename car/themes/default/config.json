@@ -27,5 +27,5 @@
   "boost_unit": "bar",
   "boost_max_bar": 1.5,
   "clock_height": 100,
-  "clock_glow": true
+  "clock_glow": false
 }
