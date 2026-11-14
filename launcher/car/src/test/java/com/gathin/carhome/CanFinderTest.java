@@ -21,4 +21,14 @@ public class CanFinderTest {
             assertFalse(p, CanFinder.looksLikeCan(p));
         }
     }
+
+    @Test
+    public void spotsCarAppsByName() {
+        assertTrue(CanFinder.labelLooksLikeCan("Car Set"));
+        assertTrue(CanFinder.labelLooksLikeCan("CanBus"));
+        assertTrue(CanFinder.labelLooksLikeCan("Car Info"));
+        assertFalse(CanFinder.labelLooksLikeCan("Calendar"));
+        assertFalse(CanFinder.labelLooksLikeCan("Spotify"));
+        assertFalse(CanFinder.labelLooksLikeCan(null));
+    }
 }

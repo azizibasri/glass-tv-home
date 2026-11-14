@@ -27,6 +27,17 @@ final class CanFinder {
             "hiworld", "raise", "xbs", "simple", "microntek", "hct", "ts10", "obd", "car."};
     private static final String[] FOLDERS = {"CanBus", "can"};
 
+    /** Visible app names that mean the unit's car or CAN app (e.g. "Car Set" on the owner's A30). */
+    static boolean labelLooksLikeCan(CharSequence label) {
+        if (label == null) return false;
+        String l = label.toString().toLowerCase(Locale.ROOT).replace(" ", "");
+        for (String w : new String[]{"carset", "carsetting", "carinfo", "canbus", "canbox", "vehicle", "carstatus",
+                "originalcar", "carservice", "obd"}) {
+            if (l.contains(w)) return true;
+        }
+        return false;
+    }
+
     private CanFinder() {
     }
 
@@ -49,7 +60,17 @@ final class CanFinder {
         PackageManager pm = ctx.getPackageManager();
         List<ApplicationInfo> apps = pm.getInstalledApplications(0);
         List<String> found = new ArrayList<>();
-        for (ApplicationInfo a : apps) if (looksLikeCan(a.packageName)) found.add(a.packageName);
+        for (ApplicationInfo a : apps) {
+            boolean match = looksLikeCan(a.packageName);
+            if (!match) {
+                try {
+                    match = labelLooksLikeCan(a.loadLabel(pm));
+                } catch (RuntimeException ignored) {
+                    // A label that can't be read: the package name decided.
+                }
+            }
+            if (match) found.add(a.packageName);
+        }
         java.util.Collections.sort(found);
         sb.append("CAN-LOOKING APPS (").append(found.size()).append(")\n");
         int flags = PackageManager.GET_RECEIVERS | PackageManager.GET_SERVICES | PackageManager.GET_PROVIDERS;
