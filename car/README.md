@@ -194,3 +194,8 @@ All keys optional; a bad file is ignored as a whole.
   are ordinary apps with names that don't say so.
 - Don't set it up while driving, and don't use the screen while driving beyond what the law allows.
 - Firmware updates for these units are rare and maker-specific; Glass Car doesn't touch them.
+
+## Credits
+
+The Inter typeface (`launcher/car/src/main/res/font/inter.ttf`) is by the Inter Project Authors, under the
+SIL Open Font License (`launcher/car/FONT-LICENSE-OFL.txt`).
