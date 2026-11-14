@@ -35,7 +35,6 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowInsets;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -174,9 +173,8 @@ public final class HomeActivity extends Activity {
         density = getResources().getDisplayMetrics().density;
         prefs = getSharedPreferences("car", MODE_PRIVATE);
         cfg = CarConfig.load(this);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS);
-        getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+        // Stay inside the system bars: head units often keep a status bar and a navigation bar on screen.
+        getWindow().setNavigationBarColor(0xFF000000);
 
         root = new FrameLayout(this);
         glass.root = root;
@@ -364,15 +362,8 @@ public final class HomeActivity extends Activity {
     }
 
     private Insets insets() {
-        Insets in = new Insets();
-        WindowInsets wi = root.getRootWindowInsets();
-        if (wi != null) {
-            in.left = wi.getSystemWindowInsetLeft();
-            in.top = wi.getSystemWindowInsetTop();
-            in.right = wi.getSystemWindowInsetRight();
-            in.bottom = wi.getSystemWindowInsetBottom();
-        }
-        return in;
+        // The window already stops at the system bars, so nothing more to leave out.
+        return new Insets();
     }
 
     private Glass glassFor(View owner, float radius) {
