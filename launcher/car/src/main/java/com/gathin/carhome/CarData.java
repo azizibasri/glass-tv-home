@@ -16,34 +16,69 @@ import android.os.SystemClock;
 import android.util.Log;
 
 /**
- * Speed and torque for the dashboard, while Home is on screen.
+ * Car readings for the dashboard, while Home is on screen: speed, rpm, torque, coolant temperature and
+ * fuel range.
  *
- * Speed: from the car's CAN bus when the head unit's CAN app broadcasts it, else from GPS. Torque: from
- * the CAN bus only. Head units have no standard CAN API: the CAN box behind the radio talks to the maker's
- * own app, and each maker shares the data differently, if at all. So the broadcast to listen to is set in
- * config.json ({@code can_speed}, {@code can_torque}: action, extra, scale), filled in once
- * {@code car/scan.py} has shown what this unit's CAN app sends.
+ * Speed comes from the car's CAN bus when the head unit's CAN app broadcasts it, else from GPS. Everything
+ * else comes from the CAN bus only. Head units have no standard CAN API: the CAN box behind the radio talks
+ * to the maker's own app, and each maker shares the data differently, if at all. So the broadcast to listen
+ * to for each value is set in config.json ({@code can_speed}, {@code can_rpm}, {@code can_torque},
+ * {@code can_coolant}, {@code can_range}: action, extra, scale), filled in once {@code car/scan.py} has
+ * shown what this unit's CAN app sends.
  */
 final class CarData {
     private static final String TAG = "CarHome.Data";
+    /** Coolant and range change slowly and some boxes send them only every few seconds. */
+    private static final long SLOW_STALE_MS = 30_000;
+
+    /** One snapshot. NaN means "no data". */
+    static final class Reading {
+        float speed = Float.NaN, rpm = Float.NaN, torque = Float.NaN, coolant = Float.NaN, range = Float.NaN;
+        int speedSource = SpeedMath.NONE;
+    }
 
     interface Listener {
-        /** Speed in the configured unit (NaN when none), its source, and torque in Nm (NaN when none). */
-        void onData(float speed, int speedSource, float torqueNm);
+        void onData(Reading r);
+    }
+
+    /** Latest value from one CAN key, and when it came. */
+    private static final class Slot {
+        final CarConfig.CanKey key;
+        final float min, max;
+        float value = Float.NaN;
+        long at;
+
+        Slot(CarConfig.CanKey key, float min, float max) {
+            this.key = key;
+            this.min = min;
+            this.max = max;
+        }
+
+        float fresh(long now, long staleMs) {
+            return at > 0 && now - at <= staleMs ? value : Float.NaN;
+        }
     }
 
     private final Context ctx;
-    private final CarConfig cfg;
     private final Listener listener;
-    private float canSpeed = Float.NaN, gpsSpeed = Float.NaN, torque = Float.NaN;
-    private long canAt, gpsAt, torqueAt;
+    private final boolean mph;
+    private final Slot speed, rpm, torque, coolant, range;
+    private final Slot[] slots;
+    private float gpsSpeed = Float.NaN;
+    private long gpsAt;
     private BroadcastReceiver canReceiver;
     private LocationListener gps;
 
     CarData(Context ctx, CarConfig cfg, Listener listener) {
         this.ctx = ctx;
-        this.cfg = cfg;
         this.listener = listener;
+        this.mph = cfg.mph;
+        speed = new Slot(cfg.canSpeed, 0, 400);
+        rpm = new Slot(cfg.canRpm, 0, 12_000);
+        torque = new Slot(cfg.canTorque, -500, 2_000);
+        coolant = new Slot(cfg.canCoolant, -40, 150);
+        range = new Slot(cfg.canRange, 0, 3_000);
+        slots = new Slot[]{speed, rpm, torque, coolant, range};
     }
 
     boolean hasGpsPermission() {
@@ -53,8 +88,7 @@ final class CarData {
     @SuppressLint("MissingPermission")
     void start() {
         IntentFilter f = new IntentFilter();
-        if (cfg.canSpeed != null) f.addAction(cfg.canSpeed.action);
-        if (cfg.canTorque != null) f.addAction(cfg.canTorque.action);
+        for (Slot s : slots) if (s.key != null && !f.hasAction(s.key.action)) f.addAction(s.key.action);
         if (f.countActions() > 0 && canReceiver == null) {
             canReceiver = new BroadcastReceiver() {
                 @Override
@@ -71,7 +105,7 @@ final class CarData {
                 @Override
                 public void onLocationChanged(Location l) {
                     if (!l.hasSpeed()) return;
-                    gpsSpeed = SpeedMath.fromMetresPerSecond(l.getSpeed(), cfg.mph);
+                    gpsSpeed = SpeedMath.fromMetresPerSecond(l.getSpeed(), mph);
                     gpsAt = SystemClock.elapsedRealtime();
                     publish();
                 }
@@ -111,28 +145,26 @@ final class CarData {
     /** Called about once a second too, so stale values fall back to GPS or to "--". */
     void publish() {
         long now = SystemClock.elapsedRealtime();
-        int src = SpeedMath.pick(now, canAt, gpsAt);
-        float speed = src == SpeedMath.CAN ? canSpeed : src == SpeedMath.GPS ? gpsSpeed : Float.NaN;
-        float t = torqueAt > 0 && now - torqueAt <= SpeedMath.CAN_STALE_MS ? torque : Float.NaN;
-        listener.onData(speed, src, t);
+        Reading r = new Reading();
+        r.speedSource = SpeedMath.pick(now, speed.at, gpsAt);
+        r.speed = r.speedSource == SpeedMath.CAN ? speed.value : r.speedSource == SpeedMath.GPS ? gpsSpeed : Float.NaN;
+        r.rpm = rpm.fresh(now, SpeedMath.CAN_STALE_MS);
+        r.torque = torque.fresh(now, SpeedMath.CAN_STALE_MS);
+        r.coolant = coolant.fresh(now, SLOW_STALE_MS);
+        r.range = range.fresh(now, SLOW_STALE_MS);
+        listener.onData(r);
     }
 
     private void onCan(Intent i) {
         Bundle b = i.getExtras();
         if (b == null) return;
         long now = SystemClock.elapsedRealtime();
-        if (cfg.canSpeed != null && cfg.canSpeed.action.equals(i.getAction())) {
-            float v = SpeedMath.parse(b.get(cfg.canSpeed.extra), cfg.canSpeed.scale);
-            if (!Float.isNaN(v) && v >= 0 && v < 400) {
-                canSpeed = v;
-                canAt = now;
-            }
-        }
-        if (cfg.canTorque != null && cfg.canTorque.action.equals(i.getAction())) {
-            float v = SpeedMath.parse(b.get(cfg.canTorque.extra), cfg.canTorque.scale);
-            if (!Float.isNaN(v) && v > -500 && v < 2000) {
-                torque = v;
-                torqueAt = now;
+        for (Slot s : slots) {
+            if (s.key == null || !s.key.action.equals(i.getAction()) || !b.containsKey(s.key.extra)) continue;
+            float v = SpeedMath.parse(b.get(s.key.extra), s.key.scale);
+            if (!Float.isNaN(v) && v >= s.min && v <= s.max) {
+                s.value = v;
+                s.at = now;
             }
         }
         publish();

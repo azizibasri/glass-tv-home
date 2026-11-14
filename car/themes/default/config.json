@@ -12,5 +12,7 @@
   "music_widget": true,
   "speed_unit": "km/h",
   "speed_max": 240,
-  "torque_max": 250
+  "torque_max": 250,
+  "rpm_max": 7000,
+  "rpm_red": 6000
 }

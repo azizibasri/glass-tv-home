@@ -59,4 +59,26 @@ final class SpeedMath {
         }
         return Float.NaN;
     }
+
+    // ---- Coolant and fuel range tiles ----
+
+    static final int COLD = 0, NORMAL = 1, HOT = 2;
+
+    /** Engine coolant, °C: cold under 70 (warming up), hot over 110, normal between (VW runs about 90). */
+    static int coolantLevel(float c) {
+        return c < 70f ? COLD : c > 110f ? HOT : NORMAL;
+    }
+
+    /** Where coolant sits on the tile's bar, which runs from 40 to 130 °C. */
+    static float coolantFraction(float c) {
+        return Math.max(0f, Math.min(1f, (c - 40f) / 90f));
+    }
+
+    /** Fuel range under this many km is shown in orange, and under a third of it in red. */
+    static final float RANGE_LOW_KM = 80f;
+
+    /** Range bar: full at 700 km, about a full tank in a 2017 Jetta. */
+    static float rangeFraction(float km) {
+        return Math.max(0f, Math.min(1f, km / 700f));
+    }
 }

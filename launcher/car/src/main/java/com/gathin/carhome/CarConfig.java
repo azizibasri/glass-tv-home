@@ -58,7 +58,9 @@ final class CarConfig {
         }
     }
 
-    CanKey canSpeed, canTorque;
+    CanKey canSpeed, canTorque, canRpm, canCoolant, canRange;
+    /** Rev counter: top of the dial and where the red zone starts. The 2017 Jetta's cluster: 7000 / 6000. */
+    int rpmMax = 7000, rpmRed = 6000;
 
     static File dir(Context ctx) {
         return ctx.getExternalFilesDir(null);
@@ -93,6 +95,13 @@ final class CarConfig {
             if (tm >= 50 && tm <= 2000) c.torqueMax = tm;
             c.canSpeed = canKey(o.optJSONObject("can_speed"));
             c.canTorque = canKey(o.optJSONObject("can_torque"));
+            c.canRpm = canKey(o.optJSONObject("can_rpm"));
+            c.canCoolant = canKey(o.optJSONObject("can_coolant"));
+            c.canRange = canKey(o.optJSONObject("can_range"));
+            int rm = o.optInt("rpm_max", c.rpmMax);
+            if (rm >= 3000 && rm <= 12000) c.rpmMax = rm;
+            int rr = o.optInt("rpm_red", c.rpmRed);
+            if (rr >= 2000 && rr <= c.rpmMax) c.rpmRed = rr;
             String accent = o.optString("accent", "");
             if (accent.matches("#[0-9a-fA-F]{6}")) c.accent = 0xFF000000 | Integer.parseInt(accent.substring(1), 16);
         } catch (Exception e) {

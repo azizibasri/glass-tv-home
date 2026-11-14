@@ -106,7 +106,8 @@ public final class HomeActivity extends Activity {
     private int builtW, builtH;
     private boolean resumed;
     private CarData carData;
-    private SpeedGauge gauge;
+    private Gauge gauge, rpmGauge;
+    private InfoTile coolantTile, rangeTile;
     private TorqueBar torqueBar;
     private RainbowClock bigClock;
     private TextView bigDate;
@@ -187,14 +188,7 @@ public final class HomeActivity extends Activity {
         pkgs.addAction(Intent.ACTION_PACKAGE_CHANGED);
         pkgs.addDataScheme("package");
         registerReceiver(packageReceiver, pkgs);
-        carData = new CarData(this, cfg, (speed, src, torque) -> {
-            if (gauge != null) {
-                String status = src == SpeedMath.CAN ? "CAN BUS" : src == SpeedMath.GPS ? "GPS"
-                        : carData.hasGpsPermission() ? "NO SIGNAL" : "NO GPS PERMISSION";
-                gauge.set(speed, src, status);
-            }
-            if (torqueBar != null) torqueBar.set(torque);
-        });
+        carData = new CarData(this, cfg, this::showCarData);
         loadApps();
     }
 
@@ -226,7 +220,10 @@ public final class HomeActivity extends Activity {
             main.post(dataTick);
         }
         if (bigClock != null) bigClock.setRunning(true);
-        if (gauge != null && pager != null && pager.page() == 0) gauge.sweep();
+        if (gauge != null && pager != null && pager.page() == 0) {
+            gauge.sweep();
+            rpmGauge.sweep();
+        }
         if (nowPlaying != null) nowPlaying.start();
     }
 
@@ -415,6 +412,9 @@ public final class HomeActivity extends Activity {
         int dash = cfg.dashboard ? 1 : 0;
         int pages = g.pages(list.size()) + dash;
         gauge = null;
+        rpmGauge = null;
+        coolantTile = null;
+        rangeTile = null;
         torqueBar = null;
         if (nowPlaying != null) nowPlaying.stop();
         bigClock = null;
@@ -474,17 +474,66 @@ public final class HomeActivity extends Activity {
         left.addView(torqueBar, tlp);
         d.addView(left, new LinearLayout.LayoutParams(0, -1, 1f));
 
-        FrameLayout right = new FrameLayout(this);
+        // Right: speedometer (top left) and rev counter (top right), coolant and fuel range under them.
+        LinearLayout right = new LinearLayout(this);
+        right.setOrientation(LinearLayout.VERTICAL);
         right.setPadding(dp(12), dp(12), dp(12), dp(12));
         right.setBackground(glassFor(right, dp(26)));
-        gauge = new SpeedGauge(this, cfg.accent, cfg.speedMax, cfg.mph ? "mph" : "km/h");
-        right.addView(gauge, new FrameLayout.LayoutParams(-1, -1));
-        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(0, -1, 1.1f);
+        LinearLayout dials = new LinearLayout(this);
+        dials.setOrientation(LinearLayout.HORIZONTAL);
+        gauge = Gauge.speed(this, cfg.speedMax, cfg.mph ? "mph" : "km/h");
+        rpmGauge = Gauge.rpm(this, cfg.rpmMax, cfg.rpmRed);
+        dials.addView(gauge, new LinearLayout.LayoutParams(0, -1, 1f));
+        LinearLayout.LayoutParams rpmLp = new LinearLayout.LayoutParams(0, -1, 1f);
+        rpmLp.leftMargin = dp(8);
+        dials.addView(rpmGauge, rpmLp);
+        right.addView(dials, new LinearLayout.LayoutParams(-1, 0, 1f));
+        LinearLayout tiles = new LinearLayout(this);
+        tiles.setOrientation(LinearLayout.HORIZONTAL);
+        coolantTile = new InfoTile(this, R.drawable.ic_coolant, getString(R.string.coolant));
+        rangeTile = new InfoTile(this, R.drawable.ic_fuel, getString(R.string.fuel_range));
+        tiles.addView(coolantTile, new LinearLayout.LayoutParams(0, -1, 1f));
+        LinearLayout.LayoutParams rangeLp = new LinearLayout.LayoutParams(0, -1, 1f);
+        rangeLp.leftMargin = dp(10);
+        tiles.addView(rangeTile, rangeLp);
+        LinearLayout.LayoutParams tilesLp = new LinearLayout.LayoutParams(-1,
+                Math.max(dp(64), Math.min(dp(84), Math.round(areaH * 0.18f))));
+        tilesLp.topMargin = dp(10);
+        right.addView(tiles, tilesLp);
+        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(0, -1, 1.25f);
         rlp.leftMargin = gap;
         d.addView(right, rlp);
         updateClock();
         bigClock.setRunning(resumed);
         return d;
+    }
+
+    /** Puts one snapshot of car data on the dashboard. */
+    private void showCarData(CarData.Reading r) {
+        if (gauge == null) return;
+        int src = r.speedSource;
+        gauge.set(r.speed, src, src == SpeedMath.CAN ? "CAN BUS" : src == SpeedMath.GPS ? "GPS"
+                : carData.hasGpsPermission() ? "NO SIGNAL" : "NO GPS PERMISSION");
+        boolean hasRpm = !Float.isNaN(r.rpm);
+        rpmGauge.set(r.rpm, hasRpm ? SpeedMath.CAN : SpeedMath.NONE, hasRpm ? "CAN BUS" : "NO DATA");
+        if (torqueBar != null) torqueBar.set(r.torque);
+        if (Float.isNaN(r.coolant)) {
+            coolantTile.set("-- °C", Float.NaN, 0x80FFFFFF, getString(R.string.no_data));
+        } else {
+            int level = SpeedMath.coolantLevel(r.coolant);
+            coolantTile.set(Math.round(r.coolant) + " °C", SpeedMath.coolantFraction(r.coolant),
+                    level == SpeedMath.COLD ? 0xFF64D2FF : level == SpeedMath.HOT ? 0xFFFF453A : 0xFF30D158,
+                    getString(level == SpeedMath.COLD ? R.string.coolant_cold
+                            : level == SpeedMath.HOT ? R.string.coolant_hot : R.string.coolant_normal));
+        }
+        if (Float.isNaN(r.range)) {
+            rangeTile.set("-- km", Float.NaN, 0x80FFFFFF, getString(R.string.no_data));
+        } else {
+            boolean low = r.range < SpeedMath.RANGE_LOW_KM, veryLow = r.range < SpeedMath.RANGE_LOW_KM / 3f;
+            rangeTile.set(Math.round(r.range) + " km", SpeedMath.rangeFraction(r.range),
+                    veryLow ? 0xFFFF453A : low ? 0xFFFF9F0A : 0xFF30D158,
+                    getString(low ? R.string.range_low : R.string.range_ok));
+        }
     }
 
     /** The music widget's play button when nothing is playing: the dock's music app, else the first one. */

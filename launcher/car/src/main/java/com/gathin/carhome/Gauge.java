@@ -15,12 +15,12 @@ import android.os.SystemClock;
 import android.view.View;
 
 /**
- * The speedometer: a clear frosted-glass dial that lets the wallpaper show through, a thin bright glass rim,
+ * A round dial, used for both the speedometer and the rev counter: a clear frosted-glass dial that lets the wallpaper show through, a thin bright glass rim,
  * a rainbow arc that fills with the speed, clean white numbers, white ticks that turn red in the top sixth of the dial, and a tapered red needle with a glowing tip that
- * sweeps from 0 to the top and back when the dashboard opens, like a car's cluster at start-up. The speed
- * in digits, its unit and its source (CAN BUS or GPS) sit under the hub.
+ * sweeps from 0 to the top and back when the dashboard opens, like a car's cluster at start-up. The value
+ * in digits, its unit and its source (CAN BUS, GPS or NO DATA) sit under the hub.
  */
-final class SpeedGauge extends View {
+final class Gauge extends View {
     private static final int RED = 0xFFFF2D2D;
     private static final long SWEEP_MS = 1_400;
     private final Paint face = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -40,16 +40,32 @@ final class SpeedGauge extends View {
     private final RectF oval = new RectF(), zoneOval = new RectF();
     private final Path needlePath = new Path();
     private final float max, redFrom;
+    /** Numbers every {@code major}, divided by {@code labelDiv} (rev counter: 1000 -> "1"). */
+    private final int major, labelDiv, digitStep;
     private final String unit;
     private float target, shown, cx, cy, r;
     private int source = SpeedMath.NONE;
     private long lastFrame, sweepStart;
     private String status = "";
 
-    SpeedGauge(Context ctx, int accent, float max, String unit) {
+    /** The speedometer: 0 to {@code max}, numbers every 20 (every 10 up to 160), red zone in the top sixth. */
+    static Gauge speed(Context ctx, float max, String unit) {
+        int major = max <= 160 ? 10 : 20;
+        return new Gauge(ctx, max, major, 1, Math.round(max * 5f / 6f / 10f) * 10f, 1, unit);
+    }
+
+    /** The rev counter: 0 to {@code maxRpm}, numbers 0, 1, 2... per thousand, red from {@code redRpm}. */
+    static Gauge rpm(Context ctx, float maxRpm, float redRpm) {
+        return new Gauge(ctx, maxRpm, 1000, 1000, redRpm, 50, "x1000 RPM");
+    }
+
+    private Gauge(Context ctx, float max, int major, int labelDiv, float redFrom, int digitStep, String unit) {
         super(ctx);
         this.max = max;
-        this.redFrom = Math.round(max * 5f / 6f / 10f) * 10f;
+        this.major = major;
+        this.labelDiv = labelDiv;
+        this.redFrom = redFrom;
+        this.digitStep = digitStep;
         this.unit = unit;
         rim.setStyle(Paint.Style.STROKE);
         redZone.setStyle(Paint.Style.STROKE);
@@ -76,8 +92,8 @@ final class SpeedGauge extends View {
     }
 
     /** New reading; {@code source} is SpeedMath.CAN, GPS or NONE. */
-    void set(float speed, int source, String status) {
-        this.target = source == SpeedMath.NONE || Float.isNaN(speed) ? 0f : speed;
+    void set(float value, int source, String status) {
+        this.target = source == SpeedMath.NONE || Float.isNaN(value) ? 0f : value;
         this.source = source;
         this.status = status;
         postInvalidateOnAnimation();
@@ -105,9 +121,11 @@ final class SpeedGauge extends View {
         float zr = r * 0.86f;
         zoneOval.set(cx - zr, cy - zr, cx + zr, cy + zr);
         redZone.setStrokeWidth(size * 0.022f);
-        num.setTextSize(size * 0.068f);
-        big.setTextSize(size * 0.15f);
-        small.setTextSize(size * 0.042f);
+        // Smaller dials keep readable text: never under 9-11 dp.
+        float dp = getResources().getDisplayMetrics().density;
+        num.setTextSize(Math.max(10 * dp, size * 0.068f));
+        big.setTextSize(Math.max(18 * dp, size * 0.15f));
+        small.setTextSize(Math.max(8 * dp, size * 0.042f));
         hubRing.setStrokeWidth(size * 0.012f);
         // The rainbow speed arc, in the clock's colours: green when slow, through blue and purple, to red.
         float ar = r * 0.955f;
@@ -164,7 +182,6 @@ final class SpeedGauge extends View {
         // Red zone band, then ticks every 5 or 10 and slanted numbers every 20.
         float zoneStart = SpeedMath.START_DEG + SpeedMath.SWEEP_DEG * redFrom / max;
         c.drawArc(zoneOval, zoneStart, SpeedMath.START_DEG + SpeedMath.SWEEP_DEG - zoneStart, false, redZone);
-        int major = max <= 160 ? 10 : 20;
         int minor = major / 4;
         for (int v = 0; v <= max; v += minor) {
             double a = Math.toRadians(SpeedMath.START_DEG + SpeedMath.SWEEP_DEG * v / max);
@@ -178,13 +195,13 @@ final class SpeedGauge extends View {
             if (isMajor) {
                 float rn = r * 0.66f;
                 num.setColor(red ? RED : 0xFFFFFFFF);
-                c.drawText(String.valueOf(v), cx + (float) Math.cos(a) * rn,
+                c.drawText(String.valueOf(v / labelDiv), cx + (float) Math.cos(a) * rn,
                         cy + (float) Math.sin(a) * rn - (num.ascent() + num.descent()) / 2, num);
             }
         }
 
         // Digits under the hub.
-        String digits = source == SpeedMath.NONE && !sweeping ? "--" : String.valueOf(SpeedMath.display(value));
+        String digits = source == SpeedMath.NONE && !sweeping ? "--" : String.valueOf(value < 2f ? 0 : Math.round(value / digitStep) * digitStep);
         float dy = cy + r * 0.42f;
         c.drawText(digits, cx, dy, big);
         c.drawText(unit.toUpperCase(java.util.Locale.ROOT), cx, dy + small.getTextSize() * 2.1f, small);

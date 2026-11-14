@@ -40,4 +40,15 @@ public class SpeedMathTest {
         assertEquals(100f, v, 0f);
         assertTrue(SpeedMath.smooth(0f, 100f, 16) < 20f);
     }
+
+    @Test
+    public void coolantAndRange() {
+        assertEquals(SpeedMath.COLD, SpeedMath.coolantLevel(45f));
+        assertEquals(SpeedMath.NORMAL, SpeedMath.coolantLevel(90f));
+        assertEquals(SpeedMath.HOT, SpeedMath.coolantLevel(115f));
+        assertEquals(0.5f, SpeedMath.coolantFraction(85f), 0.001f);
+        assertEquals(0f, SpeedMath.coolantFraction(-10f), 0f);
+        assertEquals(1f, SpeedMath.rangeFraction(900f), 0f);
+        assertEquals(0.5f, SpeedMath.rangeFraction(350f), 0.001f);
+    }
 }

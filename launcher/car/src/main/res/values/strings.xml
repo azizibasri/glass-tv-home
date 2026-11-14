@@ -15,4 +15,12 @@
     <string name="tap_to_play">Tap play to start your music</string>
     <string name="music_needs_access">Music controls are off</string>
     <string name="music_access_hint">Tap here and allow Glass Car</string>
+    <string name="coolant">COOLANT</string>
+    <string name="fuel_range">FUEL RANGE</string>
+    <string name="no_data">No data</string>
+    <string name="coolant_cold">Warming up</string>
+    <string name="coolant_normal">Normal</string>
+    <string name="coolant_hot">Hot</string>
+    <string name="range_ok">OK</string>
+    <string name="range_low">Refuel soon</string>
 </resources>
