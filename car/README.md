@@ -39,23 +39,13 @@ Swipe left for the apps.
   fills with the speed (green, yellow, blue, purple, pink, red), a thin bright glass rim,
   clean white numbers, a red zone from 200 km/h and a red needle with a glowing tip that sweeps up and back
   each time Home opens.
-- **3D car**: under the dials, a white seventh-generation Jetta built from the owner's photos: fastback roof,
-  the crease along the sides, wide black grille with three bars, slim wrap-round LED headlights, black side
-  skirts, mirrors, front lip, diffuser and boot spoiler, wide tail lights, twin exhausts, dark ten-spoke
-  wheels and a light shine on paint and glass. It is drawn in code, so it looks clean and faceted rather than
-  photo-real, and it carries no maker's badges or names.
-- **3D car with your photos**: ⚙ → **3D car photos from gallery**, then pick a four-view photo sheet of the
-  car (front top left, rear top right, side bottom left, seen from above bottom right). Each face of the
-  model shows the photo of the view it faces, so from the front, rear, side and top it looks like the real
-  car; between those angles the pictures stretch a little. Doors keep their own picture as they open.
-  **Plain 3D car** goes back to colours. The photo stays on the unit (`car_photos.jpg` in the Glass Car
-  folder); it is not part of this repository. The positions of the four views are measured for the owner's
-  sheet (`PhotoMap.ownerSheet`); a sheet laid out differently needs new measurements there. Drag sideways to turn it, up and down
-  to tilt it; left alone it turns slowly. With door data from the CAN bus (`can_doors`), each open door, the
-  boot and the bonnet swing open on the model and turn orange, the car turns to show them, and the label
-  under it says which ("Front left door open", "2 doors open", "All doors closed"). OBD-II has no door
-  data, so in OBD-II mode it says *Door status: no data*.
-- **Trip**: under the 3D car, the trip in km with a **Reset** button (tap Reset, then *Tap again* within
+- **Your car and its doors**: under the dials, your own picture of the car (⚙ → **Car picture from
+  gallery**; it stays on the unit as `car_picture.jpg`, **Remove car picture** takes it off) and beside it the
+  car seen from above. With door data from the CAN bus (`can_doors`), each open door swings out in orange on
+  the top view, and an open boot or bonnet slides out in orange; the label under it says which ("Front left
+  door open", "2 doors open", "All doors closed"). OBD-II has no door data, so in OBD-II mode it says
+  *Door status: no data*. It only redraws while something moves.
+- **Trip**: under the car picture, the trip in km with a **Reset** button (tap Reset, then *Tap again* within
   3 seconds). With the car's odometer from the CAN bus (`can_odometer`) it counts every km, whatever is on
   screen. Without it, it adds up distance from the speed, and only while Home is open: the row says which.
 - **Rev counter**: the same glass dial, 0 to 7 (x1000 rpm), red from 6000.

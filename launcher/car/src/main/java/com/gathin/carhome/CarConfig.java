@@ -59,8 +59,8 @@ final class CarConfig {
     }
 
     CanKey canSpeed, canTorque, canRpm, canCoolant, canRange, canOdometer, canDoors;
-    /** Which bit of the CAN door value means which door (index = CarMesh part). */
-    int[] doorBits = CarMesh.DEFAULT_BITS.clone();
+    /** Which bit of the CAN door value means which door (index = Doors constant). */
+    int[] doorBits = Doors.DEFAULT_BITS.clone();
     /** Where car data comes from: "can" (CAN bus, GPS for speed when it has none) or "obd" (Bluetooth OBD-II). */
     String dataSource = "can";
     /** The paired OBD-II adapter's Bluetooth address, when dataSource is "obd". */
