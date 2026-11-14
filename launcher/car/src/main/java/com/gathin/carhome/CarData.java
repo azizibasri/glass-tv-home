@@ -37,6 +37,10 @@ final class CarData {
         /** Total km on the car's odometer, for the trip counter. */
         float odometer = Float.NaN;
         int speedSource = SpeedMath.NONE;
+        /** "CAN BUS" or "OBD-II": where the car values come from. */
+        String carLabel = "CAN BUS";
+        /** In OBD-II mode, the adapter's state (ObdLink.OFF, CONNECTING, CONNECTED...). */
+        int obdState = ObdLink.OFF;
     }
 
     interface Listener {
@@ -64,6 +68,11 @@ final class CarData {
     private final Context ctx;
     private final Listener listener;
     private final boolean mph;
+    private final CarConfig cfg;
+    private String mode = "can", obdAddress = "";
+    private ObdLink obd;
+    private volatile int obdState = ObdLink.OFF;
+    private float torquePercent = Float.NaN, torqueReference = Float.NaN;
     private final Slot speed, rpm, torque, coolant, range, odometer;
     private final Slot[] slots;
     private float gpsSpeed = Float.NaN;
@@ -75,6 +84,9 @@ final class CarData {
         this.ctx = ctx;
         this.listener = listener;
         this.mph = cfg.mph;
+        this.cfg = cfg;
+        this.mode = cfg.dataSource;
+        this.obdAddress = cfg.obdAddress;
         speed = new Slot(cfg.canSpeed, 0, 400);
         rpm = new Slot(cfg.canRpm, 0, 12_000);
         torque = new Slot(cfg.canTorque, -500, 2_000);
@@ -88,8 +100,43 @@ final class CarData {
         return ctx.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 
+    /** Switches between "can" and "obd"; takes effect at the next start(). */
+    void setSource(String mode, String obdAddress) {
+        this.mode = mode;
+        this.obdAddress = obdAddress == null ? "" : obdAddress;
+    }
+
+    boolean usesObd() {
+        return "obd".equals(mode);
+    }
+
     @SuppressLint("MissingPermission")
     void start() {
+        if (usesObd()) {
+            if (obd == null && !obdAddress.isEmpty()) {
+                obd = new ObdLink(obdAddress, new ObdLink.Listener() {
+                    @Override
+                    public void onValue(String pid, int[] data) {
+                        onObd(pid, data);
+                    }
+
+                    @Override
+                    public void onState(int state, String detail) {
+                        obdState = state;
+                    }
+                });
+                obd.start();
+            } else if (obdAddress.isEmpty()) {
+                obdState = ObdLink.NOT_PAIRED;
+            }
+            startGps();
+            return;
+        }
+        startCan();
+        startGps();
+    }
+
+    private void startCan() {
         IntentFilter f = new IntentFilter();
         for (Slot s : slots) if (s.key != null && !f.hasAction(s.key.action)) f.addAction(s.key.action);
         if (f.countActions() > 0 && canReceiver == null) {
@@ -102,6 +149,10 @@ final class CarData {
             if (Build.VERSION.SDK_INT >= 33) ctx.registerReceiver(canReceiver, f, Context.RECEIVER_EXPORTED);
             else ctx.registerReceiver(canReceiver, f);
         }
+    }
+
+    @SuppressLint("MissingPermission")
+    private void startGps() {
         if (gps == null && hasGpsPermission()) {
             LocationManager lm = (LocationManager) ctx.getSystemService(Context.LOCATION_SERVICE);
             gps = new LocationListener() {
@@ -135,6 +186,11 @@ final class CarData {
     }
 
     void stop() {
+        if (obd != null) {
+            obd.stop();
+            obd = null;
+        }
+        obdState = ObdLink.OFF;
         if (canReceiver != null) {
             ctx.unregisterReceiver(canReceiver);
             canReceiver = null;
@@ -149,14 +205,63 @@ final class CarData {
     void publish() {
         long now = SystemClock.elapsedRealtime();
         Reading r = new Reading();
+        r.carLabel = usesObd() ? "OBD-II" : "CAN BUS";
+        r.obdState = obdState;
         r.speedSource = SpeedMath.pick(now, speed.at, gpsAt);
         r.speed = r.speedSource == SpeedMath.CAN ? speed.value : r.speedSource == SpeedMath.GPS ? gpsSpeed : Float.NaN;
         r.rpm = rpm.fresh(now, SpeedMath.CAN_STALE_MS);
-        r.torque = torque.fresh(now, SpeedMath.CAN_STALE_MS);
+        // Over OBD-II torque is asked for every few seconds, between the speed and rpm requests.
+        r.torque = torque.fresh(now, usesObd() ? 12_000 : SpeedMath.CAN_STALE_MS);
         r.coolant = coolant.fresh(now, SLOW_STALE_MS);
         r.range = range.fresh(now, SLOW_STALE_MS);
         r.odometer = odometer.fresh(now, SLOW_STALE_MS);
         listener.onData(r);
+    }
+
+    /** One value from the OBD-II adapter, on its thread. */
+    private void onObd(String pid, int[] data) {
+        long now = SystemClock.elapsedRealtime();
+        float v = Float.NaN;
+        Slot slot = null;
+        switch (pid) {
+            case ObdParser.SPEED:
+                v = ObdParser.speed(data) * (mph ? 0.621371f : 1f);
+                slot = speed;
+                break;
+            case ObdParser.RPM:
+                v = ObdParser.rpm(data);
+                slot = rpm;
+                break;
+            case ObdParser.COOLANT:
+                v = ObdParser.coolant(data);
+                slot = coolant;
+                break;
+            case ObdParser.FUEL_LEVEL:
+                v = ObdParser.range(ObdParser.fuelPercent(data), cfg.fuelTankLitres, cfg.fuelLitresPer100km);
+                slot = range;
+                break;
+            case ObdParser.TORQUE_PERCENT:
+                torquePercent = ObdParser.torquePercent(data);
+                break;
+            case ObdParser.TORQUE_REFERENCE:
+                torqueReference = ObdParser.torqueReference(data);
+                break;
+            case ObdParser.ODOMETER:
+                v = ObdParser.odometer(data);
+                slot = odometer;
+                break;
+            default:
+                break;
+        }
+        if (!Float.isNaN(torquePercent) && !Float.isNaN(torqueReference)
+                && (pid.equals(ObdParser.TORQUE_PERCENT) || pid.equals(ObdParser.TORQUE_REFERENCE))) {
+            v = torquePercent / 100f * torqueReference;
+            slot = torque;
+        }
+        if (slot != null && !Float.isNaN(v) && v >= slot.min && v <= slot.max) {
+            slot.value = v;
+            slot.at = now;
+        }
     }
 
     private void onCan(Intent i) {

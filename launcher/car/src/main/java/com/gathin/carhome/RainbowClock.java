@@ -54,6 +54,13 @@ final class RainbowClock extends View {
         }
     }
 
+    void setTypeface(Typeface t) {
+        glow.setTypeface(t);
+        face.setTypeface(t);
+        gradient = null;
+        invalidate();
+    }
+
     void setTextSizePx(float px) {
         glow.setTextSize(px);
         face.setTextSize(px);

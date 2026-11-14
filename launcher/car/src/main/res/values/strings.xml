@@ -37,4 +37,18 @@
     <string name="trip_from_odometer">From the car's odometer</string>
     <string name="trip_from_speed">Counts while Home is open</string>
     <string name="trip_was_reset">Trip reset to 0</string>
+    <string name="done">Done</string>
+    <string name="clock_style">Clock style</string>
+    <string name="clock_size">Size: %1$d%%</string>
+    <string name="clock_custom_hint">Your own font: copy a .ttf or .otf file into the Glass Car folder as clock.ttf (Android/data/com.gathin.carhome/files) and choose Custom.</string>
+    <string name="data_source">Car data source</string>
+    <string name="source_can">CAN bus + GPS</string>
+    <string name="source_can_hint">From the unit's CAN box. Speed falls back to GPS.</string>
+    <string name="source_obd">OBD-II Bluetooth adapter (Carista or another ELM327 type):</string>
+    <string name="source_obd_hint">Plug the adapter into the port under the dashboard, switch the ignition on, and pair it in Android's Bluetooth settings first (the PIN is usually 1234 or 0000). If it isn't listed, this unit's Bluetooth may only handle calls and music.</string>
+    <string name="open_bluetooth">Open Bluetooth settings</string>
+    <string name="source_now_obd">Car data: OBD-II adapter</string>
+    <string name="source_now_can">Car data: CAN bus + GPS</string>
+    <string name="obd_connected">OBD-II adapter connected</string>
+    <string name="obd_failed">Can't reach the OBD-II adapter. Is the ignition on?</string>
 </resources>

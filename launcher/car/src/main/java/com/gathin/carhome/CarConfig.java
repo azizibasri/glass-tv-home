@@ -59,6 +59,16 @@ final class CarConfig {
     }
 
     CanKey canSpeed, canTorque, canRpm, canCoolant, canRange, canOdometer;
+    /** Where car data comes from: "can" (CAN bus, GPS for speed when it has none) or "obd" (Bluetooth OBD-II). */
+    String dataSource = "can";
+    /** The paired OBD-II adapter's Bluetooth address, when dataSource is "obd". */
+    String obdAddress = "";
+    /** For fuel range over OBD-II, which only gives the tank level: tank size and usual use. Jetta 2017: 55 L. */
+    float fuelTankLitres = 55f, fuelLitresPer100km = 7.5f;
+    /** Dashboard clock: "thin", "light", "regular", "heavy", "condensed", "serif", "inter" or "custom". */
+    String clockFont = "thin";
+    /** Dashboard clock size, 60 to 140 % of the size that fits. */
+    int clockSize = 100;
     /** App icons: "color" (as the apps draw them) or "glass" (clear frosted glass, white symbol). */
     String iconStyle = "color";
     /** Rev counter: top of the dial and where the red zone starts. The 2017 Jetta's cluster: 7000 / 6000. */
@@ -101,6 +111,17 @@ final class CarConfig {
             c.canCoolant = canKey(o.optJSONObject("can_coolant"));
             c.canRange = canKey(o.optJSONObject("can_range"));
             c.canOdometer = canKey(o.optJSONObject("can_odometer"));
+            String src = o.optString("data_source", c.dataSource);
+            if (src.equals("can") || src.equals("obd")) c.dataSource = src;
+            c.obdAddress = o.optString("obd_address", c.obdAddress).trim();
+            double tank = o.optDouble("fuel_tank_l", c.fuelTankLitres);
+            if (tank >= 20 && tank <= 200) c.fuelTankLitres = (float) tank;
+            double use = o.optDouble("fuel_l_per_100km", c.fuelLitresPer100km);
+            if (use >= 2 && use <= 30) c.fuelLitresPer100km = (float) use;
+            String font = o.optString("clock_font", c.clockFont);
+            if (ClockFonts.isKnown(font)) c.clockFont = font;
+            int cs = o.optInt("clock_size", c.clockSize);
+            if (cs >= 60 && cs <= 140) c.clockSize = cs;
             String style = o.optString("icon_style", c.iconStyle);
             if (style.equals("color") || style.equals("glass")) c.iconStyle = style;
             int rm = o.optInt("rpm_max", c.rpmMax);

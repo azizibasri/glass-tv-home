@@ -79,6 +79,27 @@ When one carries the value, add it to `config.json`:
 `scale` converts the raw number (e.g. `0.1` when the box sends tenths). A CAN speed older than 3 seconds
 falls back to GPS; rpm and torque older than 3 seconds, and coolant and range older than 30, show `--`.
 
+## OBD-II Bluetooth adapter (Carista and others)
+
+Instead of the CAN box, every value can come from an OBD-II adapter in the port under the dashboard: speed,
+rpm, coolant, torque (actual % of the engine's reference torque), the odometer where the car has one
+(mostly 2019 and newer), and fuel range worked out from the tank level (`fuel_tank_l`, default 55 L for the
+Jetta, and `fuel_l_per_100km`, default 7.5).
+
+1. Plug the adapter in and switch the ignition on.
+2. Pair it in Android's Bluetooth settings (PIN usually `1234` or `0000`).
+3. ⚙ → **Car data source** → pick the adapter → Done. The dials say `OBD-II` once it answers.
+
+What might not work, and why:
+
+- **Carista.** It is made for Carista's own app. Older Carista adapters (Bluetooth Classic) are ELM327-type
+  and should answer standard OBD-II requests; the newer **Carista EVO** uses Bluetooth Low Energy, which Glass
+  Car does not speak yet. A generic ELM327 Bluetooth adapter (Vgate, Konnwei, OBDLink…) is the safe choice.
+- **The head unit's Bluetooth.** On many units the Bluetooth chip is reserved for calls and music and Android
+  apps can't open a serial connection on it; then the adapter never shows up as paired, or the dials say
+  `OBD NO CONNECTION`. Some units have their own "OBD" page in the Bluetooth app instead.
+- Like everything on the dashboard, the adapter is only asked while Home is on screen.
+
 ## What the Clean button does
 
 - **RAM**: closes apps sitting in the background, the same as swiping them away. It never closes the app on
@@ -128,6 +149,12 @@ The gear on the left rail, above Clean:
 
 - **Wallpaper from gallery**: pick any photo with the unit's gallery. Glass Car keeps a copy, turns it the
   right way up and blurs it behind every glass panel. **Default wallpaper** goes back to the built-in one.
+- **Clock style**: seven fonts modelled on the iOS lock-screen clock styles (Thin, Light, Regular, Heavy,
+  Condensed, Serif, and Inter, an open font close to Apple's) and a size slider (60 to 140 %). Apple's own
+  font (SF Pro) is licensed for Apple devices only, so it isn't included; to use another font you are allowed
+  to use, copy it to `Android/data/com.gathin.carhome/files/clock.ttf` and choose **Custom**.
+- **Car data source**: **CAN bus + GPS** (the CAN box, GPS for speed when it has none) or an **OBD-II
+  Bluetooth adapter** (see below).
 - **Clear glass icons / Colour icons**: switches every app icon between its own colours and a clear
   frosted-glass tile with the app's symbol in white.
 
@@ -144,6 +171,11 @@ All keys optional; a bad file is ignored as a whole.
 | `auto_clean_minutes` | 0 to 1440 | Close background apps by itself when Home shows this long after the last clean; 0 = only on tap. Default 30 |
 | `show_labels` | bool | App names under the icons |
 | `wallpaper` | bool | Use `wallpaper.jpg` from the theme folder (or the one picked from the gallery); otherwise the built-in dark aurora |
+| `clock_font` | `thin`, `light`, `regular`, `heavy`, `condensed`, `serif`, `inter`, `custom` | Clock font. The ⚙ menu wins over this |
+| `clock_size` | 60 to 140 | Clock size in %. Default 100 |
+| `data_source` | `"can"` or `"obd"` | Car data from the CAN box (and GPS) or a Bluetooth OBD-II adapter |
+| `obd_address` | Bluetooth address | The paired OBD-II adapter, e.g. `"00:1D:A5:68:98:8B"`; easier to pick in the ⚙ menu |
+| `fuel_tank_l`, `fuel_l_per_100km` | numbers | For fuel range over OBD-II. Default 55 and 7.5 |
 | `icon_style` | `"color"` or `"glass"` | App icons as the apps draw them, or clear frosted glass with a white symbol. The ⚙ menu wins over this |
 | `accent` | `#RRGGBB` | Colour of the RAM ring |
 | `dashboard` | bool | The first page with clock, music, speedometer, rev counter, torque, coolant and range. Default `true` |

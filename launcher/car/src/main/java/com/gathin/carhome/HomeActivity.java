@@ -115,6 +115,11 @@ public final class HomeActivity extends Activity {
     private long tripSavedAt;
     /** "color" or "glass": the person's choice in the settings menu, else config.json's. */
     private String iconStyle;
+    /** Clock font and size (%), and the car data source: the ⚙ menu's choices, else config.json's. */
+    private String clockFont, dataSource, obdAddress;
+    private int clockSize;
+    private float clockBasePx;
+    private int lastObdState = ObdLink.OFF;
     private TorqueBar torqueBar;
     private RainbowClock bigClock;
     private TextView bigDate;
@@ -197,6 +202,11 @@ public final class HomeActivity extends Activity {
         registerReceiver(packageReceiver, pkgs);
         carData = new CarData(this, cfg, this::showCarData);
         iconStyle = prefs.getString("icon_style", cfg.iconStyle);
+        clockFont = prefs.getString("clock_font", cfg.clockFont);
+        clockSize = prefs.getInt("clock_size", cfg.clockSize);
+        dataSource = prefs.getString("data_source", cfg.dataSource);
+        obdAddress = prefs.getString("obd_address", cfg.obdAddress);
+        carData.setSource(dataSource, obdAddress);
         trip.baseOdometer = prefs.getFloat("trip_base", Float.NaN);
         trip.accumulated = prefs.getFloat("trip_acc", 0f);
         loadApps();
@@ -474,7 +484,8 @@ public final class HomeActivity extends Activity {
         left.setPadding(dp(24), dp(20), dp(24), dp(20));
         left.setBackground(glassFor(left, dp(26)));
         bigClock = new RainbowClock(this, cfg.clockRainbow);
-        bigClock.setTextSizePx(Math.min(areaH * 0.24f, areaW * 0.12f));
+        clockBasePx = Math.min(areaH * 0.24f, areaW * 0.12f);
+        applyClockStyle();
         // The clock sits in the same dark glass box as the music widget below it.
         FrameLayout clockBox = new FrameLayout(this);
         clockBox.setBackground(NowPlaying.darkPanel(this));
@@ -620,10 +631,15 @@ public final class HomeActivity extends Activity {
         m.getMenu().add(0, 1, 0, R.string.wallpaper_pick);
         m.getMenu().add(0, 2, 1, R.string.wallpaper_reset);
         m.getMenu().add(0, 3, 2, "glass".equals(iconStyle) ? R.string.icons_color : R.string.icons_glass);
+        m.getMenu().add(0, 4, 3, R.string.clock_style);
+        m.getMenu().add(0, 5, 4, R.string.data_source);
         m.setOnMenuItemClickListener(item -> {
-            if (item.getItemId() == 1) pickWallpaper();
-            else if (item.getItemId() == 2) resetWallpaper();
-            else setIconStyle("glass".equals(iconStyle) ? "color" : "glass");
+            int id = item.getItemId();
+            if (id == 1) pickWallpaper();
+            else if (id == 2) resetWallpaper();
+            else if (id == 3) setIconStyle("glass".equals(iconStyle) ? "color" : "glass");
+            else if (id == 4) clockDialog();
+            else dataSourceDialog();
             return true;
         });
         m.show();
@@ -709,6 +725,260 @@ public final class HomeActivity extends Activity {
         loadApps();
     }
 
+    private static String obdStateLabel(int state) {
+        switch (state) {
+            case ObdLink.CONNECTING:
+                return "OBD CONNECTING";
+            case ObdLink.CONNECTED:
+                return "OBD-II";
+            case ObdLink.NO_BLUETOOTH:
+                return "BLUETOOTH OFF";
+            case ObdLink.NOT_PAIRED:
+                return "OBD NOT PAIRED";
+            case ObdLink.FAILED:
+                return "OBD NO CONNECTION";
+            default:
+                return "OBD OFF";
+        }
+    }
+
+    // ---- Clock style dialog ----
+
+    private void applyClockStyle() {
+        if (bigClock == null) return;
+        bigClock.setTypeface(ClockFonts.typeface(this, clockFont));
+        bigClock.setTextSizePx(clockBasePx * clockSize / 100f * ClockFonts.widthFactor(clockFont));
+    }
+
+    /** A dark glass panel dialog with a title, used by the clock and data source settings. */
+    private android.app.Dialog panelDialog(int title, LinearLayout body) {
+        android.app.Dialog d = new android.app.Dialog(this);
+        d.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(dp(22), dp(18), dp(22), dp(14));
+        android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
+        bg.setColor(0xF01C1C22);
+        bg.setCornerRadius(dp(24));
+        bg.setStroke(Math.max(1, dp(1)), 0x33FFFFFF);
+        box.setBackground(bg);
+        TextView t = text(18, true);
+        t.setText(title);
+        t.setGravity(Gravity.START);
+        box.addView(t, new LinearLayout.LayoutParams(-1, -2));
+        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(-1, -2);
+        blp.topMargin = dp(12);
+        box.addView(body, blp);
+        TextView done = text(16, true);
+        done.setText(R.string.done);
+        done.setTextColor(0xFF64D2FF);
+        done.setPadding(dp(16), dp(10), dp(4), dp(4));
+        done.setGravity(Gravity.END);
+        done.setOnClickListener(v -> d.dismiss());
+        box.addView(done, new LinearLayout.LayoutParams(-1, -2));
+        d.setContentView(box);
+        if (d.getWindow() != null) {
+            d.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(0));
+            d.getWindow().setLayout(Math.min(builtW - dp(48), dp(620)), ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
+        return d;
+    }
+
+    private void clockDialog() {
+        LinearLayout body = new LinearLayout(this);
+        body.setOrientation(LinearLayout.VERTICAL);
+        android.widget.HorizontalScrollView scroll = new android.widget.HorizontalScrollView(this);
+        scroll.setHorizontalScrollBarEnabled(false);
+        LinearLayout chips = new LinearLayout(this);
+        chips.setOrientation(LinearLayout.HORIZONTAL);
+        scroll.addView(chips);
+        List<TextView> sample = new ArrayList<>();
+        Runnable mark = () -> {
+            for (int i = 0; i < chips.getChildCount(); i++) {
+                View chip = chips.getChildAt(i);
+                boolean on = ClockFonts.KEYS[i].equals(clockFont);
+                android.graphics.drawable.GradientDrawable g = new android.graphics.drawable.GradientDrawable();
+                g.setCornerRadius(dp(16));
+                g.setColor(on ? 0x330A84FF : 0x14FFFFFF);
+                g.setStroke(dp(on ? 2 : 1), on ? 0xFF0A84FF : 0x26FFFFFF);
+                chip.setBackground(g);
+            }
+        };
+        for (int i = 0; i < ClockFonts.KEYS.length; i++) {
+            String key = ClockFonts.KEYS[i];
+            if (key.equals("custom") && ClockFonts.customFile(this) == null) continue;
+            LinearLayout chip = new LinearLayout(this);
+            chip.setOrientation(LinearLayout.VERTICAL);
+            chip.setGravity(Gravity.CENTER);
+            chip.setPadding(dp(14), dp(8), dp(14), dp(8));
+            TextView digits = text(30, false);
+            digits.setText(DateFormat.format(DateFormat.is24HourFormat(this) ? "H:mm" : "h:mm", new Date()));
+            digits.setTypeface(ClockFonts.typeface(this, key));
+            TextView name = text(12, false);
+            name.setText(ClockFonts.NAMES[i]);
+            name.setAlpha(0.75f);
+            chip.addView(digits);
+            chip.addView(name);
+            chip.setOnClickListener(v -> {
+                clockFont = key;
+                prefs.edit().putString("clock_font", key).apply();
+                applyClockStyle();
+                mark.run();
+            });
+            LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(-2, -2);
+            clp.rightMargin = dp(10);
+            chips.addView(chip, clp);
+            sample.add(digits);
+        }
+        mark.run();
+        body.addView(scroll, new LinearLayout.LayoutParams(-1, -2));
+
+        TextView sizeLabel = text(14, false);
+        sizeLabel.setGravity(Gravity.START);
+        sizeLabel.setText(getString(R.string.clock_size, clockSize));
+        LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(-1, -2);
+        slp.topMargin = dp(16);
+        body.addView(sizeLabel, slp);
+        android.widget.SeekBar bar = new android.widget.SeekBar(this);
+        bar.setMax(80);
+        bar.setProgress(clockSize - 60);
+        bar.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(android.widget.SeekBar b, int p, boolean user) {
+                clockSize = 60 + p;
+                sizeLabel.setText(getString(R.string.clock_size, clockSize));
+                applyClockStyle();
+            }
+
+            @Override
+            public void onStartTrackingTouch(android.widget.SeekBar b) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(android.widget.SeekBar b) {
+                prefs.edit().putInt("clock_size", clockSize).apply();
+            }
+        });
+        body.addView(bar, new LinearLayout.LayoutParams(-1, dp(40)));
+        TextView hint = text(11, false);
+        hint.setGravity(Gravity.START);
+        hint.setSingleLine(false);
+        hint.setAlpha(0.6f);
+        hint.setText(R.string.clock_custom_hint);
+        body.addView(hint, new LinearLayout.LayoutParams(-1, -2));
+        if (pager != null) pager.snapTo(0);
+        panelDialog(R.string.clock_style, body).show();
+    }
+
+    // ---- Car data source dialog: CAN bus + GPS, or Bluetooth OBD-II ----
+
+    @android.annotation.SuppressLint("MissingPermission")
+    private void dataSourceDialog() {
+        if (Build.VERSION.SDK_INT >= 31
+                && checkSelfPermission(android.Manifest.permission.BLUETOOTH_CONNECT) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{android.Manifest.permission.BLUETOOTH_CONNECT}, 4);
+        }
+        LinearLayout body = new LinearLayout(this);
+        body.setOrientation(LinearLayout.VERTICAL);
+        android.app.Dialog[] holder = new android.app.Dialog[1];
+        List<View> rows = new ArrayList<>();
+        String[] chosen = {dataSource, obdAddress};
+        Runnable refresh = () -> {
+            for (View row : rows) {
+                String[] tag = (String[]) row.getTag();
+                boolean on = tag[0].equals(chosen[0]) && (tag[0].equals("can") || tag[1].equals(chosen[1]));
+                android.graphics.drawable.GradientDrawable g = new android.graphics.drawable.GradientDrawable();
+                g.setCornerRadius(dp(14));
+                g.setColor(on ? 0x330A84FF : 0x14FFFFFF);
+                g.setStroke(dp(on ? 2 : 1), on ? 0xFF0A84FF : 0x26FFFFFF);
+                row.setBackground(g);
+            }
+        };
+        java.util.function.BiConsumer<String[], String[]> addRow = (tag, lines) -> {
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.VERTICAL);
+            row.setPadding(dp(14), dp(10), dp(14), dp(10));
+            row.setTag(tag);
+            TextView a = text(15, true);
+            a.setGravity(Gravity.START);
+            a.setText(lines[0]);
+            TextView b = text(12, false);
+            b.setGravity(Gravity.START);
+            b.setSingleLine(false);
+            b.setAlpha(0.7f);
+            b.setText(lines[1]);
+            row.addView(a);
+            row.addView(b);
+            row.setOnClickListener(v -> {
+                chosen[0] = tag[0];
+                if (tag[0].equals("obd")) chosen[1] = tag[1];
+                refresh.run();
+            });
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(-1, -2);
+            lp.bottomMargin = dp(8);
+            body.addView(row, lp);
+            rows.add(row);
+        };
+        addRow.accept(new String[]{"can", ""}, new String[]{getString(R.string.source_can), getString(R.string.source_can_hint)});
+        TextView obdTitle = text(13, true);
+        obdTitle.setGravity(Gravity.START);
+        obdTitle.setAlpha(0.7f);
+        obdTitle.setText(R.string.source_obd);
+        LinearLayout.LayoutParams olp = new LinearLayout.LayoutParams(-1, -2);
+        olp.topMargin = dp(8);
+        olp.bottomMargin = dp(6);
+        body.addView(obdTitle, olp);
+        java.util.Set<android.bluetooth.BluetoothDevice> paired = null;
+        try {
+            android.bluetooth.BluetoothAdapter bt = android.bluetooth.BluetoothAdapter.getDefaultAdapter();
+            if (bt != null) paired = bt.getBondedDevices();
+        } catch (SecurityException ignored) {
+        }
+        if (paired != null) {
+            for (android.bluetooth.BluetoothDevice dev : paired) {
+                String name = dev.getName() == null ? dev.getAddress() : dev.getName();
+                boolean likely = name.toUpperCase(Locale.ROOT).matches(".*(OBD|ELM|CARISTA|VLINK|V-LINK|OBDII|KONNWEI|VGATE).*");
+                addRow.accept(new String[]{"obd", dev.getAddress()},
+                        new String[]{name + (likely ? "  ·  OBD" : ""), dev.getAddress()});
+            }
+        }
+        TextView help = text(12, false);
+        help.setGravity(Gravity.START);
+        help.setSingleLine(false);
+        help.setAlpha(0.65f);
+        help.setText(R.string.source_obd_hint);
+        body.addView(help, new LinearLayout.LayoutParams(-1, -2));
+        TextView btSettings = text(14, true);
+        btSettings.setGravity(Gravity.START);
+        btSettings.setTextColor(0xFF64D2FF);
+        btSettings.setText(R.string.open_bluetooth);
+        btSettings.setPadding(0, dp(10), 0, 0);
+        btSettings.setOnClickListener(v -> {
+            if (holder[0] != null) holder[0].dismiss();
+            open(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
+        });
+        body.addView(btSettings, new LinearLayout.LayoutParams(-2, -2));
+        refresh.run();
+        android.widget.ScrollView sv = new android.widget.ScrollView(this);
+        sv.addView(body);
+        LinearLayout wrap = new LinearLayout(this);
+        wrap.addView(sv, new LinearLayout.LayoutParams(-1, Math.min(dp(330), builtH - dp(160))));
+        android.app.Dialog d = panelDialog(R.string.data_source, wrap);
+        holder[0] = d;
+        d.setOnDismissListener(x -> {
+            if (chosen[0].equals("obd") && chosen[1].isEmpty()) chosen[0] = "can";
+            if (chosen[0].equals(dataSource) && chosen[1].equals(obdAddress)) return;
+            dataSource = chosen[0];
+            obdAddress = chosen[1];
+            prefs.edit().putString("data_source", dataSource).putString("obd_address", obdAddress).apply();
+            carData.stop();
+            carData.setSource(dataSource, obdAddress);
+            if (resumed) carData.start();
+            showToast(getString("obd".equals(dataSource) ? R.string.source_now_obd : R.string.source_now_can));
+        });
+        d.show();
+    }
+
     /** Puts one snapshot of car data on the dashboard. */
     private void showCarData(CarData.Reading r) {
         trip.odometer(r.odometer);
@@ -716,11 +986,17 @@ public final class HomeActivity extends Activity {
         showTrip();
         if (SystemClock.elapsedRealtime() - tripSavedAt > 15_000) saveTrip();
         if (gauge == null) return;
+        if (r.obdState != lastObdState) {
+            if (r.obdState == ObdLink.CONNECTED) showToast(getString(R.string.obd_connected));
+            else if (r.obdState == ObdLink.FAILED && lastObdState != ObdLink.FAILED) showToast(getString(R.string.obd_failed));
+            lastObdState = r.obdState;
+        }
         int src = r.speedSource;
-        gauge.set(r.speed, src, src == SpeedMath.CAN ? "CAN BUS" : src == SpeedMath.GPS ? "GPS"
-                : carData.hasGpsPermission() ? "NO SIGNAL" : "NO GPS PERMISSION");
+        String missing = carData.usesObd() ? obdStateLabel(r.obdState) : "NO DATA";
+        gauge.set(r.speed, src, src == SpeedMath.CAN ? r.carLabel : src == SpeedMath.GPS ? "GPS"
+                : carData.usesObd() ? missing : carData.hasGpsPermission() ? "NO SIGNAL" : "NO GPS PERMISSION");
         boolean hasRpm = !Float.isNaN(r.rpm);
-        rpmGauge.set(r.rpm, hasRpm ? SpeedMath.CAN : SpeedMath.NONE, hasRpm ? "CAN BUS" : "NO DATA");
+        rpmGauge.set(r.rpm, hasRpm ? SpeedMath.CAN : SpeedMath.NONE, hasRpm ? r.carLabel : missing);
         if (torqueBar != null) torqueBar.set(r.torque);
         if (Float.isNaN(r.coolant)) {
             coolantTile.set("-- °C", Float.NaN, 0x80FFFFFF, getString(R.string.no_data));

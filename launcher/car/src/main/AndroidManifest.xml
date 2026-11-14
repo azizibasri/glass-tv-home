@@ -18,6 +18,11 @@
     <!-- Dashboard speed from GPS when the CAN bus doesn't send it. Only while Home is on screen. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+    <!-- Optional OBD-II Bluetooth adapter (Carista, ELM327). Talks only to the adapter the owner picks. -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-feature android:name="android.hardware.bluetooth" android:required="false" />
 
     <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
 
