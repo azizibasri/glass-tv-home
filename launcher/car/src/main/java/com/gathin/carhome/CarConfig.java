@@ -71,6 +71,10 @@ final class CarConfig {
     String clockFont = "thin";
     /** Dashboard clock size, 60 to 140 % of the size that fits. */
     int clockSize = 100;
+    /** Dashboard clock height, 100 (normal) to 250 % taller, same width. */
+    int clockHeight = 100;
+    /** The soft glow behind the rainbow clock. */
+    boolean clockGlow = true;
     /** App icons: "color" (as the apps draw them) or "glass" (clear frosted glass, white symbol). */
     String iconStyle = "color";
     /** Turbo boost: shown in "bar" or "psi"; the bar's top in bar (the 1.4 TSI peaks near 1.2 bar). */
@@ -137,6 +141,9 @@ final class CarConfig {
             if (ClockFonts.isKnown(font)) c.clockFont = font;
             int cs = o.optInt("clock_size", c.clockSize);
             if (cs >= 60 && cs <= 140) c.clockSize = cs;
+            int ch = o.optInt("clock_height", c.clockHeight);
+            if (ch >= 100 && ch <= 250) c.clockHeight = ch;
+            if (o.opt("clock_glow") instanceof Boolean) c.clockGlow = o.getBoolean("clock_glow");
             String style = o.optString("icon_style", c.iconStyle);
             if (style.equals("color") || style.equals("glass")) c.iconStyle = style;
             String accent = o.optString("accent", "");

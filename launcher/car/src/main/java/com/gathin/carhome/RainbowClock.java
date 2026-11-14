@@ -30,6 +30,10 @@ final class RainbowClock extends View {
     private LinearGradient gradient;
     private String text = "";
     private boolean running;
+    /** Taller digits: 1 = normal, 2.5 = two and a half times as tall, same width. */
+    private float stretch = 1f;
+    private boolean glowOn = true;
+    private final android.graphics.Rect bounds = new android.graphics.Rect();
 
     RainbowClock(Context ctx, boolean rainbow) {
         super(ctx);
@@ -68,6 +72,18 @@ final class RainbowClock extends View {
         invalidate();
     }
 
+    /** Stretches the digits up and down (1 to 2.5) without making them wider; kept inside the box. */
+    void setStretch(float s) {
+        stretch = Math.max(1f, Math.min(2.5f, s));
+        invalidate();
+    }
+
+    /** The soft glow behind the digits, on or off. The rainbow keeps flowing either way. */
+    void setGlow(boolean on) {
+        glowOn = on;
+        invalidate();
+    }
+
     /** Runs the flow while Home is resumed; stops it (one still frame) otherwise. */
     void setRunning(boolean r) {
         running = r && animate;
@@ -79,7 +95,19 @@ final class RainbowClock extends View {
         if (text.isEmpty()) return;
         float w = face.measureText(text);
         float cx = getWidth() / 2f;
-        float y = getHeight() / 2f - (face.ascent() + face.descent()) / 2f;
+        // Centre on the digits' real height, then stretch them up and down about the middle, never past
+        // the box (the glow needs a little room).
+        face.getTextBounds(text, 0, text.length(), bounds);
+        float y = getHeight() / 2f - bounds.exactCenterY();
+        float fit = bounds.height() > 0 ? getHeight() * 0.86f / bounds.height() : 1f;
+        float sy = Math.max(1f, Math.min(stretch, fit));
+        int save = c.save();
+        c.scale(1f, sy, cx, getHeight() / 2f);
+        drawDigits(c, w, cx, y);
+        c.restoreToCount(save);
+    }
+
+    private void drawDigits(Canvas c, float w, float cx, float y) {
         if (!rainbow) {
             c.drawText(text, cx, y, face);
             return;
@@ -98,9 +126,11 @@ final class RainbowClock extends View {
         float breath = animate ? 0.5f + 0.5f * (float) Math.sin(now / 900.0) : 0.6f;
         hsv[0] = (phase * 360f + 200f) % 360f;
         int glowColor = Color.HSVToColor((int) (110 + 90 * breath), hsv);
-        glow.setShadowLayer(face.getTextSize() * (0.10f + 0.06f * breath), 0, 0, glowColor);
-        glow.setAlpha((int) (120 + 80 * breath));
-        c.drawText(text, cx, y, glow);
+        if (glowOn) {
+            glow.setShadowLayer(face.getTextSize() * (0.10f + 0.06f * breath), 0, 0, glowColor);
+            glow.setAlpha((int) (120 + 80 * breath));
+            c.drawText(text, cx, y, glow);
+        }
         c.drawText(text, cx, y, face);
         if (running) postInvalidateDelayed(33);
     }

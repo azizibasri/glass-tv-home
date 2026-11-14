@@ -119,7 +119,8 @@ public final class HomeActivity extends Activity {
     private String iconStyle;
     /** Clock font and size (%), and the car data source: the ⚙ menu's choices, else config.json's. */
     private String clockFont, dataSource, obdAddress;
-    private int clockSize;
+    private int clockSize, clockHeight;
+    private boolean clockGlow;
     private float clockBasePx;
     private int lastObdState = ObdLink.OFF;
     private TorqueBar torqueBar;
@@ -206,6 +207,8 @@ public final class HomeActivity extends Activity {
         iconStyle = prefs.getString("icon_style", cfg.iconStyle);
         clockFont = prefs.getString("clock_font", cfg.clockFont);
         clockSize = prefs.getInt("clock_size", cfg.clockSize);
+        clockHeight = prefs.getInt("clock_height", cfg.clockHeight);
+        clockGlow = prefs.getBoolean("clock_glow", cfg.clockGlow);
         dataSource = prefs.getString("data_source", cfg.dataSource);
         obdAddress = prefs.getString("obd_address", cfg.obdAddress);
         carData.setSource(dataSource, obdAddress);
@@ -775,6 +778,8 @@ public final class HomeActivity extends Activity {
         if (bigClock == null) return;
         bigClock.setTypeface(ClockFonts.typeface(this, clockFont));
         bigClock.setTextSizePx(clockBasePx * clockSize / 100f * ClockFonts.widthFactor(clockFont));
+        bigClock.setStretch(clockHeight / 100f);
+        bigClock.setGlow(clockGlow);
     }
 
     /** A dark glass panel dialog with a title, used by the clock and data source settings. */
@@ -887,6 +892,47 @@ public final class HomeActivity extends Activity {
             }
         });
         body.addView(bar, new LinearLayout.LayoutParams(-1, dp(40)));
+
+        // Height: stretches the digits up and down, the width stays.
+        TextView heightLabel = text(14, false);
+        heightLabel.setGravity(Gravity.START);
+        heightLabel.setText(getString(R.string.clock_height, clockHeight));
+        body.addView(heightLabel, new LinearLayout.LayoutParams(-1, -2));
+        android.widget.SeekBar tall = new android.widget.SeekBar(this);
+        tall.setMax(150);
+        tall.setProgress(clockHeight - 100);
+        tall.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(android.widget.SeekBar b, int p, boolean user) {
+                clockHeight = 100 + p;
+                heightLabel.setText(getString(R.string.clock_height, clockHeight));
+                applyClockStyle();
+            }
+
+            @Override
+            public void onStartTrackingTouch(android.widget.SeekBar b) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(android.widget.SeekBar b) {
+                prefs.edit().putInt("clock_height", clockHeight).apply();
+            }
+        });
+        body.addView(tall, new LinearLayout.LayoutParams(-1, dp(40)));
+
+        android.widget.Switch glowSwitch = new android.widget.Switch(this);
+        glowSwitch.setText(R.string.clock_glow);
+        glowSwitch.setTextColor(0xFFFFFFFF);
+        glowSwitch.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        glowSwitch.setChecked(clockGlow);
+        glowSwitch.setOnCheckedChangeListener((v, on) -> {
+            clockGlow = on;
+            prefs.edit().putBoolean("clock_glow", on).apply();
+            applyClockStyle();
+        });
+        LinearLayout.LayoutParams glp = new LinearLayout.LayoutParams(-1, -2);
+        glp.bottomMargin = dp(8);
+        body.addView(glowSwitch, glp);
         TextView hint = text(11, false);
         hint.setGravity(Gravity.START);
         hint.setSingleLine(false);

@@ -159,7 +159,9 @@ The gear on the left rail, above Clean:
 - **Wallpaper from gallery**: pick any photo with the unit's gallery. Glass Car keeps a copy, turns it the
   right way up and blurs it behind every glass panel. **Default wallpaper** goes back to the built-in one.
 - **Clock style**: seven fonts modelled on the iOS lock-screen clock styles (Thin, Light, Regular, Heavy,
-  Condensed, Serif, and Inter, an open font close to Apple's) and a size slider (60 to 140 %). Apple's own
+  Condensed, Serif, and Inter, an open font close to Apple's), a size slider (60 to 140 %), a **Height**
+  slider that stretches the digits taller (100 to 250 %, the width stays; it stops where the box ends, so
+  for very tall digits lower the size a little), and a **Glow** switch for the soft glow behind them. Apple's own
   font (SF Pro) is licensed for Apple devices only, so it isn't included; to use another font you are allowed
   to use, copy it to `Android/data/com.gathin.carhome/files/clock.ttf` and choose **Custom**.
 - **Car data source**: **CAN bus + GPS** (the CAN box, GPS for speed when it has none) or an **OBD-II
@@ -182,6 +184,8 @@ All keys optional; a bad file is ignored as a whole.
 | `wallpaper` | bool | Use `wallpaper.jpg` from the theme folder (or the one picked from the gallery); otherwise the built-in dark aurora |
 | `clock_font` | `thin`, `light`, `regular`, `heavy`, `condensed`, `serif`, `inter`, `custom` | Clock font. The ⚙ menu wins over this |
 | `clock_size` | 60 to 140 | Clock size in %. Default 100 |
+| `clock_height` | 100 to 250 | Clock digits stretched taller, in %. Default 100 |
+| `clock_glow` | bool | The glow behind the clock. Default `true` |
 | `data_source` | `"can"` or `"obd"` | Car data from the CAN box (and GPS) or a Bluetooth OBD-II adapter |
 | `obd_address` | Bluetooth address | The paired OBD-II adapter, e.g. `"00:1D:A5:68:98:8B"`; easier to pick in the ⚙ menu |
 | `fuel_tank_l`, `fuel_l_per_100km` | numbers | For fuel range over OBD-II. Default 55 and 7.5 |

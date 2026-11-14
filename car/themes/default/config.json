@@ -25,5 +25,7 @@
   "fuel_tank_l": 55,
   "fuel_l_per_100km": 7.5,
   "boost_unit": "bar",
-  "boost_max_bar": 1.5
+  "boost_max_bar": 1.5,
+  "clock_height": 100,
+  "clock_glow": true
 }
