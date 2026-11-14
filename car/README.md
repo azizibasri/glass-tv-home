@@ -161,7 +161,8 @@ The gear on the left rail, above Clean:
 - **Clock style**: seven fonts modelled on the iOS lock-screen clock styles (Thin, Light, Regular, Heavy,
   Condensed, Serif, and Inter, an open font close to Apple's), a size slider (60 to 140 %), a **Height**
   slider that stretches the digits taller (100 to 250 %, the width stays; it stops where the box ends, so
-  for very tall digits lower the size a little), and a **Glow** switch for the soft glow behind them. Apple's own
+  for very tall digits lower the size a little), a **Rainbow colours** switch (off: plain white digits) and a
+  **Glow** switch for the soft glow behind them (a white halo when the rainbow is off). Apple's own
   font (SF Pro) is licensed for Apple devices only, so it isn't included; to use another font you are allowed
   to use, copy it to `Android/data/com.gathin.carhome/files/clock.ttf` and choose **Custom**.
 - **Car data source**: **CAN bus + GPS** (the CAN box, GPS for speed when it has none) or an **OBD-II

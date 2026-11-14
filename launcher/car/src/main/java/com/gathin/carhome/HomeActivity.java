@@ -120,7 +120,7 @@ public final class HomeActivity extends Activity {
     /** Clock font and size (%), and the car data source: the ⚙ menu's choices, else config.json's. */
     private String clockFont, dataSource, obdAddress;
     private int clockSize, clockHeight;
-    private boolean clockGlow;
+    private boolean clockGlow, clockRainbow;
     private float clockBasePx;
     private int lastObdState = ObdLink.OFF;
     private TorqueBar torqueBar;
@@ -209,6 +209,7 @@ public final class HomeActivity extends Activity {
         clockSize = prefs.getInt("clock_size", cfg.clockSize);
         clockHeight = prefs.getInt("clock_height", cfg.clockHeight);
         clockGlow = prefs.getBoolean("clock_glow", cfg.clockGlow);
+        clockRainbow = prefs.getBoolean("clock_rainbow", cfg.clockRainbow);
         dataSource = prefs.getString("data_source", cfg.dataSource);
         obdAddress = prefs.getString("obd_address", cfg.obdAddress);
         carData.setSource(dataSource, obdAddress);
@@ -780,6 +781,7 @@ public final class HomeActivity extends Activity {
         bigClock.setTextSizePx(clockBasePx * clockSize / 100f * ClockFonts.widthFactor(clockFont));
         bigClock.setStretch(clockHeight / 100f);
         bigClock.setGlow(clockGlow);
+        bigClock.setRainbow(clockRainbow);
     }
 
     /** A dark glass panel dialog with a title, used by the clock and data source settings. */
@@ -920,6 +922,20 @@ public final class HomeActivity extends Activity {
         });
         body.addView(tall, new LinearLayout.LayoutParams(-1, dp(40)));
 
+        android.widget.Switch rainbowSwitch = new android.widget.Switch(this);
+        rainbowSwitch.setText(R.string.clock_rainbow);
+        rainbowSwitch.setTextColor(0xFFFFFFFF);
+        rainbowSwitch.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
+        rainbowSwitch.setChecked(clockRainbow);
+        rainbowSwitch.setOnCheckedChangeListener((v, on) -> {
+            clockRainbow = on;
+            prefs.edit().putBoolean("clock_rainbow", on).apply();
+            applyClockStyle();
+            if (bigClock != null) bigClock.setRunning(resumed);
+        });
+        LinearLayout.LayoutParams rlp2 = new LinearLayout.LayoutParams(-1, -2);
+        rlp2.bottomMargin = dp(6);
+        body.addView(rainbowSwitch, rlp2);
         android.widget.Switch glowSwitch = new android.widget.Switch(this);
         glowSwitch.setText(R.string.clock_glow);
         glowSwitch.setTextColor(0xFFFFFFFF);

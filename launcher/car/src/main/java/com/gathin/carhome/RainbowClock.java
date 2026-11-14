@@ -26,7 +26,8 @@ final class RainbowClock extends View {
     private final Paint face = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Matrix matrix = new Matrix();
     private final float[] hsv = {0f, 0.75f, 1f};
-    private final boolean animate, rainbow;
+    private final boolean motionAllowed;
+    private boolean animate, rainbow;
     private LinearGradient gradient;
     private String text = "";
     private boolean running;
@@ -38,15 +39,39 @@ final class RainbowClock extends View {
     RainbowClock(Context ctx, boolean rainbow) {
         super(ctx);
         float scale = Settings.Global.getFloat(ctx.getContentResolver(), Settings.Global.ANIMATOR_DURATION_SCALE, 1f);
+        motionAllowed = scale > 0f;
         this.rainbow = rainbow;
-        animate = rainbow && scale > 0f;
+        animate = rainbow && motionAllowed;
         Typeface t = Typeface.create("sans-serif-light", Typeface.NORMAL);
         for (Paint p : new Paint[]{glow, face}) {
             p.setTypeface(t);
             p.setTextAlign(Paint.Align.CENTER);
             p.setColor(0xFFFFFFFF);
         }
-        if (!rainbow) face.setShadowLayer(6, 0, 2, 0x99000000);
+        applyColours();
+    }
+
+    /** Rainbow colours (flowing) or plain white digits. */
+    void setRainbow(boolean on) {
+        if (on == rainbow) return;
+        rainbow = on;
+        animate = on && motionAllowed;
+        running = running && animate;
+        applyColours();
+        invalidate();
+    }
+
+    private void applyColours() {
+        gradient = null;
+        if (rainbow) {
+            face.clearShadowLayer();
+        } else {
+            face.setShader(null);
+            glow.setShader(null);
+            face.setColor(0xFFFFFFFF);
+            glow.setColor(0xFFFFFFFF);
+            face.setShadowLayer(6, 0, 2, 0x99000000);
+        }
     }
 
     void setText(CharSequence s) {
@@ -109,6 +134,12 @@ final class RainbowClock extends View {
 
     private void drawDigits(Canvas c, float w, float cx, float y) {
         if (!rainbow) {
+            // Plain white; the glow, when on, is a soft white halo.
+            if (glowOn) {
+                glow.setShadowLayer(face.getTextSize() * 0.10f, 0, 0, 0x99FFFFFF);
+                glow.setAlpha(0x99);
+                c.drawText(text, cx, y, glow);
+            }
             c.drawText(text, cx, y, face);
             return;
         }

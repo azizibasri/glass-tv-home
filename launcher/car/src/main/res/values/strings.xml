@@ -63,4 +63,5 @@
     <string name="turbo_boost">TURBO BOOST</string>
     <string name="clock_height">Height: %1$d%%</string>
     <string name="clock_glow">Glow behind the clock</string>
+    <string name="clock_rainbow">Rainbow colours (off: plain white)</string>
 </resources>
