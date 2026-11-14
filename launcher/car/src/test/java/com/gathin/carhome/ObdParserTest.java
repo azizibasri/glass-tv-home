@@ -60,4 +60,23 @@ public class ObdParserTest {
         assertEquals(250f, ObdParser.torqueFromLoad(130f, 250f), 0.001f);
         assertTrue(Float.isNaN(ObdParser.torqueFromLoad(Float.NaN, 250f)));
     }
+
+    @org.junit.Test
+    public void engineHeaderOnlyOnElevenBitCan() {
+        org.junit.Assert.assertEquals("7E0", ObdParser.engineHeader("A6\r\r"));
+        org.junit.Assert.assertEquals("7E0", ObdParser.engineHeader("6"));
+        org.junit.Assert.assertEquals("7E0", ObdParser.engineHeader("A8"));
+        org.junit.Assert.assertNull(ObdParser.engineHeader("A7"));
+        org.junit.Assert.assertNull(ObdParser.engineHeader("A3"));
+        org.junit.Assert.assertNull(ObdParser.engineHeader(null));
+        org.junit.Assert.assertTrue(ObdParser.notUnderstood("?\r\r"));
+        org.junit.Assert.assertFalse(ObdParser.notUnderstood("410B64"));
+        org.junit.Assert.assertTrue(ObdParser.ok("OK\r"));
+    }
+
+    @org.junit.Test
+    public void boostFromOneReplyRequest() {
+        int[] b = ObdParser.data("410BC8\r\r", "010B");
+        org.junit.Assert.assertEquals(0.987f, ObdParser.boostBar(ObdParser.kpa(b), 101.3f), 0.001f);
+    }
 }

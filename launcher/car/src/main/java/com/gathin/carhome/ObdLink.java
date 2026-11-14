@@ -110,6 +110,12 @@ final class ObdLink {
         }
         // Reset, no echo, no line feeds, no spaces, no headers, find the car's protocol by itself.
         for (String cmd : new String[]{"ATZ", "ATE0", "ATL0", "ATS0", "ATH0", "ATSP0"}) ask(cmd, 3_000);
+        // Find the protocol now (the first request searches), then on CAN talk to the engine computer only:
+        // otherwise the gearbox (DSG) answers too and every request waits for the adapter's time-out.
+        ask("0100", 10_000);
+        String header = ObdParser.engineHeader(ask("ATDPN", 2_000));
+        engineOnly = header != null && ObdParser.ok(ask("ATSH" + header, 2_000));
+        oneReply = engineOnly;
         listener.onState(CONNECTED, dev.getName());
     }
 
@@ -123,12 +129,23 @@ final class ObdLink {
             if (round % 2 == 0) report(ObdParser.ENGINE_LOAD);
             if (round % 3 == 0) report(slow[(round / 3) % slow.length]);
             round++;
-            Thread.sleep(150);
+            Thread.sleep(oneReply ? 20 : 100);
         }
     }
 
+    /**
+     * Engine computer only (CAN), and requests ending in "1": the adapter returns as soon as the one reply is
+     * in instead of waiting for other computers, so boost and speed update several times faster. Turned off
+     * by itself on an adapter that doesn't understand it.
+     */
+    private boolean engineOnly, oneReply;
+
     private void report(String pid) throws IOException {
-        String reply = ask(pid, 2_000);
+        String reply = ask(oneReply ? pid + "1" : pid, 2_000);
+        if (oneReply && ObdParser.notUnderstood(reply)) {
+            oneReply = false;
+            reply = ask(pid, 2_000);
+        }
         int[] data = ObdParser.data(reply, pid);
         if (data != null) listener.onValue(pid, data);
     }

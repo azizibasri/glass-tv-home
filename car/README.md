@@ -46,6 +46,9 @@ Swipe left for the apps.
   below zero, orange to red above, and a white mark at the highest boost of the last 10 seconds. From the
   CAN bus (`can_boost`, in bar above outside air) or over OBD-II from manifold pressure minus air pressure,
   as OBD apps do. Only the turbo engines (1.4 TSI) go above zero; the 1.6 without a turbo only shows vacuum.
+  Below zero is normal: at idle, cruising, light throttle and for a moment at every gear change (the DSG
+  closes the throttle) the engine pulls a vacuum, about -0.6 bar. It only goes above zero with a firm press,
+  above about 1,500 rpm. Over OBD-II it asks the engine computer alone, several times a second.
 - **Trip**: under the speed, the trip in km with a **Reset** button (tap Reset, then *Tap again* within
   3 seconds). With the car's odometer from the CAN bus (`can_odometer`) it counts every km, whatever is on
   screen. Without it, it adds up distance from the speed: the row says which.

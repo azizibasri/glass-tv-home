@@ -42,6 +42,27 @@ final class ObdParser {
         return null;
     }
 
+    /**
+     * The request header for the engine computer, from the adapter's protocol number (ATDPN, e.g. "A6"),
+     * or null when it isn't 11-bit CAN (6 or 8), where the engine is always 7E0.
+     */
+    static String engineHeader(String dpn) {
+        if (dpn == null) return null;
+        String p = dpn.replaceAll("[^0-9A-Fa-f]", "").toUpperCase(Locale.ROOT);
+        if (p.startsWith("A")) p = p.substring(1);
+        return p.equals("6") || p.equals("8") ? "7E0" : null;
+    }
+
+    /** True when the adapter answered OK. */
+    static boolean ok(String reply) {
+        return reply != null && reply.toUpperCase(Locale.ROOT).contains("OK");
+    }
+
+    /** True when the adapter didn't understand the command ("?"). */
+    static boolean notUnderstood(String reply) {
+        return reply != null && reply.trim().startsWith("?");
+    }
+
     /** km/h. */
     static float speed(int[] b) {
         return b != null && b.length >= 1 ? b[0] : Float.NaN;
