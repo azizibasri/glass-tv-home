@@ -122,7 +122,6 @@ public final class HomeActivity extends Activity {
     private TextView carNameView;
     private float clockBasePx;
     private int lastObdState = ObdLink.OFF;
-    private TorqueBar torqueBar;
     private RainbowClock bigClock;
     private TextView bigDate;
     private NowPlaying nowPlaying;
@@ -473,7 +472,6 @@ public final class HomeActivity extends Activity {
         bigSpeed = null;
         coolantTile = null;
         rangeTile = null;
-        torqueBar = null;
         if (nowPlaying != null) nowPlaying.stop();
         bigClock = null;
         bigDate = null;
@@ -552,17 +550,11 @@ public final class HomeActivity extends Activity {
         right.setOrientation(LinearLayout.VERTICAL);
         right.setPadding(dp(12), dp(12), dp(12), dp(12));
         right.setBackground(glassFor(right, dp(26)));
-        bigSpeed = new BigSpeedView(this, cfg.mph ? "mph" : "km/h", cfg.boostPsi, cfg.boostMaxBar);
+        bigSpeed = new BigSpeedView(this, cfg.mph ? "mph" : "km/h", cfg.boostPsi, cfg.boostMaxBar, cfg.torqueMax);
         bigSpeed.setTypeface(ClockFonts.typeface(this, clockFont));
         LinearLayout.LayoutParams speedLp = new LinearLayout.LayoutParams(-1, 0, 1f);
         speedLp.leftMargin = speedLp.rightMargin = dp(6);
         right.addView(bigSpeed, speedLp);
-        // Torque right under the turbo boost, in the same style.
-        torqueBar = new TorqueBar(this, cfg.torqueMax);
-        LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(-1, dp(44));
-        tlp.topMargin = dp(4);
-        tlp.leftMargin = tlp.rightMargin = dp(12);   // lines up with the boost bar
-        right.addView(torqueBar, tlp);
         LinearLayout.LayoutParams tripLp = new LinearLayout.LayoutParams(-1, dp(52));
         tripLp.topMargin = dp(8);
         right.addView(tripRow(), tripLp);
@@ -1268,7 +1260,7 @@ public final class HomeActivity extends Activity {
         String missing = carData.usesObd() ? obdStateLabel(r.obdState) : "NO DATA";
         bigSpeed.set(r.speed, src == SpeedMath.CAN ? r.carLabel : src == SpeedMath.GPS ? "GPS"
                 : carData.usesObd() ? missing : carData.hasGpsPermission() ? "NO SIGNAL" : "NO GPS PERMISSION", r.boost);
-        if (torqueBar != null) torqueBar.set(r.torque, r.torqueEstimated);
+        bigSpeed.setTorque(r.torque, r.torqueEstimated);
         if (Float.isNaN(r.coolant)) {
             coolantTile.set("-- °C", Float.NaN, 0x80FFFFFF, getString(R.string.no_data));
         } else {

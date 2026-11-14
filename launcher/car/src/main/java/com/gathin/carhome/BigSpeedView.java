@@ -13,7 +13,8 @@ import android.view.View;
 /**
  * The big digital speedometer: the speed in large digits (in the clock's font), its unit and source, and
  * under it the turbo boost: the value, and a bar from vacuum on the left through zero to full boost on the
- * right, blue below zero, orange to red above, with a mark at the highest boost of the last 10 seconds.
+ * right, blue below zero, orange to red above, with a mark at the highest boost of the last 10 seconds;
+ * and under that engine torque, drawn the same way (same text sizes, same bar) from 0 to the peak torque.
  */
 final class BigSpeedView extends View {
     private static final long PEAK_HOLD_MS = 10_000;
@@ -25,7 +26,11 @@ final class BigSpeedView extends View {
     private final Paint track = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mark = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final RectF bar = new RectF(), lit = new RectF();
+    private final Paint torqueFill = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final RectF bar = new RectF(), lit = new RectF(), torqueBar = new RectF();
+    private final float torqueMax;
+    private float torque = Float.NaN, shownTorque, speedH;
+    private boolean torqueEstimated;
     private final String unitText;
     private final boolean psi;
     private final float maxBar;
@@ -33,8 +38,9 @@ final class BigSpeedView extends View {
     private long peakAt, lastFrame;
     private String source = "";
 
-    BigSpeedView(Context ctx, String unitText, boolean psi, float maxBar) {
+    BigSpeedView(Context ctx, String unitText, boolean psi, float maxBar, float torqueMaxNm) {
         super(ctx);
+        this.torqueMax = torqueMaxNm;
         this.unitText = unitText;
         this.psi = psi;
         this.maxBar = maxBar;
@@ -75,16 +81,27 @@ final class BigSpeedView extends View {
         postInvalidateOnAnimation();
     }
 
+    /** Engine torque in Nm (NaN: none); estimated: worked out from engine load. */
+    void setTorque(float nm, boolean estimated) {
+        torque = nm;
+        torqueEstimated = estimated;
+        postInvalidateOnAnimation();
+    }
+
     @Override
     protected void onSizeChanged(int w, int h, int ow, int oh) {
-        float boostH = Math.max(52 * d, h * 0.30f);
-        float speedH = h - boostH;
+        // Two rows of the same size under the speed: turbo boost, then torque.
+        float boostH = Math.max(50 * d, h * 0.22f);
+        speedH = h - 2 * boostH;
         digits.setTextSize(Math.min(speedH * 0.78f, w * 0.40f));
         unit.setTextSize(Math.max(11 * d, speedH * 0.09f));
         label.setTextSize(Math.max(10 * d, boostH * 0.17f));
         value.setTextSize(Math.max(15 * d, boostH * 0.30f));
         float bh = Math.max(6 * d, boostH * 0.13f), pad = 6 * d;
-        bar.set(pad, h - pad - bh, w - pad, h - pad);
+        torqueBar.set(pad, h - pad - bh, w - pad, h - pad);
+        bar.set(pad, h - pad - bh - boostH, w - pad, h - pad - boostH);
+        torqueFill.setShader(new LinearGradient(torqueBar.left, 0, torqueBar.right, 0, 0xFF30D158, 0xFFFF9F0A,
+                Shader.TileMode.CLAMP));
         fill.setShader(new LinearGradient(bar.left, 0, bar.right, 0,
                 new int[]{0xFF64D2FF, 0xFF64D2FF, 0xFFFF9F0A, 0xFFFF453A},
                 new float[]{0f, SpeedMath.fractionOf(0f, maxBar), SpeedMath.fractionOf(0.2f, maxBar), 1f},
@@ -98,9 +115,8 @@ final class BigSpeedView extends View {
         lastFrame = now;
         shownSpeed = SpeedMath.smooth(shownSpeed, Float.isNaN(speed) ? 0f : speed, dt);
         shownBoost = SpeedMath.smooth(shownBoost, Float.isNaN(boost) ? 0f : boost, dt);
-        int w = getWidth(), h = getHeight();
-        float boostH = h - bar.top + bar.height() * 3.2f;
-        float speedH = h - boostH;
+        shownTorque = SpeedMath.smooth(shownTorque, Float.isNaN(torque) ? 0f : torque, dt);
+        int w = getWidth();
 
         // Speed.
         String text = Float.isNaN(speed) ? "--" : String.valueOf(SpeedMath.display(shownSpeed));
@@ -130,7 +146,20 @@ final class BigSpeedView extends View {
         c.drawLine(zero, bar.top - 2 * d, zero, bar.bottom + 2 * d, mark);
         mark.setAlpha(0xFF);
 
-        boolean moving = Math.abs(shownSpeed - (Float.isNaN(speed) ? 0f : speed)) > 0.05f
+        // Torque: the same row as the boost, from 0 to the engine's peak torque.
+        float tRowY = torqueBar.top - torqueBar.height() * 0.9f;
+        c.drawText(getContext().getString(torqueEstimated ? R.string.torque_estimated : R.string.torque),
+                torqueBar.left, tRowY, label);
+        c.drawText(Float.isNaN(torque) ? "-- Nm" : Math.round(torque) + " Nm", torqueBar.right, tRowY, value);
+        c.drawRoundRect(torqueBar, r, r, track);
+        float tf = SpeedMath.fraction(Math.max(0f, shownTorque), torqueMax);
+        if (!Float.isNaN(torque) && tf > 0.005f) {
+            lit.set(torqueBar.left, torqueBar.top,
+                    torqueBar.left + Math.max(torqueBar.height(), torqueBar.width() * tf), torqueBar.bottom);
+            c.drawRoundRect(lit, r, r, torqueFill);
+        }
+
+        boolean moving = Math.abs(shownTorque - (Float.isNaN(torque) ? 0f : torque)) > 0.05f || Math.abs(shownSpeed - (Float.isNaN(speed) ? 0f : speed)) > 0.05f
                 || Math.abs(shownBoost - (Float.isNaN(boost) ? 0f : boost)) > 0.002f;
         if (moving) postInvalidateOnAnimation();
         else lastFrame = 0;
