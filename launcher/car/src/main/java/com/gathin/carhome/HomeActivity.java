@@ -386,8 +386,9 @@ public final class HomeActivity extends Activity {
 
         // Dock: as many slots as fit, up to four, each icon at most 64 dp.
         int fixed = dp(14 + 30 + 18 + 12 + 12) + dp(76) + dp(48);
-        int slot = Math.min(dp(80), Math.max(dp(48), (railH - fixed) / MAX_DOCK));
-        int icon = Math.min(Math.min(dp(64), railW - dp(20)), slot - dp(12));
+        // Dock icons shrink to fit short screens instead of being cut off.
+        int slot = Math.min(dp(80), Math.max(dp(36), (railH - fixed) / MAX_DOCK));
+        int icon = Math.min(Math.min(dp(64), railW - dp(20)), slot - dp(slot < dp(56) ? 6 : 12));
         List<App> dock = dockApps();
         LinearLayout dockBox = new LinearLayout(this);
         dockBox.setOrientation(LinearLayout.VERTICAL);
@@ -478,7 +479,11 @@ public final class HomeActivity extends Activity {
         LinearLayout left = new LinearLayout(this);
         left.setOrientation(LinearLayout.VERTICAL);
         left.setGravity(Gravity.CENTER_HORIZONTAL);
-        left.setPadding(dp(24), dp(20), dp(24), dp(20));
+        // Narrow screens (dense or small units): less padding so the music widget and date fit.
+        int leftW = Math.round((areaW - dp(12)) / 2.25f);
+        boolean compact = leftW < dp(340);
+        int lp2 = compact ? dp(12) : dp(24);
+        left.setPadding(lp2, compact ? dp(12) : dp(20), lp2, compact ? dp(12) : dp(20));
         left.setBackground(glassFor(left, dp(26)));
         bigClock = new RainbowClock(this, cfg.clockRainbow);
         clockBasePx = Math.min(areaH * 0.24f, areaW * 0.12f);
@@ -492,10 +497,12 @@ public final class HomeActivity extends Activity {
         left.addView(clockBox, cblp);
         bigDate = text(18, false);
         bigDate.setAlpha(0.8f);
-        left.addView(bigDate, new LinearLayout.LayoutParams(-2, -2));
+        // Shrinks to fit rather than cutting the date short.
+        bigDate.setAutoSizeTextTypeUniformWithConfiguration(11, 18, 1, TypedValue.COMPLEX_UNIT_SP);
+        left.addView(bigDate, new LinearLayout.LayoutParams(-1, dp(compact ? 22 : 28)));
         if (cfg.musicWidget) {
             int npH = Math.max(dp(64), Math.min(dp(84), Math.round(areaH * 0.17f)));
-            nowPlaying = new NowPlaying(this, npH, this::openMusicApp);
+            nowPlaying = new NowPlaying(this, npH, leftW - 2 * lp2, this::openMusicApp);
             LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(-1, npH);
             nlp.topMargin = dp(14);
             left.addView(nowPlaying, nlp);
@@ -626,23 +633,57 @@ public final class HomeActivity extends Activity {
 
     // ---- Settings menu: wallpaper and icon style ----
 
+    /** The settings panel: every option as a big glass button, two to a row, in the middle of the screen. */
     private void settingsMenu(View anchor) {
-        PopupMenu m = new PopupMenu(this, anchor);
-        m.getMenu().add(0, 1, 0, R.string.wallpaper_pick);
-        m.getMenu().add(0, 2, 1, R.string.wallpaper_reset);
-        m.getMenu().add(0, 3, 2, "glass".equals(iconStyle) ? R.string.icons_color : R.string.icons_glass);
-        m.getMenu().add(0, 4, 3, R.string.clock_style);
-        m.getMenu().add(0, 5, 4, R.string.data_source);
-        m.setOnMenuItemClickListener(item -> {
-            int id = item.getItemId();
-            if (id == 1) pickPicture(REQUEST_WALLPAPER);
-            else if (id == 2) resetWallpaper();
-            else if (id == 3) setIconStyle("glass".equals(iconStyle) ? "color" : "glass");
-            else if (id == 4) clockDialog();
-            else dataSourceDialog();
-            return true;
-        });
-        m.show();
+        LinearLayout body = new LinearLayout(this);
+        body.setOrientation(LinearLayout.VERTICAL);
+        android.app.Dialog[] holder = new android.app.Dialog[1];
+        Object[][] items = {
+                {R.string.wallpaper_pick, (Runnable) () -> pickPicture(REQUEST_WALLPAPER)},
+                {R.string.wallpaper_reset, (Runnable) this::resetWallpaper},
+                {"glass".equals(iconStyle) ? R.string.icons_color : R.string.icons_glass,
+                        (Runnable) () -> setIconStyle("glass".equals(iconStyle) ? "color" : "glass")},
+                {R.string.clock_style, (Runnable) this::clockDialog},
+                {R.string.data_source, (Runnable) this::dataSourceDialog},
+        };
+        LinearLayout row = null;
+        for (int i = 0; i < items.length; i++) {
+            if (i % 2 == 0) {
+                row = new LinearLayout(this);
+                row.setOrientation(LinearLayout.HORIZONTAL);
+                LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(-1, -2);
+                rlp.bottomMargin = dp(10);
+                body.addView(row, rlp);
+            }
+            TextView b = text(15, true);
+            b.setText((int) items[i][0]);
+            b.setSingleLine(false);
+            b.setMinHeight(dp(52));
+            b.setPadding(dp(14), dp(12), dp(14), dp(12));
+            android.graphics.drawable.GradientDrawable g = new android.graphics.drawable.GradientDrawable();
+            g.setColor(0x1FFFFFFF);
+            g.setCornerRadius(dp(16));
+            g.setStroke(Math.max(1, dp(1)), 0x40FFFFFF);
+            b.setBackground(g);
+            Runnable action = (Runnable) items[i][1];
+            b.setOnClickListener(v -> {
+                if (holder[0] != null) holder[0].dismiss();
+                action.run();
+            });
+            squish(b);
+            b.setGravity(Gravity.CENTER);
+            LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(0, -2, 1f);
+            if (i % 2 == 1) blp.leftMargin = dp(10);
+            row.addView(b, blp);
+        }
+        // An odd number of options: keep the last one half width.
+        if (items.length % 2 == 1 && row != null) {
+            LinearLayout.LayoutParams flp = new LinearLayout.LayoutParams(0, dp(1), 1f);
+            flp.leftMargin = dp(10);
+            row.addView(new View(this), flp);
+        }
+        holder[0] = panelDialog(R.string.settings, body);
+        holder[0].show();
     }
 
     private void pickPicture(int request) {
@@ -788,9 +829,19 @@ public final class HomeActivity extends Activity {
         t.setText(title);
         t.setGravity(Gravity.START);
         box.addView(t, new LinearLayout.LayoutParams(-1, -2));
+        // The body scrolls when the screen is short, so Done always stays on screen.
+        int maxBody = Math.max(dp(120), (builtH > 0 ? builtH : getResources().getDisplayMetrics().heightPixels) - dp(150));
+        android.widget.ScrollView scroll = new android.widget.ScrollView(this) {
+            @Override
+            protected void onMeasure(int wSpec, int hSpec) {
+                super.onMeasure(wSpec, MeasureSpec.makeMeasureSpec(maxBody, MeasureSpec.AT_MOST));
+            }
+        };
+        scroll.setVerticalScrollBarEnabled(false);
+        scroll.addView(body, new android.widget.FrameLayout.LayoutParams(-1, -2));
         LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(-1, -2);
         blp.topMargin = dp(12);
-        box.addView(body, blp);
+        box.addView(scroll, blp);
         TextView done = text(16, true);
         done.setText(R.string.done);
         done.setTextColor(0xFF64D2FF);
@@ -818,19 +869,8 @@ public final class HomeActivity extends Activity {
         knob.setSize(dp(24), dp(24));
         bar.setThumb(knob);
         bar.setThumbOffset(dp(12));
-        android.graphics.drawable.GradientDrawable track = new android.graphics.drawable.GradientDrawable();
-        track.setColor(0x33FFFFFF);
-        track.setCornerRadius(dp(3));
-        track.setStroke(Math.max(1, dp(1)), 0x33FFFFFF);
-        android.graphics.drawable.GradientDrawable done = new android.graphics.drawable.GradientDrawable();
-        done.setColor(0x8CFFFFFF);
-        done.setCornerRadius(dp(3));
-        android.graphics.drawable.LayerDrawable layers = new android.graphics.drawable.LayerDrawable(new android.graphics.drawable.Drawable[]{
-                track, new android.graphics.drawable.ClipDrawable(done, Gravity.START, android.graphics.drawable.ClipDrawable.HORIZONTAL)});
-        layers.setId(0, android.R.id.background);
-        layers.setId(1, android.R.id.progress);
-        for (int i = 0; i < 2; i++) layers.setLayerInset(i, 0, dp(17), 0, dp(17));
-        bar.setProgressDrawable(layers);
+        // A thin rounded track centred in the slider whatever its height, filled up to the knob.
+        bar.setProgressDrawable(new GlassTrack(dp(6), dp(1)));
         bar.setPadding(dp(14), 0, dp(14), 0);
     }
 
@@ -1076,11 +1116,7 @@ public final class HomeActivity extends Activity {
         });
         body.addView(btSettings, new LinearLayout.LayoutParams(-2, -2));
         refresh.run();
-        android.widget.ScrollView sv = new android.widget.ScrollView(this);
-        sv.addView(body);
-        LinearLayout wrap = new LinearLayout(this);
-        wrap.addView(sv, new LinearLayout.LayoutParams(-1, Math.min(dp(330), builtH - dp(160))));
-        android.app.Dialog d = panelDialog(R.string.data_source, wrap);
+        android.app.Dialog d = panelDialog(R.string.data_source, body);
         holder[0] = d;
         d.setOnDismissListener(x -> {
             if (chosen[0].equals("obd") && chosen[1].isEmpty()) chosen[0] = "can";

@@ -70,7 +70,14 @@ final class InfoTile extends View {
         c.drawText(title, x, labelY, label);
         float valueY = labelY + value.getTextSize() * 1.05f;
         c.drawText(text, x, valueY, value);
-        c.drawText(state, w - pad, labelY, note);
+        // The state word goes top right; on a narrow tile, next to the value instead; if neither fits, the
+        // coloured bar still tells.
+        float gap = 8 * d, stateW = note.measureText(state);
+        if (x + label.measureText(title) + gap + stateW <= w - pad) {
+            c.drawText(state, w - pad, labelY, note);
+        } else if (x + value.measureText(text) + gap + stateW <= w - pad) {
+            c.drawText(state, w - pad, valueY, note);
+        }
         float bh = Math.max(3 * d, h * 0.06f);
         bar.set(x, h - pad - bh, w - pad, h - pad);
         c.drawRoundRect(bar, bh / 2, bh / 2, track);

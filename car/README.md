@@ -154,7 +154,8 @@ Undo Glass Car: `CAR_HOST=<ip> car/restore-home.sh <original home printed by ins
 
 ## The ⚙ menu
 
-The gear on the left rail, above Clean:
+The gear on the left rail, above Clean, opens a glass settings panel in the middle of the screen with every
+option as a big button (it scrolls on short screens):
 
 - **Wallpaper from gallery**: pick any photo with the unit's gallery. Glass Car keeps a copy, turns it the
   right way up and blurs it behind every glass panel. **Default wallpaper** goes back to the built-in one.

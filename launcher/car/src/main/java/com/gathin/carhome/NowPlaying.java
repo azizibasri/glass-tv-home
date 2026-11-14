@@ -68,17 +68,20 @@ final class NowPlaying extends LinearLayout {
     private MediaController controller;
     private boolean running, listening;
 
-    NowPlaying(Context ctx, int heightPx, Runnable openMusicApp) {
+    NowPlaying(Context ctx, int heightPx, int widthPx, Runnable openMusicApp) {
         super(ctx);
         this.openMusicApp = openMusicApp;
         float d = getResources().getDisplayMetrics().density;
         setOrientation(HORIZONTAL);
         setGravity(Gravity.CENTER_VERTICAL);
-        int pad = Math.round(10 * d);
+        // Narrow: smaller padding and buttons, and no "previous" button, so the song name keeps room.
+        boolean narrow = widthPx > 0 && widthPx < 300 * d;
+        int pad = Math.round((narrow ? 7 : 10) * d);
         setPadding(pad, pad, pad, pad);
         setBackground(darkPanel(ctx));
 
         int artPx = heightPx - 2 * pad;
+
         art = new ImageView(ctx);
         art.setScaleType(ImageView.ScaleType.CENTER_CROP);
         art.setOutlineProvider(new ViewOutlineProvider() {
@@ -89,6 +92,7 @@ final class NowPlaying extends LinearLayout {
         });
         art.setClipToOutline(true);
         addView(art, new LayoutParams(artPx, artPx));
+        if (narrow) art.setVisibility(GONE);   // narrow screens: the song name needs the room more
 
         LinearLayout text = new LinearLayout(ctx);
         text.setOrientation(VERTICAL);
@@ -115,10 +119,12 @@ final class NowPlaying extends LinearLayout {
         addView(text, new LayoutParams(0, -2, 1f));
         text.setOnClickListener(v -> openApp());
 
-        int btn = Math.round(Math.min(44 * d, artPx * 0.8f));
-        addView(button(ctx, R.drawable.ic_prev, btn, v -> {
-            if (controller != null) controller.getTransportControls().skipToPrevious();
-        }));
+        int btn = Math.round(Math.min((narrow ? 34 : 44) * d, artPx * 0.8f));
+        if (!narrow) {
+            addView(button(ctx, R.drawable.ic_prev, btn, v -> {
+                if (controller != null) controller.getTransportControls().skipToPrevious();
+            }));
+        }
         playPause = button(ctx, R.drawable.ic_play, Math.round(btn * 1.15f), v -> togglePlay());
         addView(playPause);
         addView(button(ctx, R.drawable.ic_next, btn, v -> {
