@@ -71,8 +71,9 @@ final class Glass extends Drawable {
         Wallpaper wp = source.wallpaper;
         View root = source.root;
         if (wp != null && root != null && root.getWidth() > 0) {
-            owner.getLocationInWindow(at);
-            root.getLocationInWindow(rootAt);
+            // Screen positions, so a panel in a dialog (its own window) lines up with the wallpaper too.
+            owner.getLocationOnScreen(at);
+            root.getLocationOnScreen(rootAt);
             int x = at[0] - rootAt[0], y = at[1] - rootAt[1];
             dst.set(-x, -y, root.getWidth() - x, root.getHeight() - y);
             c.drawBitmap(wp.blurred, null, dst, bitmapPaint);

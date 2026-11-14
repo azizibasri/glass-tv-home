@@ -791,11 +791,8 @@ public final class HomeActivity extends Activity {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(dp(22), dp(18), dp(22), dp(14));
-        android.graphics.drawable.GradientDrawable bg = new android.graphics.drawable.GradientDrawable();
-        bg.setColor(0xF01C1C22);
-        bg.setCornerRadius(dp(24));
-        bg.setStroke(Math.max(1, dp(1)), 0x33FFFFFF);
-        box.setBackground(bg);
+        // Clear glass: the blurred wallpaper under the panel, a dark veil for reading, a bright rim.
+        box.setBackground(new Glass(glass, box, dp(24), density, 0x8C1C1E2A));
         TextView t = text(18, true);
         t.setText(title);
         t.setGravity(Gravity.START);
@@ -811,11 +808,47 @@ public final class HomeActivity extends Activity {
         done.setOnClickListener(v -> d.dismiss());
         box.addView(done, new LinearLayout.LayoutParams(-1, -2));
         d.setContentView(box);
+        glassViews.add(box);
         if (d.getWindow() != null) {
             d.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(0));
             d.getWindow().setLayout(Math.min(builtW - dp(48), dp(620)), ViewGroup.LayoutParams.WRAP_CONTENT);
         }
         return d;
+    }
+
+    /** A glass slider: thin frosted track, white glass knob. */
+    private void glassSeek(android.widget.SeekBar bar) {
+        android.graphics.drawable.GradientDrawable knob = new android.graphics.drawable.GradientDrawable();
+        knob.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        knob.setColors(new int[]{0xFFFFFFFF, 0xFFD5D9E1});
+        knob.setGradientType(android.graphics.drawable.GradientDrawable.RADIAL_GRADIENT);
+        knob.setGradientRadius(dp(14));
+        knob.setStroke(Math.max(1, dp(1)), 0xB3FFFFFF);
+        knob.setSize(dp(24), dp(24));
+        bar.setThumb(knob);
+        bar.setThumbOffset(dp(12));
+        android.graphics.drawable.GradientDrawable track = new android.graphics.drawable.GradientDrawable();
+        track.setColor(0x33FFFFFF);
+        track.setCornerRadius(dp(3));
+        track.setStroke(Math.max(1, dp(1)), 0x33FFFFFF);
+        android.graphics.drawable.GradientDrawable done = new android.graphics.drawable.GradientDrawable();
+        done.setColor(0x8CFFFFFF);
+        done.setCornerRadius(dp(3));
+        android.graphics.drawable.LayerDrawable layers = new android.graphics.drawable.LayerDrawable(new android.graphics.drawable.Drawable[]{
+                track, new android.graphics.drawable.ClipDrawable(done, Gravity.START, android.graphics.drawable.ClipDrawable.HORIZONTAL)});
+        layers.setId(0, android.R.id.background);
+        layers.setId(1, android.R.id.progress);
+        for (int i = 0; i < 2; i++) layers.setLayerInset(i, 0, dp(17), 0, dp(17));
+        bar.setProgressDrawable(layers);
+        bar.setPadding(dp(14), 0, dp(14), 0);
+    }
+
+    /** An iPhone-style switch: white glass knob, green track when on, frosted when off. */
+    private void glassSwitch(android.widget.Switch sw) {
+        int[][] states = {{android.R.attr.state_checked}, {}};
+        sw.setThumbTintList(new android.content.res.ColorStateList(states, new int[]{0xFFFFFFFF, 0xFFF2F4F8}));
+        sw.setTrackTintList(new android.content.res.ColorStateList(states, new int[]{0xFF30D158, 0x59FFFFFF}));
+        sw.setTrackTintMode(android.graphics.PorterDuff.Mode.SRC);
     }
 
     private void clockDialog() {
@@ -833,8 +866,8 @@ public final class HomeActivity extends Activity {
                 boolean on = ClockFonts.KEYS[i].equals(clockFont);
                 android.graphics.drawable.GradientDrawable g = new android.graphics.drawable.GradientDrawable();
                 g.setCornerRadius(dp(16));
-                g.setColor(on ? 0x330A84FF : 0x14FFFFFF);
-                g.setStroke(dp(on ? 2 : 1), on ? 0xFF0A84FF : 0x26FFFFFF);
+                g.setColor(on ? 0x400A84FF : 0x1AFFFFFF);
+                g.setStroke(dp(on ? 2 : 1), on ? 0xFF0A84FF : 0x33FFFFFF);
                 chip.setBackground(g);
             }
         };
@@ -874,6 +907,7 @@ public final class HomeActivity extends Activity {
         slp.topMargin = dp(16);
         body.addView(sizeLabel, slp);
         android.widget.SeekBar bar = new android.widget.SeekBar(this);
+        glassSeek(bar);
         bar.setMax(80);
         bar.setProgress(clockSize - 60);
         bar.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener() {
@@ -901,6 +935,7 @@ public final class HomeActivity extends Activity {
         heightLabel.setText(getString(R.string.clock_height, clockHeight));
         body.addView(heightLabel, new LinearLayout.LayoutParams(-1, -2));
         android.widget.SeekBar tall = new android.widget.SeekBar(this);
+        glassSeek(tall);
         tall.setMax(150);
         tall.setProgress(clockHeight - 100);
         tall.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener() {
@@ -927,6 +962,7 @@ public final class HomeActivity extends Activity {
         rainbowSwitch.setTextColor(0xFFFFFFFF);
         rainbowSwitch.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
         rainbowSwitch.setChecked(clockRainbow);
+        glassSwitch(rainbowSwitch);
         rainbowSwitch.setOnCheckedChangeListener((v, on) -> {
             clockRainbow = on;
             prefs.edit().putBoolean("clock_rainbow", on).apply();
@@ -941,6 +977,7 @@ public final class HomeActivity extends Activity {
         glowSwitch.setTextColor(0xFFFFFFFF);
         glowSwitch.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
         glowSwitch.setChecked(clockGlow);
+        glassSwitch(glowSwitch);
         glowSwitch.setOnCheckedChangeListener((v, on) -> {
             clockGlow = on;
             prefs.edit().putBoolean("clock_glow", on).apply();
