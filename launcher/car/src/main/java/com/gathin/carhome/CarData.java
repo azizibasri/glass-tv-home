@@ -33,6 +33,8 @@ final class CarData {
 
     /** One snapshot. NaN means "no data". */
     static final class Reading {
+        /** True when torque is estimated from engine load (the car doesn't report actual torque). */
+        boolean torqueEstimated;
         /** Turbo boost in bar above the outside air (below zero: vacuum). */
         float boost = Float.NaN;
         float speed = Float.NaN, torque = Float.NaN, coolant = Float.NaN, range = Float.NaN;
@@ -77,6 +79,9 @@ final class CarData {
     private ObdLink obd;
     private volatile int obdState = ObdLink.OFF;
     private float torquePercent = Float.NaN, torqueReference = Float.NaN;
+    /** When the car last gave actual torque; without it for a while, torque comes from engine load. */
+    private long actualTorqueAt;
+    private volatile boolean torqueEstimated;
     private final Slot speed, boost, torque, coolant, range, odometer, doors;
     private float airKpa = Float.NaN;
     private final Slot[] slots;
@@ -212,6 +217,7 @@ final class CarData {
         long now = SystemClock.elapsedRealtime();
         Reading r = new Reading();
         r.carLabel = usesObd() ? "OBD-II" : "CAN BUS";
+        r.torqueEstimated = usesObd() && torqueEstimated;
         r.obdState = obdState;
         r.speedSource = SpeedMath.pick(now, speed.at, gpsAt);
         r.speed = r.speedSource == SpeedMath.CAN ? speed.value : r.speedSource == SpeedMath.GPS ? gpsSpeed : Float.NaN;
@@ -258,6 +264,14 @@ final class CarData {
             case ObdParser.TORQUE_REFERENCE:
                 torqueReference = ObdParser.torqueReference(data);
                 break;
+            case ObdParser.ENGINE_LOAD:
+                // Only when the car hasn't given actual torque in the last 20 seconds.
+                if (actualTorqueAt == 0 || now - actualTorqueAt > 20_000) {
+                    v = ObdParser.torqueFromLoad(ObdParser.engineLoad(data), cfg.torqueMax);
+                    slot = torque;
+                    torqueEstimated = true;
+                }
+                break;
             case ObdParser.ODOMETER:
                 v = ObdParser.odometer(data);
                 slot = odometer;
@@ -269,6 +283,8 @@ final class CarData {
                 && (pid.equals(ObdParser.TORQUE_PERCENT) || pid.equals(ObdParser.TORQUE_REFERENCE))) {
             v = torquePercent / 100f * torqueReference;
             slot = torque;
+            actualTorqueAt = now;
+            torqueEstimated = false;
         }
         if (slot != null && !Float.isNaN(v) && v >= slot.min && v <= slot.max) {
             slot.value = v;

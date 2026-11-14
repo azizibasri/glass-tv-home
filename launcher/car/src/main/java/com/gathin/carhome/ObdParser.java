@@ -11,7 +11,7 @@ final class ObdParser {
     /** The requests, in the adapter's own words: mode 01 + PID. */
     static final String SPEED = "010D", RPM = "010C", COOLANT = "0105", FUEL_LEVEL = "012F",
             TORQUE_PERCENT = "0162", TORQUE_REFERENCE = "0163", ODOMETER = "01A6",
-            MANIFOLD_PRESSURE = "010B", BAROMETRIC_PRESSURE = "0133";
+            MANIFOLD_PRESSURE = "010B", BAROMETRIC_PRESSURE = "0133", ENGINE_LOAD = "0104";
 
     /** Sea-level air pressure, kPa: used for boost until the car reports its own. */
     static final float STANDARD_AIR_KPA = 101.3f;
@@ -75,6 +75,21 @@ final class ObdParser {
     /** km on the odometer (newer cars only). */
     static float odometer(int[] b) {
         return b != null && b.length >= 4 ? ((long) b[0] << 24 | b[1] << 16 | b[2] << 8 | b[3]) / 10f : Float.NaN;
+    }
+
+    /** Calculated engine load, 0 to 100 %: supported by nearly every car, unlike actual torque. */
+    static float engineLoad(int[] b) {
+        return b != null && b.length >= 1 ? b[0] * 100f / 255f : Float.NaN;
+    }
+
+    /**
+     * A torque estimate for cars that don't report actual torque: engine load times the engine's peak
+     * torque. Rough (load follows the air the engine takes in, not exactly the torque), so it is shown as
+     * an estimate.
+     */
+    static float torqueFromLoad(float loadPercent, float peakNm) {
+        if (Float.isNaN(loadPercent) || peakNm <= 0) return Float.NaN;
+        return Math.max(0f, Math.min(100f, loadPercent)) / 100f * peakNm;
     }
 
     /** Intake manifold absolute pressure, or barometric pressure: kPa. */

@@ -1148,7 +1148,7 @@ public final class HomeActivity extends Activity {
         String missing = carData.usesObd() ? obdStateLabel(r.obdState) : "NO DATA";
         bigSpeed.set(r.speed, src == SpeedMath.CAN ? r.carLabel : src == SpeedMath.GPS ? "GPS"
                 : carData.usesObd() ? missing : carData.hasGpsPermission() ? "NO SIGNAL" : "NO GPS PERMISSION", r.boost);
-        if (torqueBar != null) torqueBar.set(r.torque);
+        if (torqueBar != null) torqueBar.set(r.torque, r.torqueEstimated);
         showDoors(r.doors < 0 ? null : Doors.open(r.doors, cfg.doorBits), r.doors >= 0);
         if (Float.isNaN(r.coolant)) {
             coolantTile.set("-- °C", Float.NaN, 0x80FFFFFF, getString(R.string.no_data));

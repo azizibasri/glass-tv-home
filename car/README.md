@@ -90,6 +90,10 @@ falls back to GPS; boost and torque older than 3 seconds, and coolant and range 
 
 ## OBD-II Bluetooth adapter (Carista and others)
 
+Torque over OBD-II: the actual-torque values (PIDs 62/63) when the car gives them; many cars before about
+2018, VW included, don't, and then torque is estimated from engine load (PID 04) times `torque_max`, shown
+as `TORQUE · EST.`.
+
 Instead of the CAN box, every value can come from an OBD-II adapter in the port under the dashboard: speed,
 turbo boost (manifold pressure minus air pressure), coolant, torque (actual % of the engine's reference torque), the odometer where the car has one
 (mostly 2019 and newer), and fuel range worked out from the tank level (`fuel_tank_l`, default 55 L for the

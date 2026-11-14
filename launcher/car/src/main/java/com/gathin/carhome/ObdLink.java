@@ -120,6 +120,7 @@ final class ObdLink {
         while (running) {
             report(ObdParser.SPEED);
             report(ObdParser.MANIFOLD_PRESSURE);
+            if (round % 2 == 0) report(ObdParser.ENGINE_LOAD);
             if (round % 3 == 0) report(slow[(round / 3) % slow.length]);
             round++;
             Thread.sleep(150);

@@ -36,8 +36,11 @@ final class TorqueBar extends View {
         track.setColor(0x26FFFFFF);
     }
 
-    void set(float nm) {
+    private boolean estimated;
+
+    void set(float nm, boolean estimated) {
         target = nm;
+        this.estimated = estimated;
         postInvalidateOnAnimation();
     }
 
@@ -55,7 +58,7 @@ final class TorqueBar extends View {
         shown = SpeedMath.smooth(shown, has ? target : 0f, lastFrame == 0 ? 16 : now - lastFrame);
         lastFrame = now;
         float base = bar.top - bar.height() * 0.9f;
-        c.drawText("TORQUE", 0, base, label);
+        c.drawText(estimated ? "TORQUE · EST." : "TORQUE", 0, base, label);
         c.drawText(has ? Math.round(target) + " Nm" : "-- Nm", getWidth(), base, value);
         float r = bar.height() / 2;
         c.drawRoundRect(bar, r, r, track);

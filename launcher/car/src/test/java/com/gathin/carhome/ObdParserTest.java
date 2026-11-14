@@ -51,4 +51,13 @@ public class ObdParserTest {
         assertEquals(0.4f, SpeedMath.fractionOf(0f, 1.5f), 0.001f);
         assertEquals(1f, SpeedMath.boostFraction(3f, 1.5f), 0f);
     }
+
+    @Test
+    public void torqueFromEngineLoad() {
+        // 50 % load on a 250 Nm engine: about 125 Nm.
+        assertEquals(50.2f, ObdParser.engineLoad(ObdParser.data("41 04 80", "0104")), 0.1f);
+        assertEquals(125f, ObdParser.torqueFromLoad(50f, 250f), 0.001f);
+        assertEquals(250f, ObdParser.torqueFromLoad(130f, 250f), 0.001f);
+        assertTrue(Float.isNaN(ObdParser.torqueFromLoad(Float.NaN, 250f)));
+    }
 }
