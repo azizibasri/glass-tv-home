@@ -39,7 +39,13 @@ Swipe left for the apps.
   fills with the speed (green, yellow, blue, purple, pink, red), a thin bright glass rim,
   clean white numbers, a red zone from 200 km/h and a red needle with a glowing tip that sweeps up and back
   each time Home opens.
-- **Trip**: under the two dials, the trip in km with a **Reset** button (tap Reset, then *Tap again* within
+- **3D car**: under the dials, a white sedan styled after the owner's 2017 Jetta (black mirrors and front
+  lip, smoked lamps, a red line across the grille; no maker's badges). Drag sideways to turn it, up and down
+  to tilt it; left alone it turns slowly. With door data from the CAN bus (`can_doors`), each open door, the
+  boot and the bonnet swing open on the model and glow orange, the car turns to show them, and the label
+  under it says which ("Front left door open", "2 doors open", "All doors closed"). OBD-II has no door
+  data, so in OBD-II mode it says *Door status: no data*.
+- **Trip**: under the 3D car, the trip in km with a **Reset** button (tap Reset, then *Tap again* within
   3 seconds). With the car's odometer from the CAN bus (`can_odometer`) it counts every km, whatever is on
   screen. Without it, it adds up distance from the speed, and only while Home is open: the row says which.
 - **Rev counter**: the same glass dial, 0 to 7 (x1000 rpm), red from 6000.
@@ -72,10 +78,14 @@ When one carries the value, add it to `config.json`:
   "can_torque":  { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
   "can_coolant": { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
   "can_range":   { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
-  "can_odometer":{ "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 }
+  "can_odometer":{ "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
+  "can_doors":   { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
+  "door_bits":   { "front_left": 1, "front_right": 2, "rear_left": 4, "rear_right": 8, "boot": 16, "bonnet": 32 }
 }
 ```
 
+`can_doors` is one number with a bit per door; `door_bits` says which bit is which (the values above are the
+default; CAN boxes differ, so open each door once with the scan running and watch which bit changes).
 `scale` converts the raw number (e.g. `0.1` when the box sends tenths). A CAN speed older than 3 seconds
 falls back to GPS; rpm and torque older than 3 seconds, and coolant and range older than 30, show `--`.
 
@@ -185,7 +195,8 @@ All keys optional; a bad file is ignored as a whole.
 | `speed_max` | 60 to 400 | Top of the dial. Default 240, like the Jetta's cluster |
 | `torque_max` | 50 to 2000 | End of the torque bar in Nm, about the engine's peak (1.4 TSI: 250, 1.5 MPI: 145) |
 | `rpm_max`, `rpm_red` | 3000 to 12000 | Top of the rev counter and start of its red zone. Default 7000 and 6000 |
-| `can_speed`, `can_rpm`, `can_torque`, `can_coolant`, `can_range`, `can_odometer` | `{action, extra, scale}` | The CAN app's broadcast that carries each value; see Dashboard above |
+| `door_bits` | `{front_left, front_right, rear_left, rear_right, boot, bonnet}` | Which bit of `can_doors` is which door |
+| `can_speed`, `can_rpm`, `can_torque`, `can_coolant`, `can_range`, `can_odometer`, `can_doors` | `{action, extra, scale}` | The CAN app's broadcast that carries each value; see Dashboard above |
 
 ## Safety
 

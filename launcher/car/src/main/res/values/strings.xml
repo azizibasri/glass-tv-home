@@ -51,4 +51,15 @@
     <string name="source_now_can">Car data: CAN bus + GPS</string>
     <string name="obd_connected">OBD-II adapter connected</string>
     <string name="obd_failed">Can't reach the OBD-II adapter. Is the ignition on?</string>
+    <string name="car_model">Your car. Drag to turn it.</string>
+    <string name="door_fl">Front left door</string>
+    <string name="door_fr">Front right door</string>
+    <string name="door_rl">Rear left door</string>
+    <string name="door_rr">Rear right door</string>
+    <string name="door_trunk">Boot</string>
+    <string name="door_hood">Bonnet</string>
+    <string name="door_open">%1$s open</string>
+    <string name="doors_open">%1$d doors open</string>
+    <string name="doors_closed">All doors closed</string>
+    <string name="doors_no_data">Door status: no data</string>
 </resources>

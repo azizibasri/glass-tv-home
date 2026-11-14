@@ -108,6 +108,7 @@ public final class HomeActivity extends Activity {
     private CarData carData;
     private Gauge gauge, rpmGauge;
     private InfoTile coolantTile, rangeTile;
+    private CarModelView carModel;
     private static final int REQUEST_WALLPAPER = 11;
     private final TripMeter trip = new TripMeter();
     private TextView tripValue, tripNote, tripReset;
@@ -240,6 +241,7 @@ public final class HomeActivity extends Activity {
             main.post(dataTick);
         }
         if (bigClock != null) bigClock.setRunning(true);
+        if (carModel != null) carModel.setRunning(true);
         if (gauge != null && pager != null && pager.page() == 0) {
             gauge.sweep();
             rpmGauge.sweep();
@@ -265,6 +267,7 @@ public final class HomeActivity extends Activity {
         carData.stop();
         saveTrip();
         if (bigClock != null) bigClock.setRunning(false);
+        if (carModel != null) carModel.setRunning(false);
         if (nowPlaying != null) nowPlaying.stop();
         super.onPause();
     }
@@ -450,6 +453,7 @@ public final class HomeActivity extends Activity {
         rpmGauge = null;
         coolantTile = null;
         rangeTile = null;
+        carModel = null;
         torqueBar = null;
         if (nowPlaying != null) nowPlaying.stop();
         bigClock = null;
@@ -524,6 +528,12 @@ public final class HomeActivity extends Activity {
         rpmLp.leftMargin = dp(8);
         dials.addView(rpmGauge, rpmLp);
         right.addView(dials, new LinearLayout.LayoutParams(-1, 0, 1f));
+        // The 3D car under the dials, showing open doors.
+        carModel = new CarModelView(this);
+        LinearLayout.LayoutParams carLp = new LinearLayout.LayoutParams(-1, 0, 1.05f);
+        carLp.topMargin = dp(4);
+        right.addView(carModel, carLp);
+        carModel.setRunning(resumed);
         LinearLayout.LayoutParams tripLp = new LinearLayout.LayoutParams(-1, dp(52));
         tripLp.topMargin = dp(8);
         right.addView(tripRow(), tripLp);
@@ -998,6 +1008,9 @@ public final class HomeActivity extends Activity {
         boolean hasRpm = !Float.isNaN(r.rpm);
         rpmGauge.set(r.rpm, hasRpm ? SpeedMath.CAN : SpeedMath.NONE, hasRpm ? r.carLabel : missing);
         if (torqueBar != null) torqueBar.set(r.torque);
+        if (carModel != null) {
+            carModel.setDoors(r.doors < 0 ? null : CarMesh.openParts(r.doors, cfg.doorBits), r.doors >= 0);
+        }
         if (Float.isNaN(r.coolant)) {
             coolantTile.set("-- °C", Float.NaN, 0x80FFFFFF, getString(R.string.no_data));
         } else {

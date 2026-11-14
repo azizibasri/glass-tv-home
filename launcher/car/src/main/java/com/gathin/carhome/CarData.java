@@ -36,6 +36,8 @@ final class CarData {
         float speed = Float.NaN, rpm = Float.NaN, torque = Float.NaN, coolant = Float.NaN, range = Float.NaN;
         /** Total km on the car's odometer, for the trip counter. */
         float odometer = Float.NaN;
+        /** The CAN door value (bits per door, see door_bits), or -1 when there is none. */
+        int doors = -1;
         int speedSource = SpeedMath.NONE;
         /** "CAN BUS" or "OBD-II": where the car values come from. */
         String carLabel = "CAN BUS";
@@ -73,7 +75,7 @@ final class CarData {
     private ObdLink obd;
     private volatile int obdState = ObdLink.OFF;
     private float torquePercent = Float.NaN, torqueReference = Float.NaN;
-    private final Slot speed, rpm, torque, coolant, range, odometer;
+    private final Slot speed, rpm, torque, coolant, range, odometer, doors;
     private final Slot[] slots;
     private float gpsSpeed = Float.NaN;
     private long gpsAt;
@@ -93,7 +95,8 @@ final class CarData {
         coolant = new Slot(cfg.canCoolant, -40, 150);
         range = new Slot(cfg.canRange, 0, 3_000);
         odometer = new Slot(cfg.canOdometer, 0, 3_000_000);
-        slots = new Slot[]{speed, rpm, torque, coolant, range, odometer};
+        doors = new Slot(cfg.canDoors, 0, 0xFFFF);
+        slots = new Slot[]{speed, rpm, torque, coolant, range, odometer, doors};
     }
 
     boolean hasGpsPermission() {
@@ -215,6 +218,8 @@ final class CarData {
         r.coolant = coolant.fresh(now, SLOW_STALE_MS);
         r.range = range.fresh(now, SLOW_STALE_MS);
         r.odometer = odometer.fresh(now, SLOW_STALE_MS);
+        // Doors: many boxes send them only when one changes, so the last value stays good. Not over OBD-II.
+        r.doors = usesObd() || doors.at == 0 ? -1 : Math.round(doors.value);
         listener.onData(r);
     }
 
