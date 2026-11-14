@@ -307,7 +307,7 @@ final class CarMesh {
         double yaw = Math.toRadians(yawDeg), pitch = Math.toRadians(pitchDeg);
         float cyw = (float) Math.cos(yaw), syw = (float) Math.sin(yaw);
         float cp = (float) Math.cos(pitch), sp = (float) Math.sin(pitch);
-        float dist = 9f, scale = Math.min(w / 6.0f, h / 3.9f);
+        float dist = 9f, scale = Math.min(w / 5.8f, h / 3.45f);
         float lx = -0.35f, ly = 0.80f, lz = 0.48f;   // light, in view space
         List<Flat> out = new ArrayList<>();
         float[] v = new float[3];
@@ -363,7 +363,7 @@ final class CarMesh {
             for (int i = 0; i < n; i++) {
                 float s = dist / (dist - cam[3 * i + 2]);
                 xy[2 * i] = w / 2 + cam[3 * i] * s * scale;
-                xy[2 * i + 1] = h * 0.52f - cam[3 * i + 1] * s * scale;
+                xy[2 * i + 1] = h * 0.50f - cam[3 * i + 1] * s * scale;
             }
             out.add(new Flat(xy, color, f.part, cz + f.bias));
         }
