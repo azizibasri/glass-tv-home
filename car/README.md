@@ -39,10 +39,13 @@ Swipe left for the apps.
   fills with the speed (green, yellow, blue, purple, pink, red), a thin bright glass rim,
   clean white numbers, a red zone from 200 km/h and a red needle with a glowing tip that sweeps up and back
   each time Home opens.
-- **3D car**: under the dials, a white sedan styled after the owner's 2017 Jetta (black mirrors and front
-  lip, smoked lamps, a red line across the grille; no maker's badges). Drag sideways to turn it, up and down
+- **3D car**: under the dials, a white seventh-generation Jetta built from the owner's photos: fastback roof,
+  the crease along the sides, wide black grille with three bars, slim wrap-round LED headlights, black side
+  skirts, mirrors, front lip, diffuser and boot spoiler, wide tail lights, twin exhausts, dark ten-spoke
+  wheels and a light shine on paint and glass. It is drawn in code, so it looks clean and faceted rather than
+  photo-real, and it carries no maker's badges or names. Drag sideways to turn it, up and down
   to tilt it; left alone it turns slowly. With door data from the CAN bus (`can_doors`), each open door, the
-  boot and the bonnet swing open on the model and glow orange, the car turns to show them, and the label
+  boot and the bonnet swing open on the model and turn orange, the car turns to show them, and the label
   under it says which ("Front left door open", "2 doors open", "All doors closed"). OBD-II has no door
   data, so in OBD-II mode it says *Door status: no data*.
 - **Trip**: under the 3D car, the trip in km with a **Reset** button (tap Reset, then *Tap again* within

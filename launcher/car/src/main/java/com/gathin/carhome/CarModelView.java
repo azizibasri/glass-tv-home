@@ -16,7 +16,7 @@ import java.util.List;
 
 /**
  * The 3D car under the dials. Drag to turn it (sideways) or tilt it (up and down); left alone it turns
- * slowly. Open doors, boot and bonnet swing open on the model and glow orange, the car turns to show
+ * slowly. Open doors, boot and bonnet swing open on the model and turn orange, the car turns to show
  * them, and a label says which are open. Draws only while Home is on screen.
  */
 final class CarModelView extends View {
@@ -24,7 +24,6 @@ final class CarModelView extends View {
     private final CarMesh mesh = CarMesh.jetta();
     private final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint edge = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint glow = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint shadow = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint label = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint pill = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -50,10 +49,6 @@ final class CarModelView extends View {
         edge.setStyle(Paint.Style.STROKE);
         edge.setStrokeWidth(Math.max(0.6f, 0.5f * d));
         edge.setStrokeJoin(Paint.Join.ROUND);
-        glow.setStyle(Paint.Style.STROKE);
-        glow.setColor(ORANGE);
-        glow.setStrokeWidth(2.2f * d);
-        glow.setStrokeJoin(Paint.Join.ROUND);
         label.setColor(0xFFFFFFFF);
         label.setTextSize(12 * d);
         label.setTextAlign(Paint.Align.CENTER);
@@ -165,15 +160,14 @@ final class CarModelView extends View {
             path.moveTo(f.xy[0], f.xy[1]);
             for (int i = 2; i < f.xy.length; i += 2) path.lineTo(f.xy[i], f.xy[i + 1]);
             path.close();
-            fill.setColor(f.color);
+            // Open panels take on an orange tint as they swing out.
+            int color = f.part != CarMesh.BODY && openNow[f.part] > 0.02f
+                    ? CarMesh.toward(f.color, ORANGE, 0.45f * openNow[f.part]) : f.color;
+            fill.setColor(color);
             c.drawPath(path, fill);
-            // A hairline in the same colour hides seams; opening panels get a faint panel gap.
-            edge.setColor(f.part != CarMesh.BODY ? 0x55000000 : f.color);
+            // A hairline in the same colour hides the seams between faces.
+            edge.setColor(color);
             c.drawPath(path, edge);
-            if (f.part != CarMesh.BODY && openNow[f.part] > 0.05f) {
-                glow.setAlpha(Math.round(255 * Math.min(1f, openNow[f.part] * 1.5f)));
-                c.drawPath(path, glow);
-            }
         }
 
         // Status pill.
