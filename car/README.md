@@ -21,7 +21,9 @@ caches are cleared through the debugging service rather than the Android 11 dial
 
 ## Dashboard: clock, speed and torque
 
-The first page shows a large digital clock, the date, a music widget, engine torque and the speedometer.
+The first page shows, on the left, a large digital clock, the date, a music widget and engine torque; on the
+right, the speedometer (top left), the rev counter (top right), and tiles for coolant temperature and fuel
+range under them.
 Swipe left for the apps.
 
 - **Clock**: in a dark glass box like the music widget; thin large digits filled with a rainbow that flows across them, with a soft glow that shifts
@@ -37,16 +39,23 @@ Swipe left for the apps.
   fills with the speed (green, yellow, blue, purple, pink, red), a thin bright glass rim,
   clean white numbers, a red zone from 200 km/h and a red needle with a glowing tip that sweeps up and back
   each time Home opens.
+- **Rev counter**: the same glass dial, 0 to 7 (x1000 rpm), red from 6000.
+- **Coolant**: °C with a bar and a word: *Warming up* under 70 °C (blue), *Normal* (green), *Hot* over
+  110 °C (red). A VW normally sits near 90 °C.
+- **Fuel range**: km left, as the car's own trip computer works it out. Orange *Refuel soon* under 80 km,
+  red under about 27 km.
 - **Speed** comes from the car's CAN bus when the unit's CAN app shares it, otherwise from GPS. The dial
   says which one (`CAN BUS`, `GPS`, or `NO SIGNAL` in a tunnel). GPS speed works on any unit with no setup.
-- **Torque** can only come from the CAN bus. It shows `-- Nm` until set up.
+- **Rpm, torque, coolant and range** can only come from the CAN bus. Each shows `--` and *No data* until set
+  up.
 - The car's own instrument cluster stays the speed to drive by. GPS speed lags by about a second.
 
 **Why the CAN bus needs one more step.** Android head units have no standard CAN interface. A small CAN box
 behind the radio (Raise, Hiworld, XBS, Simple Soft…) talks to the maker's own app, and each maker passes the
 data on differently, if at all. On a 2017 Jetta the box sits on the comfort network: it normally knows doors,
-lights, outside temperature and steering angle, and often speed. **Engine torque is on the engine network,
-which these boxes usually don't read.** If yours doesn't send it, torque needs an OBD-II Bluetooth adapter
+lights, outside temperature and steering angle, and often speed. Many VW boxes also pass on what the
+instrument cluster shows, which can include rpm, coolant temperature and fuel range: the scan will tell.
+**Engine torque is on the engine network, which these boxes usually don't read.** If yours doesn't send it, torque needs an OBD-II Bluetooth adapter
 (ELM327 type) in the port under the dashboard. Glass Car doesn't read OBD-II yet.
 
 How to wire it up: drive a short way with the unit on, then run `car/scan.py` (step 3). It writes
@@ -55,13 +64,16 @@ When one carries the value, add it to `config.json`:
 
 ```json
 {
-  "can_speed":  { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
-  "can_torque": { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 }
+  "can_speed":   { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
+  "can_rpm":     { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
+  "can_torque":  { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
+  "can_coolant": { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
+  "can_range":   { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 }
 }
 ```
 
-`scale` converts the raw number (e.g. `0.1` when the box sends tenths). A CAN reading older than 3 seconds
-falls back to GPS.
+`scale` converts the raw number (e.g. `0.1` when the box sends tenths). A CAN speed older than 3 seconds
+falls back to GPS; rpm and torque older than 3 seconds, and coolant and range older than 30, show `--`.
 
 ## What the Clean button does
 
@@ -120,13 +132,14 @@ All keys optional; a bad file is ignored as a whole.
 | `show_labels` | bool | App names under the icons |
 | `wallpaper` | bool | Use `wallpaper.jpg` from the theme folder; otherwise the built-in dark aurora |
 | `accent` | `#RRGGBB` | Colour of the RAM ring |
-| `dashboard` | bool | The first page with clock, speedometer and torque. Default `true` |
+| `dashboard` | bool | The first page with clock, music, speedometer, rev counter, torque, coolant and range. Default `true` |
 | `clock_rainbow` | bool | Flowing, glowing rainbow clock. Default `true`; `false` for plain white |
 | `music_widget` | bool | Music widget under the clock. Default `true` |
 | `speed_unit` | `"km/h"` or `"mph"` | Speedometer unit |
 | `speed_max` | 60 to 400 | Top of the dial. Default 240, like the Jetta's cluster |
 | `torque_max` | 50 to 2000 | End of the torque bar in Nm, about the engine's peak (1.4 TSI: 250, 1.5 MPI: 145) |
-| `can_speed`, `can_torque` | `{action, extra, scale}` | The CAN app's broadcast that carries the value; see Dashboard above |
+| `rpm_max`, `rpm_red` | 3000 to 12000 | Top of the rev counter and start of its red zone. Default 7000 and 6000 |
+| `can_speed`, `can_rpm`, `can_torque`, `can_coolant`, `can_range` | `{action, extra, scale}` | The CAN app's broadcast that carries each value; see Dashboard above |
 
 ## Safety
 
