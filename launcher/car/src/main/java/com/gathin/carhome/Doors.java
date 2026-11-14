@@ -19,4 +19,17 @@ final class Doors {
         for (int p = 1; p < COUNT; p++) open[p] = bits[p] != 0 && (mask & bits[p]) != 0;
         return open;
     }
+
+    /** "Front left door, Boot open", "All doors closed" or the no-data text. */
+    static String status(String openFormat, String closed, String noData, String[] names, boolean[] open,
+                         boolean known) {
+        if (!known || open == null) return noData;
+        StringBuilder sb = new StringBuilder();
+        for (int p = 1; p < COUNT && p < open.length; p++) {
+            if (!open[p]) continue;
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(names[p]);
+        }
+        return sb.length() == 0 ? closed : String.format(openFormat, sb);
+    }
 }

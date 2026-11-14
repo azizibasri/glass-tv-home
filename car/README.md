@@ -40,11 +40,10 @@ Swipe left for the apps.
   clean white numbers, a red zone from 200 km/h and a red needle with a glowing tip that sweeps up and back
   each time Home opens.
 - **Your car and its doors**: under the dials, your own picture of the car (⚙ → **Car picture from
-  gallery**; it stays on the unit as `car_picture.jpg`, **Remove car picture** takes it off) and beside it the
-  car seen from above. With door data from the CAN bus (`can_doors`), each open door swings out in orange on
-  the top view, and an open boot or bonnet slides out in orange; the label under it says which ("Front left
-  door open", "2 doors open", "All doors closed"). OBD-II has no door data, so in OBD-II mode it says
-  *Door status: no data*. It only redraws while something moves.
+  gallery**; it stays on the unit as `car_picture.jpg`, **Remove car picture** takes it off) with the door
+  status under it: "Front left door open", "Front left door, Boot open", "All doors closed". It turns orange
+  while anything is open. The status needs door data from the CAN bus (`can_doors`); OBD-II has no door
+  data, so in OBD-II mode it says *Door status: no data*.
 - **Trip**: under the car picture, the trip in km with a **Reset** button (tap Reset, then *Tap again* within
   3 seconds). With the car's odometer from the CAN bus (`can_odometer`) it counts every km, whatever is on
   screen. Without it, it adds up distance from the speed, and only while Home is open: the row says which.
