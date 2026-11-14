@@ -1115,6 +1115,16 @@ public final class HomeActivity extends Activity {
             open(new Intent(Settings.ACTION_BLUETOOTH_SETTINGS));
         });
         body.addView(btSettings, new LinearLayout.LayoutParams(-2, -2));
+        TextView finder = text(14, true);
+        finder.setGravity(Gravity.START);
+        finder.setTextColor(0xFF64D2FF);
+        finder.setText(R.string.can_finder);
+        finder.setPadding(0, dp(12), 0, 0);
+        finder.setOnClickListener(v -> {
+            if (holder[0] != null) holder[0].dismiss();
+            canFinderDialog();
+        });
+        body.addView(finder, new LinearLayout.LayoutParams(-2, -2));
         refresh.run();
         android.app.Dialog d = panelDialog(R.string.data_source, body);
         holder[0] = d;
@@ -1132,7 +1142,37 @@ public final class HomeActivity extends Activity {
         d.show();
     }
 
-    /** Puts one snapshot of car data on the dashboard. */
+    /** Shows what the CAN finder sees, for the owner to photograph and send. */
+    private void canFinderDialog() {
+        if (checkSelfPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+                != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{android.Manifest.permission.READ_EXTERNAL_STORAGE}, 5);
+        }
+        LinearLayout body = new LinearLayout(this);
+        body.setOrientation(LinearLayout.VERTICAL);
+        TextView hint = text(12, false);
+        hint.setGravity(Gravity.START);
+        hint.setSingleLine(false);
+        hint.setAlpha(0.7f);
+        hint.setText(R.string.can_finder_hint);
+        body.addView(hint, new LinearLayout.LayoutParams(-1, -2));
+        TextView out = new TextView(this);
+        out.setTextColor(0xFFFFFFFF);
+        out.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12);
+        out.setTypeface(Typeface.MONOSPACE);
+        out.setTextIsSelectable(true);
+        out.setText(R.string.can_finder_looking);
+        LinearLayout.LayoutParams olp = new LinearLayout.LayoutParams(-1, -2);
+        olp.topMargin = dp(10);
+        body.addView(out, olp);
+        worker.execute(() -> {
+            String r = CanFinder.report(this);
+            main.post(() -> out.setText(r));
+        });
+        panelDialog(R.string.can_finder, body).show();
+    }
+
+        /** Puts one snapshot of car data on the dashboard. */
     private void showCarData(CarData.Reading r) {
         trip.odometer(r.odometer);
         trip.speed(r.speed, SystemClock.elapsedRealtime());

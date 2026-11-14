@@ -66,7 +66,11 @@ instrument cluster shows, which can include turbo boost, coolant temperature and
 **Engine torque is on the engine network, which these boxes usually don't read.** If yours doesn't send it, torque needs an OBD-II Bluetooth adapter
 (ELM327 type) in the port under the dashboard. Glass Car doesn't read OBD-II yet.
 
-How to wire it up: drive a short way with the unit on, then run `car/scan.py` (step 3). It writes
+Without a computer: ⚙ → Car data source → **Find my CAN app** lists the CAN-looking apps on the unit with
+their receivers, services and content providers, and the files in a `CanBus` folder in storage (with the
+first lines of small text files). Photograph it and send it to whoever sets up the CAN keys. It only reads.
+
+With a computer, how to wire it up: drive a short way with the unit on, then run `car/scan.py` (step 3). It writes
 `can-discovery.txt`: the CAN apps, the broadcasts they declare, and log lines that mention speed or torque.
 When one carries the value, add it to `config.json`:
 
