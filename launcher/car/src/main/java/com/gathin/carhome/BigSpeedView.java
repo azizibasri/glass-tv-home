@@ -81,6 +81,14 @@ final class BigSpeedView extends View {
         postInvalidateOnAnimation();
     }
 
+    private int topOffset;
+
+    /** The room above this view taken to move it lower: the boost and torque rows keep their size. */
+    void setTopOffset(int px) {
+        topOffset = px;
+        requestLayout();
+    }
+
     /** Engine torque in Nm (NaN: none); estimated: worked out from engine load. */
     void setTorque(float nm, boolean estimated) {
         torque = nm;
@@ -91,7 +99,7 @@ final class BigSpeedView extends View {
     @Override
     protected void onSizeChanged(int w, int h, int ow, int oh) {
         // Two rows of the same size under the speed: turbo boost, then torque.
-        float boostH = Math.max(50 * d, h * 0.22f);
+        float boostH = Math.min(h * 0.3f, Math.max(50 * d, (h + topOffset) * 0.22f));
         speedH = h - 2 * boostH;
         digits.setTextSize(Math.min(speedH * 0.78f, w * 0.40f));
         unit.setTextSize(Math.max(11 * d, speedH * 0.09f));

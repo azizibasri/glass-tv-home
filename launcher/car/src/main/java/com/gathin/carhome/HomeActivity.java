@@ -319,6 +319,17 @@ public final class HomeActivity extends Activity {
         return Math.round(v * density);
     }
 
+    /**
+     * Millimetres on the screen, in pixels. Uses the screen's reported pixels per inch, unless that is
+     * clearly wrong (some head units report nonsense), then the density's.
+     */
+    private int mm(float v) {
+        android.util.DisplayMetrics m = getResources().getDisplayMetrics();
+        float ppi = m.xdpi;
+        if (!(ppi > m.densityDpi * 0.6f && ppi < m.densityDpi * 1.6f)) ppi = m.densityDpi;
+        return Math.round(v / 25.4f * ppi);
+    }
+
     private void build() {
         int w = root.getWidth(), h = root.getHeight();
         if (w == 0 || h == 0) return;
@@ -554,6 +565,8 @@ public final class HomeActivity extends Activity {
         bigSpeed.setTypeface(ClockFonts.typeface(this, clockFont));
         LinearLayout.LayoutParams speedLp = new LinearLayout.LayoutParams(-1, 0, 1f);
         speedLp.leftMargin = speedLp.rightMargin = dp(6);
+        speedLp.topMargin = mm(cfg.speedTopMm);   // lower on the screen: 10 mm by default (speed_top_mm)
+        bigSpeed.setTopOffset(speedLp.topMargin);
         right.addView(bigSpeed, speedLp);
         LinearLayout.LayoutParams tripLp = new LinearLayout.LayoutParams(-1, dp(52));
         tripLp.topMargin = dp(8);
