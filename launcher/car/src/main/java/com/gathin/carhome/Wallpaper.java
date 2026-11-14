@@ -75,6 +75,23 @@ final class Wallpaper {
             o.inSampleSize = sample;
             Bitmap src = BitmapFactory.decodeFile(f.getPath(), o);
             if (src == null) return null;
+            // Phone photos are often stored sideways with a note saying which way is up: follow it.
+            int degrees = 0;
+            try {
+                int orientation = new android.media.ExifInterface(f.getPath()).getAttributeInt(
+                        android.media.ExifInterface.TAG_ORIENTATION, android.media.ExifInterface.ORIENTATION_NORMAL);
+                degrees = orientation == android.media.ExifInterface.ORIENTATION_ROTATE_90 ? 90
+                        : orientation == android.media.ExifInterface.ORIENTATION_ROTATE_180 ? 180
+                        : orientation == android.media.ExifInterface.ORIENTATION_ROTATE_270 ? 270 : 0;
+            } catch (java.io.IOException ignored) {
+            }
+            if (degrees != 0) {
+                android.graphics.Matrix m = new android.graphics.Matrix();
+                m.postRotate(degrees);
+                Bitmap turned = Bitmap.createBitmap(src, 0, 0, src.getWidth(), src.getHeight(), m, true);
+                if (turned != src) src.recycle();
+                src = turned;
+            }
             Bitmap out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
             float scale = Math.max(w / (float) src.getWidth(), h / (float) src.getHeight());
             float sw = w / scale, sh = h / scale;

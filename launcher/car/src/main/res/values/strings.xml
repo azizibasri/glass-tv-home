@@ -23,4 +23,18 @@
     <string name="coolant_hot">Hot</string>
     <string name="range_ok">OK</string>
     <string name="range_low">Refuel soon</string>
+    <string name="settings">Home settings</string>
+    <string name="wallpaper_pick">Wallpaper from gallery</string>
+    <string name="wallpaper_reset">Default wallpaper</string>
+    <string name="wallpaper_set">Wallpaper changed</string>
+    <string name="wallpaper_failed">Couldn't open that picture. Try another one.</string>
+    <string name="no_gallery">No gallery app found on this unit</string>
+    <string name="icons_glass">Clear glass icons</string>
+    <string name="icons_color">Colour icons</string>
+    <string name="trip">TRIP</string>
+    <string name="trip_reset">Reset</string>
+    <string name="trip_confirm">Tap again</string>
+    <string name="trip_from_odometer">From the car's odometer</string>
+    <string name="trip_from_speed">Counts while Home is open</string>
+    <string name="trip_was_reset">Trip reset to 0</string>
 </resources>

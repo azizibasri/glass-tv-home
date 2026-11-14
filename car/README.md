@@ -39,6 +39,9 @@ Swipe left for the apps.
   fills with the speed (green, yellow, blue, purple, pink, red), a thin bright glass rim,
   clean white numbers, a red zone from 200 km/h and a red needle with a glowing tip that sweeps up and back
   each time Home opens.
+- **Trip**: under the two dials, the trip in km with a **Reset** button (tap Reset, then *Tap again* within
+  3 seconds). With the car's odometer from the CAN bus (`can_odometer`) it counts every km, whatever is on
+  screen. Without it, it adds up distance from the speed, and only while Home is open: the row says which.
 - **Rev counter**: the same glass dial, 0 to 7 (x1000 rpm), red from 6000.
 - **Coolant**: °C with a bar and a word: *Warming up* under 70 °C (blue), *Normal* (green), *Hot* over
   110 °C (red). A VW normally sits near 90 °C.
@@ -68,7 +71,8 @@ When one carries the value, add it to `config.json`:
   "can_rpm":     { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
   "can_torque":  { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
   "can_coolant": { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
-  "can_range":   { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 }
+  "can_range":   { "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 },
+  "can_odometer":{ "action": "<broadcast action>", "extra": "<extra name>", "scale": 1 }
 }
 ```
 
@@ -118,6 +122,15 @@ the same Wi-Fi (a phone hotspot works).
 
 Undo Glass Car: `CAR_HOST=<ip> car/restore-home.sh <original home printed by install.sh>`.
 
+## The ⚙ menu
+
+The gear on the left rail, above Clean:
+
+- **Wallpaper from gallery**: pick any photo with the unit's gallery. Glass Car keeps a copy, turns it the
+  right way up and blurs it behind every glass panel. **Default wallpaper** goes back to the built-in one.
+- **Clear glass icons / Colour icons**: switches every app icon between its own colours and a clear
+  frosted-glass tile with the app's symbol in white.
+
 ## Settings (`config.json`)
 
 All keys optional; a bad file is ignored as a whole.
@@ -130,7 +143,8 @@ All keys optional; a bad file is ignored as a whole.
 | `columns` | 3 to 8, or 0 | Icons per row; 0 fits them to the screen (5 x 3 on 1024x600, 5 x 2 on 1280x720 at 1.5x) |
 | `auto_clean_minutes` | 0 to 1440 | Close background apps by itself when Home shows this long after the last clean; 0 = only on tap. Default 30 |
 | `show_labels` | bool | App names under the icons |
-| `wallpaper` | bool | Use `wallpaper.jpg` from the theme folder; otherwise the built-in dark aurora |
+| `wallpaper` | bool | Use `wallpaper.jpg` from the theme folder (or the one picked from the gallery); otherwise the built-in dark aurora |
+| `icon_style` | `"color"` or `"glass"` | App icons as the apps draw them, or clear frosted glass with a white symbol. The ⚙ menu wins over this |
 | `accent` | `#RRGGBB` | Colour of the RAM ring |
 | `dashboard` | bool | The first page with clock, music, speedometer, rev counter, torque, coolant and range. Default `true` |
 | `clock_rainbow` | bool | Flowing, glowing rainbow clock. Default `true`; `false` for plain white |
@@ -139,7 +153,7 @@ All keys optional; a bad file is ignored as a whole.
 | `speed_max` | 60 to 400 | Top of the dial. Default 240, like the Jetta's cluster |
 | `torque_max` | 50 to 2000 | End of the torque bar in Nm, about the engine's peak (1.4 TSI: 250, 1.5 MPI: 145) |
 | `rpm_max`, `rpm_red` | 3000 to 12000 | Top of the rev counter and start of its red zone. Default 7000 and 6000 |
-| `can_speed`, `can_rpm`, `can_torque`, `can_coolant`, `can_range` | `{action, extra, scale}` | The CAN app's broadcast that carries each value; see Dashboard above |
+| `can_speed`, `can_rpm`, `can_torque`, `can_coolant`, `can_range`, `can_odometer` | `{action, extra, scale}` | The CAN app's broadcast that carries each value; see Dashboard above |
 
 ## Safety
 

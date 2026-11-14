@@ -20,10 +20,10 @@ import android.util.Log;
  * fuel range.
  *
  * Speed comes from the car's CAN bus when the head unit's CAN app broadcasts it, else from GPS. Everything
- * else comes from the CAN bus only. Head units have no standard CAN API: the CAN box behind the radio talks
+ * else (rpm, torque, coolant, fuel range, odometer for the trip) comes from the CAN bus only. Head units have no standard CAN API: the CAN box behind the radio talks
  * to the maker's own app, and each maker shares the data differently, if at all. So the broadcast to listen
  * to for each value is set in config.json ({@code can_speed}, {@code can_rpm}, {@code can_torque},
- * {@code can_coolant}, {@code can_range}: action, extra, scale), filled in once {@code car/scan.py} has
+ * {@code can_coolant}, {@code can_range}, {@code can_odometer}: action, extra, scale), filled in once {@code car/scan.py} has
  * shown what this unit's CAN app sends.
  */
 final class CarData {
@@ -34,6 +34,8 @@ final class CarData {
     /** One snapshot. NaN means "no data". */
     static final class Reading {
         float speed = Float.NaN, rpm = Float.NaN, torque = Float.NaN, coolant = Float.NaN, range = Float.NaN;
+        /** Total km on the car's odometer, for the trip counter. */
+        float odometer = Float.NaN;
         int speedSource = SpeedMath.NONE;
     }
 
@@ -62,7 +64,7 @@ final class CarData {
     private final Context ctx;
     private final Listener listener;
     private final boolean mph;
-    private final Slot speed, rpm, torque, coolant, range;
+    private final Slot speed, rpm, torque, coolant, range, odometer;
     private final Slot[] slots;
     private float gpsSpeed = Float.NaN;
     private long gpsAt;
@@ -78,7 +80,8 @@ final class CarData {
         torque = new Slot(cfg.canTorque, -500, 2_000);
         coolant = new Slot(cfg.canCoolant, -40, 150);
         range = new Slot(cfg.canRange, 0, 3_000);
-        slots = new Slot[]{speed, rpm, torque, coolant, range};
+        odometer = new Slot(cfg.canOdometer, 0, 3_000_000);
+        slots = new Slot[]{speed, rpm, torque, coolant, range, odometer};
     }
 
     boolean hasGpsPermission() {
@@ -152,6 +155,7 @@ final class CarData {
         r.torque = torque.fresh(now, SpeedMath.CAN_STALE_MS);
         r.coolant = coolant.fresh(now, SLOW_STALE_MS);
         r.range = range.fresh(now, SLOW_STALE_MS);
+        r.odometer = odometer.fresh(now, SLOW_STALE_MS);
         listener.onData(r);
     }
 

@@ -1,5 +1,10 @@
 {
-  "dock_apps": ["com.waze", "com.google.android.apps.maps", "com.spotify.music", "com.netflix.mediaclient"],
+  "dock_apps": [
+    "com.waze",
+    "com.google.android.apps.maps",
+    "com.spotify.music",
+    "com.netflix.mediaclient"
+  ],
   "hidden_apps": [],
   "keep_running": [],
   "columns": 0,
@@ -14,5 +19,6 @@
   "speed_max": 240,
   "torque_max": 250,
   "rpm_max": 7000,
-  "rpm_red": 6000
+  "rpm_red": 6000,
+  "icon_style": "color"
 }

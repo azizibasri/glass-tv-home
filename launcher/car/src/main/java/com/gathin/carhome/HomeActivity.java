@@ -108,6 +108,13 @@ public final class HomeActivity extends Activity {
     private CarData carData;
     private Gauge gauge, rpmGauge;
     private InfoTile coolantTile, rangeTile;
+    private static final int REQUEST_WALLPAPER = 11;
+    private final TripMeter trip = new TripMeter();
+    private TextView tripValue, tripNote, tripReset;
+    private boolean tripResetArmed;
+    private long tripSavedAt;
+    /** "color" or "glass": the person's choice in the settings menu, else config.json's. */
+    private String iconStyle;
     private TorqueBar torqueBar;
     private RainbowClock bigClock;
     private TextView bigDate;
@@ -189,6 +196,9 @@ public final class HomeActivity extends Activity {
         pkgs.addDataScheme("package");
         registerReceiver(packageReceiver, pkgs);
         carData = new CarData(this, cfg, this::showCarData);
+        iconStyle = prefs.getString("icon_style", cfg.iconStyle);
+        trip.baseOdometer = prefs.getFloat("trip_base", Float.NaN);
+        trip.accumulated = prefs.getFloat("trip_acc", 0f);
         loadApps();
     }
 
@@ -243,6 +253,7 @@ public final class HomeActivity extends Activity {
         main.removeCallbacks(autoClean);
         main.removeCallbacks(dataTick);
         carData.stop();
+        saveTrip();
         if (bigClock != null) bigClock.setRunning(false);
         if (nowPlaying != null) nowPlaying.stop();
         super.onPause();
@@ -265,6 +276,9 @@ public final class HomeActivity extends Activity {
     protected void onActivityResult(int request, int result, Intent data) {
         super.onActivityResult(request, result, data);
         if (request == Cleaner.REQUEST_CLEAR_CACHE && result == RESULT_OK) showToast(getString(R.string.clean) + " ✓");
+        if (request == REQUEST_WALLPAPER && result == RESULT_OK && data != null && data.getData() != null) {
+            setWallpaperFrom(data.getData());
+        }
     }
 
     // ---- Building the screen ----
@@ -364,7 +378,7 @@ public final class HomeActivity extends Activity {
         rail.addView(date, new LinearLayout.LayoutParams(-2, -2));
 
         // Dock: as many slots as fit, up to four, each icon at most 64 dp.
-        int fixed = dp(14 + 30 + 18 + 12 + 12) + dp(76);
+        int fixed = dp(14 + 30 + 18 + 12 + 12) + dp(76) + dp(48);
         int slot = Math.min(dp(80), Math.max(dp(48), (railH - fixed) / MAX_DOCK));
         int icon = Math.min(Math.min(dp(64), railW - dp(20)), slot - dp(12));
         List<App> dock = dockApps();
@@ -383,6 +397,17 @@ public final class HomeActivity extends Activity {
         LinearLayout.LayoutParams dockLp = new LinearLayout.LayoutParams(-1, 0, 1f);
         dockLp.topMargin = dp(18);
         rail.addView(dockBox, dockLp);
+
+        ImageView gear = new ImageView(this);
+        gear.setImageResource(R.drawable.ic_settings);
+        gear.setAlpha(0.85f);
+        gear.setPadding(dp(8), dp(8), dp(8), dp(8));
+        gear.setContentDescription(getString(R.string.settings));
+        gear.setOnClickListener(this::settingsMenu);
+        squish(gear);
+        LinearLayout.LayoutParams gearLp = new LinearLayout.LayoutParams(dp(40), dp(40));
+        gearLp.bottomMargin = dp(8);
+        rail.addView(gear, gearLp);
 
         ring = new RamRing(this, cfg.accent);
         ring.setContentDescription(getString(R.string.clean));
@@ -488,6 +513,9 @@ public final class HomeActivity extends Activity {
         rpmLp.leftMargin = dp(8);
         dials.addView(rpmGauge, rpmLp);
         right.addView(dials, new LinearLayout.LayoutParams(-1, 0, 1f));
+        LinearLayout.LayoutParams tripLp = new LinearLayout.LayoutParams(-1, dp(52));
+        tripLp.topMargin = dp(8);
+        right.addView(tripRow(), tripLp);
         LinearLayout tiles = new LinearLayout(this);
         tiles.setOrientation(LinearLayout.HORIZONTAL);
         coolantTile = new InfoTile(this, R.drawable.ic_coolant, getString(R.string.coolant));
@@ -508,8 +536,185 @@ public final class HomeActivity extends Activity {
         return d;
     }
 
+    /** The trip row under the dials: TRIP, the distance, where it comes from, and Reset. */
+    private View tripRow() {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setPadding(dp(14), dp(6), dp(8), dp(6));
+        row.setBackground(NowPlaying.darkPanel(this));
+        TextView label = text(11, true);
+        label.setText(R.string.trip);
+        label.setLetterSpacing(0.12f);
+        label.setAlpha(0.65f);
+        row.addView(label, new LinearLayout.LayoutParams(-2, -2));
+        LinearLayout values = new LinearLayout(this);
+        values.setOrientation(LinearLayout.VERTICAL);
+        values.setPadding(dp(12), 0, dp(8), 0);
+        tripValue = text(20, true);
+        tripValue.setGravity(Gravity.START);
+        tripValue.setFontFeatureSettings("tnum");
+        tripNote = text(10, false);
+        tripNote.setGravity(Gravity.START);
+        tripNote.setAlpha(0.6f);
+        values.addView(tripValue);
+        values.addView(tripNote);
+        row.addView(values, new LinearLayout.LayoutParams(0, -2, 1f));
+        tripReset = text(13, true);
+        tripReset.setText(R.string.trip_reset);
+        tripReset.setPadding(dp(16), dp(8), dp(16), dp(8));
+        android.graphics.drawable.GradientDrawable pill = new android.graphics.drawable.GradientDrawable();
+        pill.setColor(0x24FFFFFF);
+        pill.setCornerRadius(dp(18));
+        pill.setStroke(Math.max(1, dp(1)), 0x4DFFFFFF);
+        tripReset.setBackground(pill);
+        tripReset.setOnClickListener(v -> resetTrip());
+        squish(tripReset);
+        row.addView(tripReset, new LinearLayout.LayoutParams(-2, -2));
+        tripResetArmed = false;
+        showTrip();
+        return row;
+    }
+
+    private final Runnable disarmTrip = () -> {
+        tripResetArmed = false;
+        if (tripReset != null) {
+            tripReset.setText(R.string.trip_reset);
+            tripReset.setTextColor(0xFFFFFFFF);
+        }
+    };
+
+    /** First tap arms it ("Tap again"), a second tap within 3 seconds resets: no accidental resets. */
+    private void resetTrip() {
+        if (!tripResetArmed) {
+            tripResetArmed = true;
+            tripReset.setText(R.string.trip_confirm);
+            tripReset.setTextColor(0xFFFF9F0A);
+            main.removeCallbacks(disarmTrip);
+            main.postDelayed(disarmTrip, 3_000);
+            return;
+        }
+        main.removeCallbacks(disarmTrip);
+        disarmTrip.run();
+        trip.reset();
+        saveTrip();
+        showTrip();
+        showToast(getString(R.string.trip_was_reset));
+    }
+
+    private void showTrip() {
+        if (tripValue == null) return;
+        tripValue.setText(TripMeter.format(trip.distance()) + (cfg.mph ? " mi" : " km"));
+        tripNote.setText(trip.fromOdometer() ? R.string.trip_from_odometer : R.string.trip_from_speed);
+    }
+
+    private void saveTrip() {
+        tripSavedAt = SystemClock.elapsedRealtime();
+        prefs.edit().putFloat("trip_base", trip.baseOdometer).putFloat("trip_acc", trip.accumulated).apply();
+    }
+
+    // ---- Settings menu: wallpaper and icon style ----
+
+    private void settingsMenu(View anchor) {
+        PopupMenu m = new PopupMenu(this, anchor);
+        m.getMenu().add(0, 1, 0, R.string.wallpaper_pick);
+        m.getMenu().add(0, 2, 1, R.string.wallpaper_reset);
+        m.getMenu().add(0, 3, 2, "glass".equals(iconStyle) ? R.string.icons_color : R.string.icons_glass);
+        m.setOnMenuItemClickListener(item -> {
+            if (item.getItemId() == 1) pickWallpaper();
+            else if (item.getItemId() == 2) resetWallpaper();
+            else setIconStyle("glass".equals(iconStyle) ? "color" : "glass");
+            return true;
+        });
+        m.show();
+    }
+
+    private void pickWallpaper() {
+        Intent pick = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        Intent any = new Intent(Intent.ACTION_GET_CONTENT).setType("image/*").addCategory(Intent.CATEGORY_OPENABLE);
+        for (Intent i : new Intent[]{pick, any}) {
+            try {
+                startActivityForResult(i, REQUEST_WALLPAPER);
+                return;
+            } catch (RuntimeException ignored) {
+                // No app for this one: try the next.
+            }
+        }
+        showToast(getString(R.string.no_gallery));
+    }
+
+    /** Copies the chosen picture next to config.json as wallpaper.jpg, then redraws everything with it. */
+    private void setWallpaperFrom(Uri uri) {
+        java.io.File dir = CarConfig.dir(this);
+        if (dir == null) {
+            showToast(getString(R.string.wallpaper_failed));
+            return;
+        }
+        worker.execute(() -> {
+            java.io.File tmp = new java.io.File(dir, "wallpaper.tmp"), dst = new java.io.File(dir, "wallpaper.jpg");
+            boolean ok = false;
+            try (java.io.InputStream in = getContentResolver().openInputStream(uri);
+                 java.io.OutputStream out = new java.io.FileOutputStream(tmp)) {
+                if (in != null) {
+                    byte[] buf = new byte[64 * 1024];
+                    long total = 0;
+                    int n;
+                    while ((n = in.read(buf)) > 0 && total < 40L * 1024 * 1024) {
+                        out.write(buf, 0, n);
+                        total += n;
+                    }
+                    ok = total > 0;
+                }
+            } catch (Exception e) {
+                ok = false;
+            }
+            // Check it really is a picture before it replaces the old one.
+            android.graphics.BitmapFactory.Options o = new android.graphics.BitmapFactory.Options();
+            o.inJustDecodeBounds = true;
+            if (ok) android.graphics.BitmapFactory.decodeFile(tmp.getPath(), o);
+            ok = ok && o.outWidth > 0 && tmp.renameTo(dst);
+            if (!ok) tmp.delete();
+            final boolean done = ok;
+            main.post(() -> {
+                if (!done) {
+                    showToast(getString(R.string.wallpaper_failed));
+                    return;
+                }
+                cfg.wallpaper = true;
+                refreshWallpaper();
+                showToast(getString(R.string.wallpaper_set));
+            });
+        });
+    }
+
+    private void resetWallpaper() {
+        java.io.File dir = CarConfig.dir(this);
+        if (dir != null) new java.io.File(dir, "wallpaper.jpg").delete();
+        refreshWallpaper();
+    }
+
+    private void refreshWallpaper() {
+        glass.wallpaper = null;
+        backdrop.invalidate();
+        builtW = 0;
+        build();
+    }
+
+    private void setIconStyle(String style) {
+        iconStyle = style;
+        prefs.edit().putString("icon_style", style).apply();
+        synchronized (iconCache) {
+            iconCache.clear();
+        }
+        loadApps();
+    }
+
     /** Puts one snapshot of car data on the dashboard. */
     private void showCarData(CarData.Reading r) {
+        trip.odometer(r.odometer);
+        trip.speed(r.speed, SystemClock.elapsedRealtime());
+        showTrip();
+        if (SystemClock.elapsedRealtime() - tripSavedAt > 15_000) saveTrip();
         if (gauge == null) return;
         int src = r.speedSource;
         gauge.set(r.speed, src, src == SpeedMath.CAN ? "CAN BUS" : src == SpeedMath.GPS ? "GPS"
@@ -667,9 +872,9 @@ public final class HomeActivity extends Activity {
                 }
                 if (cached == null) {
                     try {
-                        cached = renderIcon(info.getIcon(0), iconPx);
+                        cached = renderIcon(info.getIcon(0), iconPx, "glass".equals(iconStyle));
                     } catch (RuntimeException | OutOfMemoryError e) {
-                        cached = renderIcon(getDrawable(R.drawable.ic_car_home), iconPx);
+                        cached = renderIcon(getDrawable(R.drawable.ic_car_home), iconPx, "glass".equals(iconStyle));
                     }
                     synchronized (iconCache) {
                         iconCache.put(key, cached);
@@ -831,7 +1036,8 @@ public final class HomeActivity extends Activity {
      * Draws an app icon as a full-bleed rounded square with a faint glass rim. Adaptive icons fill the
      * square edge to edge; older icons sit on a dark tile, so every icon has the same shape.
      */
-    static Bitmap renderIcon(Drawable d, int size) {
+    static Bitmap renderIcon(Drawable d, int size, boolean glassStyle) {
+        if (glassStyle) return renderGlassIcon(d, size);
         Bitmap content = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(content);
         if (Build.VERSION.SDK_INT >= 26 && d instanceof AdaptiveIconDrawable) {
@@ -872,6 +1078,64 @@ public final class HomeActivity extends Activity {
         float h = rim.getStrokeWidth() / 2;
         oc.drawRoundRect(new RectF(h, h, size - h, size - h), r, r, rim);
         content.recycle();
+        return out;
+    }
+
+    /**
+     * The clear glass icon style: a see-through frosted tile (the wallpaper shows through it), a soft shine
+     * at the top and a bright rim, with the app's symbol in white. Adaptive icons give their symbol layer;
+     * older icons are drawn in soft grey-white so they stay recognisable.
+     */
+    static Bitmap renderGlassIcon(Drawable d, int size) {
+        Bitmap out = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        Canvas c = new Canvas(out);
+        float r = size * 0.225f;
+        RectF rect = new RectF(0, 0, size, size);
+        Paint tile = new Paint(Paint.ANTI_ALIAS_FLAG);
+        tile.setShader(new LinearGradient(0, 0, 0, size, 0x47FFFFFF, 0x14FFFFFF, Shader.TileMode.CLAMP));
+        c.drawRoundRect(rect, r, r, tile);
+        Paint shine = new Paint(Paint.ANTI_ALIAS_FLAG);
+        shine.setShader(new LinearGradient(0, 0, 0, size * 0.5f, 0x33FFFFFF, 0x00FFFFFF, Shader.TileMode.CLAMP));
+        c.drawRoundRect(new RectF(size * 0.04f, size * 0.03f, size * 0.96f, size * 0.5f), r * 0.85f, r * 0.85f, shine);
+
+        Bitmap glyph = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+        Canvas g = new Canvas(glyph);
+        boolean adaptive = Build.VERSION.SDK_INT >= 26 && d instanceof AdaptiveIconDrawable
+                && ((AdaptiveIconDrawable) d).getForeground() != null;
+        if (adaptive) {
+            int pad = size / 4;
+            Drawable fg = ((AdaptiveIconDrawable) d).getForeground();
+            fg.setBounds(-pad, -pad, size + pad, size + pad);
+            fg.draw(g);
+        } else if (d != null) {
+            int inset = Math.round(size * 0.18f);
+            d.setBounds(inset, inset, size - inset, size - inset);
+            d.draw(g);
+        }
+        Paint glyphPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+        if (adaptive) {
+            // The symbol's shape in white.
+            glyphPaint.setColorFilter(new android.graphics.PorterDuffColorFilter(0xF2FFFFFF,
+                    android.graphics.PorterDuff.Mode.SRC_IN));
+        } else {
+            android.graphics.ColorMatrix cm = new android.graphics.ColorMatrix();
+            cm.setSaturation(0f);
+            android.graphics.ColorMatrix lift = new android.graphics.ColorMatrix(new float[]{
+                    0.6f, 0, 0, 0, 100, 0, 0.6f, 0, 0, 100, 0, 0, 0.6f, 0, 100, 0, 0, 0, 0.9f, 0});
+            cm.postConcat(lift);
+            glyphPaint.setColorFilter(new android.graphics.ColorMatrixColorFilter(cm));
+        }
+        glyphPaint.setShadowLayer(size * 0.03f, 0, size * 0.01f, 0x40000000);
+        c.drawBitmap(glyph, 0, 0, glyphPaint);
+        glyph.recycle();
+
+        Paint rim = new Paint(Paint.ANTI_ALIAS_FLAG);
+        rim.setStyle(Paint.Style.STROKE);
+        rim.setStrokeWidth(Math.max(1f, size / 64f));
+        rim.setShader(new LinearGradient(0, 0, size, size, new int[]{0xB3FFFFFF, 0x1AFFFFFF, 0x66FFFFFF},
+                new float[]{0f, 0.55f, 1f}, Shader.TileMode.CLAMP));
+        float h = rim.getStrokeWidth() / 2;
+        c.drawRoundRect(new RectF(h, h, size - h, size - h), r, r, rim);
         return out;
     }
 }

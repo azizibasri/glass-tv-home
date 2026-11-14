@@ -58,7 +58,9 @@ final class CarConfig {
         }
     }
 
-    CanKey canSpeed, canTorque, canRpm, canCoolant, canRange;
+    CanKey canSpeed, canTorque, canRpm, canCoolant, canRange, canOdometer;
+    /** App icons: "color" (as the apps draw them) or "glass" (clear frosted glass, white symbol). */
+    String iconStyle = "color";
     /** Rev counter: top of the dial and where the red zone starts. The 2017 Jetta's cluster: 7000 / 6000. */
     int rpmMax = 7000, rpmRed = 6000;
 
@@ -98,6 +100,9 @@ final class CarConfig {
             c.canRpm = canKey(o.optJSONObject("can_rpm"));
             c.canCoolant = canKey(o.optJSONObject("can_coolant"));
             c.canRange = canKey(o.optJSONObject("can_range"));
+            c.canOdometer = canKey(o.optJSONObject("can_odometer"));
+            String style = o.optString("icon_style", c.iconStyle);
+            if (style.equals("color") || style.equals("glass")) c.iconStyle = style;
             int rm = o.optInt("rpm_max", c.rpmMax);
             if (rm >= 3000 && rm <= 12000) c.rpmMax = rm;
             int rr = o.optInt("rpm_red", c.rpmRed);
