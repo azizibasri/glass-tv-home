@@ -319,16 +319,6 @@ public final class HomeActivity extends Activity {
         return Math.round(v * density);
     }
 
-    /**
-     * Millimetres on the screen, in pixels. Uses the screen's reported pixels per inch, unless that is
-     * clearly wrong (some head units report nonsense), then the density's.
-     */
-    private int mm(float v) {
-        android.util.DisplayMetrics m = getResources().getDisplayMetrics();
-        float ppi = m.xdpi;
-        if (!(ppi > m.densityDpi * 0.6f && ppi < m.densityDpi * 1.6f)) ppi = m.densityDpi;
-        return Math.round(v / 25.4f * ppi);
-    }
 
     private void build() {
         int w = root.getWidth(), h = root.getHeight();
@@ -559,17 +549,16 @@ public final class HomeActivity extends Activity {
         // Right: the big digital speedometer with turbo boost, torque, trip, coolant and fuel range.
         LinearLayout right = new LinearLayout(this);
         right.setOrientation(LinearLayout.VERTICAL);
-        right.setPadding(dp(12), dp(12), dp(12), dp(12));
+        right.setPadding(dp(12), 0, dp(12), dp(12));   // the speed view makes its own even space on top
         right.setBackground(glassFor(right, dp(26)));
         bigSpeed = new BigSpeedView(this, cfg.mph ? "mph" : "km/h", cfg.boostPsi, cfg.boostMaxBar, cfg.torqueMax);
         bigSpeed.setTypeface(ClockFonts.typeface(this, clockFont));
         LinearLayout.LayoutParams speedLp = new LinearLayout.LayoutParams(-1, 0, 1f);
         speedLp.leftMargin = speedLp.rightMargin = dp(6);
-        speedLp.topMargin = mm(cfg.speedTopMm);   // lower on the screen: 10 mm by default (speed_top_mm)
-        bigSpeed.setTopOffset(speedLp.topMargin);
+        bigSpeed.setGap(dp(12));   // the speed spaces itself evenly; the same 12 dp around the rows below
         right.addView(bigSpeed, speedLp);
         LinearLayout.LayoutParams tripLp = new LinearLayout.LayoutParams(-1, dp(52));
-        tripLp.topMargin = dp(8);
+        tripLp.topMargin = 0;   // the speed view ends with the same even space
         right.addView(tripRow(), tripLp);
         LinearLayout tiles = new LinearLayout(this);
         tiles.setOrientation(LinearLayout.HORIZONTAL);
@@ -581,7 +570,7 @@ public final class HomeActivity extends Activity {
         tiles.addView(rangeTile, rangeLp);
         LinearLayout.LayoutParams tilesLp = new LinearLayout.LayoutParams(-1,
                 Math.max(dp(64), Math.min(dp(84), Math.round(areaH * 0.18f))));
-        tilesLp.topMargin = dp(10);
+        tilesLp.topMargin = dp(12);
         right.addView(tiles, tilesLp);
         LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(0, -1, 1.25f);
         rlp.leftMargin = gap;

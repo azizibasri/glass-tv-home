@@ -82,8 +82,6 @@ final class CarConfig {
     /** Turbo boost: shown in "bar" or "psi"; the bar's top in bar (the 1.4 TSI peaks near 1.2 bar). */
     boolean boostPsi = false;
     float boostMaxBar = 1.5f;
-    /** How far the speed, boost and torque sit below the top of their panel, in mm on the screen. */
-    float speedTopMm = 10f;
 
     static File dir(Context ctx) {
         return ctx.getExternalFilesDir(null);
@@ -122,8 +120,6 @@ final class CarConfig {
             c.boostPsi = "psi".equalsIgnoreCase(o.optString("boost_unit", "bar"));
             double bm = o.optDouble("boost_max_bar", c.boostMaxBar);
             if (bm >= 0.3 && bm <= 4) c.boostMaxBar = (float) bm;
-            double st = o.optDouble("speed_top_mm", c.speedTopMm);
-            if (st >= 0 && st <= 40) c.speedTopMm = (float) st;
             c.canCoolant = canKey(o.optJSONObject("can_coolant"));
             c.canRange = canKey(o.optJSONObject("can_range"));
             c.canOdometer = canKey(o.optJSONObject("can_odometer"));

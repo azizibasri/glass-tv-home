@@ -214,7 +214,6 @@ All keys optional; a bad file is ignored as a whole.
 | `torque_max` | 50 to 2000 | End of the torque bar in Nm, about the engine's peak (1.4 TSI: 250, 1.5 MPI: 145) |
 | `boost_unit` | `"bar"` or `"psi"` | Turbo boost unit. Default bar |
 | `boost_max_bar` | 0.3 to 4 | Right end of the boost bar, in bar. Default 1.5 |
-| `speed_top_mm` | 0 to 40 | How far the speed, turbo boost and torque sit below the top of their panel, in mm. Default 10 |
 | `can_speed`, `can_boost`, `can_torque`, `can_coolant`, `can_range`, `can_odometer` | `{action, extra, scale}` | The CAN app's broadcast that carries each value; see Dashboard above |
 
 ## Safety

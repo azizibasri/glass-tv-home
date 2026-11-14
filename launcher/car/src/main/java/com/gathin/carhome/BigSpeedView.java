@@ -29,7 +29,7 @@ final class BigSpeedView extends View {
     private final Paint torqueFill = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF bar = new RectF(), lit = new RectF(), torqueBar = new RectF();
     private final float torqueMax;
-    private float torque = Float.NaN, shownTorque, speedH;
+    private float torque = Float.NaN, shownTorque;
     private boolean torqueEstimated;
     private final String unitText;
     private final boolean psi;
@@ -81,11 +81,13 @@ final class BigSpeedView extends View {
         postInvalidateOnAnimation();
     }
 
-    private int topOffset;
+    /** The space between the speed, the boost row, the torque row and what is around them. */
+    private float gap;
+    private float digitsBase, unitBase, boostBase, torqueBase;
 
-    /** The room above this view taken to move it lower: the boost and torque rows keep their size. */
-    void setTopOffset(int px) {
-        topOffset = px;
+    /** Sets the even spacing (at least {@code px}; more when there is room to spare). */
+    void setGap(int px) {
+        gap = px;
         requestLayout();
     }
 
@@ -98,22 +100,51 @@ final class BigSpeedView extends View {
 
     @Override
     protected void onSizeChanged(int w, int h, int ow, int oh) {
-        // Two rows of the same size under the speed: turbo boost, then torque.
-        float boostH = Math.min(h * 0.3f, Math.max(50 * d, (h + topOffset) * 0.22f));
-        speedH = h - 2 * boostH;
-        digits.setTextSize(Math.min(speedH * 0.78f, w * 0.40f));
-        unit.setTextSize(Math.max(11 * d, speedH * 0.09f));
-        label.setTextSize(Math.max(10 * d, boostH * 0.17f));
-        value.setTextSize(Math.max(15 * d, boostH * 0.30f));
-        float bh = Math.max(6 * d, boostH * 0.13f), pad = 6 * d;
-        torqueBar.set(pad, h - pad - bh, w - pad, h - pad);
-        bar.set(pad, h - pad - bh - boostH, w - pad, h - pad - boostH);
+        // Top to bottom: speed digits, unit and source, turbo boost row, torque row, with the same space
+        // above, between and below them all.
+        float rowH = Math.max(50 * d, h * 0.22f);
+        label.setTextSize(Math.max(10 * d, rowH * 0.17f));
+        value.setTextSize(Math.max(15 * d, rowH * 0.30f));
+        unit.setTextSize(Math.max(11 * d, h * 0.045f));
+        float bh = Math.max(6 * d, rowH * 0.13f), pad = 6 * d;
+        float valueCap = capHeight(value, 1f), unitCap = capHeight(unit, 1f);
+        float rowVis = valueCap + bh * 0.9f + bh;          // value top to bar bottom
+        float unitGap = unit.getTextSize() * 0.8f;
+        float g = Math.max(gap, 4 * d);
+        float room = h - 4 * g - 2 * rowVis - unitGap - unitCap;
+        float digitRatio = capHeight(digits, 100f) / 100f;
+        // As tall as the room allows, as long as a three-digit speed still fits the width.
+        digits.setTextSize(100f);
+        float widthPer100 = digits.measureText("188") / 0.92f;
+        digits.setTextSize(Math.max(10 * d, Math.min(room / digitRatio, w * 100f / widthPer100)));
+        float digitCap = capHeight(digits, 1f);
+        // Room to spare (a wide speed hits its width limit first): share it evenly between the spaces.
+        float spare = h - (digitCap + unitGap + unitCap + 2 * rowVis);
+        g = Math.max(g, spare / 4f);
+        digitsBase = g + digitCap;
+        unitBase = digitsBase + unitGap + unitCap;
+        boostBase = unitBase + g + valueCap;
+        bar.set(pad, boostBase + bh * 0.9f, w - pad, boostBase + bh * 1.9f);
+        torqueBase = bar.bottom + g + valueCap;
+        torqueBar.set(pad, torqueBase + bh * 0.9f, w - pad, torqueBase + bh * 1.9f);
         torqueFill.setShader(new LinearGradient(torqueBar.left, 0, torqueBar.right, 0, 0xFF30D158, 0xFFFF9F0A,
                 Shader.TileMode.CLAMP));
         fill.setShader(new LinearGradient(bar.left, 0, bar.right, 0,
                 new int[]{0xFF64D2FF, 0xFF64D2FF, 0xFFFF9F0A, 0xFFFF453A},
                 new float[]{0f, SpeedMath.fractionOf(0f, maxBar), SpeedMath.fractionOf(0.2f, maxBar), 1f},
                 Shader.TileMode.CLAMP));
+    }
+
+    /** Height of capitals and digits drawn with {@code p}, scaled by {@code k}. */
+    private final android.graphics.Rect bounds = new android.graphics.Rect();
+
+    private float capHeight(Paint p, float sizeOrOne) {
+        float old = p.getTextSize();
+        if (sizeOrOne != 1f) p.setTextSize(sizeOrOne);
+        p.getTextBounds("8H", 0, 2, bounds);
+        float hgt = bounds.height();
+        p.setTextSize(old);
+        return hgt;
     }
 
     @Override
@@ -128,13 +159,11 @@ final class BigSpeedView extends View {
 
         // Speed.
         String text = Float.isNaN(speed) ? "--" : String.valueOf(SpeedMath.display(shownSpeed));
-        float baseline = speedH * 0.70f;
-        c.drawText(text, w / 2f, baseline, digits);
-        c.drawText(unitText.toUpperCase(java.util.Locale.ROOT) + "  ·  " + source, w / 2f,
-                baseline + unit.getTextSize() * 1.7f, unit);
+        c.drawText(text, w / 2f, digitsBase, digits);
+        c.drawText(unitText.toUpperCase(java.util.Locale.ROOT) + "  ·  " + source, w / 2f, unitBase, unit);
 
         // Turbo boost.
-        float rowY = bar.top - bar.height() * 0.9f;
+        float rowY = boostBase;
         c.drawText(getContext().getString(R.string.turbo_boost), bar.left, rowY, label);
         c.drawText(SpeedMath.boostText(Float.isNaN(boost) ? Float.NaN : shownBoost, psi), bar.right, rowY, value);
         float r = bar.height() / 2;
@@ -155,7 +184,7 @@ final class BigSpeedView extends View {
         mark.setAlpha(0xFF);
 
         // Torque: the same row as the boost, from 0 to the engine's peak torque.
-        float tRowY = torqueBar.top - torqueBar.height() * 0.9f;
+        float tRowY = torqueBase;
         c.drawText(getContext().getString(torqueEstimated ? R.string.torque_estimated : R.string.torque),
                 torqueBar.left, tRowY, label);
         c.drawText(Float.isNaN(torque) ? "-- Nm" : Math.round(torque) + " Nm", torqueBar.right, tRowY, value);
