@@ -48,11 +48,15 @@ Swipe left for the apps.
   as OBD apps do. Only the turbo engines (1.4 TSI) go above zero; the 1.6 without a turbo only shows vacuum.
 - **Trip**: under the speed, the trip in km with a **Reset** button (tap Reset, then *Tap again* within
   3 seconds). With the car's odometer from the CAN bus (`can_odometer`) it counts every km, whatever is on
-  screen. Without it, it adds up distance from the speed, and only while Home is open: the row says which.
+  screen. Without it, it adds up distance from the speed: the row says which.
 - **Coolant**: °C with a bar and a word: *Warming up* under 70 °C (blue), *Normal* (green), *Hot* over
   110 °C (red). A VW normally sits near 90 °C.
 - **Fuel range**: km left, as the car's own trip computer works it out. Orange *Refuel soon* under 80 km,
   red under about 27 km.
+- **Always connected**: the car data (OBD-II adapter, CAN box and GPS) runs in a small background service,
+  so it stays connected when the reverse camera comes on, when you open Maps, Waze or music, and while the
+  screen is off. Android shows it as a *Car data connected* notification. If the adapter drops out (engine
+  off, out of range) it reconnects by itself. `"car_data_background": false` connects only while Home is open.
 - **Speed** comes from the car's CAN bus when the unit's CAN app shares it, otherwise from GPS. The dial
   says which one (`CAN BUS`, `GPS`, or `NO SIGNAL` in a tunnel). GPS speed works on any unit with no setup.
 - **Rpm, torque, coolant and range** can only come from the CAN bus. Each shows `--` and *No data* until set
@@ -194,6 +198,7 @@ All keys optional; a bad file is ignored as a whole.
 | `clock_height` | 100 to 250 | Clock digits stretched taller, in %. Default 100 |
 | `clock_glow` | bool | The glow behind the clock. Default `true` |
 | `data_source` | `"can"` or `"obd"` | Car data from the CAN box (and GPS) or a Bluetooth OBD-II adapter |
+| `car_data_background` | `true` (default) or `false` | Keep the OBD-II, CAN and GPS connection running in the background (reverse camera, other apps, screen off), shown as a *Car data connected* notification. `false` connects only while Home is in front |
 | `obd_address` | Bluetooth address | The paired OBD-II adapter, e.g. `"00:1D:A5:68:98:8B"`; easier to pick in the ⚙ menu |
 | `fuel_tank_l`, `fuel_l_per_100km` | numbers | For fuel range over OBD-II. Default 55 and 7.5 |
 | `icon_style` | `"color"` or `"glass"` | App icons as the apps draw them, or on a clear frosted-glass tile. The ⚙ menu wins over this |

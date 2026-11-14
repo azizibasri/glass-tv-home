@@ -59,6 +59,8 @@ final class CarConfig {
     }
 
     CanKey canSpeed, canTorque, canBoost, canCoolant, canRange, canOdometer;
+    /** Keep car data (OBD-II, CAN, GPS) running while other apps are in front, in a background service. */
+    boolean carDataBackground = true;
     /** Where car data comes from: "can" (CAN bus, GPS for speed when it has none) or "obd" (Bluetooth OBD-II). */
     String dataSource = "can";
     /** The paired OBD-II adapter's Bluetooth address, when dataSource is "obd". */
@@ -121,6 +123,7 @@ final class CarConfig {
             c.canCoolant = canKey(o.optJSONObject("can_coolant"));
             c.canRange = canKey(o.optJSONObject("can_range"));
             c.canOdometer = canKey(o.optJSONObject("can_odometer"));
+            if (o.opt("car_data_background") instanceof Boolean) c.carDataBackground = o.getBoolean("car_data_background");
             String src = o.optString("data_source", c.dataSource);
             if (src.equals("can") || src.equals("obd")) c.dataSource = src;
             c.obdAddress = o.optString("obd_address", c.obdAddress).trim();

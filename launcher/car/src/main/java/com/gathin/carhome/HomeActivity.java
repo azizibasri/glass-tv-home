@@ -208,7 +208,8 @@ public final class HomeActivity extends Activity {
         pkgs.addAction(Intent.ACTION_PACKAGE_CHANGED);
         pkgs.addDataScheme("package");
         registerReceiver(packageReceiver, pkgs);
-        carData = new CarData(this, cfg, this::showCarData);
+        carData = CarData.shared(this, cfg);
+        carData.setListener(this::showCarData);
         iconStyle = prefs.getString("icon_style", cfg.iconStyle);
         clockFont = prefs.getString("clock_font", cfg.clockFont);
         clockSize = prefs.getInt("clock_size", cfg.clockSize);
@@ -228,6 +229,8 @@ public final class HomeActivity extends Activity {
     protected void onDestroy() {
         unregisterReceiver(timeReceiver);
         unregisterReceiver(packageReceiver);
+        // The background service keeps the connection; it just has no screen to show it on now.
+        carData.setListener(null);
         main.removeCallbacksAndMessages(null);
         worker.shutdownNow();
         super.onDestroy();
@@ -247,7 +250,7 @@ public final class HomeActivity extends Activity {
                 prefs.edit().putBoolean("asked_gps", true).apply();
                 requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, 3);
             }
-            carData.start();
+            startCarData();
             main.removeCallbacks(dataTick);
             main.post(dataTick);
         }
@@ -264,8 +267,9 @@ public final class HomeActivity extends Activity {
             return;
         }
         if (resumed && cfg.dashboard) {
-            carData.stop();
-            carData.start();
+            // GPS or Bluetooth now allowed: connect again with it.
+            stopCarData();
+            startCarData();
         }
     }
 
@@ -275,7 +279,9 @@ public final class HomeActivity extends Activity {
         main.removeCallbacks(ramTick);
         main.removeCallbacks(autoClean);
         main.removeCallbacks(dataTick);
-        carData.stop();
+        // With the background connection on, car data keeps flowing (and the trip counting) while the
+        // reverse camera or another app is in front; otherwise it stops here as before.
+        if (!cfg.carDataBackground) carData.stop();
         saveTrip();
         if (bigClock != null) bigClock.setRunning(false);
         if (nowPlaying != null) nowPlaying.stop();
@@ -1190,9 +1196,9 @@ public final class HomeActivity extends Activity {
             dataSource = chosen[0];
             obdAddress = chosen[1];
             prefs.edit().putString("data_source", dataSource).putString("obd_address", obdAddress).apply();
-            carData.stop();
+            stopCarData();
             carData.setSource(dataSource, obdAddress);
-            if (resumed) carData.start();
+            if (resumed) startCarData();
             showToast(getString("obd".equals(dataSource) ? R.string.source_now_obd : R.string.source_now_can));
         });
         d.show();
@@ -1228,7 +1234,22 @@ public final class HomeActivity extends Activity {
         panelDialog(R.string.can_finder, body).show();
     }
 
-        /** Puts one snapshot of car data on the dashboard. */
+        /** Starts car data: in the background service when allowed, so it survives other apps in front. */
+    private void startCarData() {
+        if (cfg.carDataBackground) {
+            CarDataService.start(this);
+            if (!carData.isStarted()) carData.start();
+        } else {
+            carData.start();
+        }
+    }
+
+    private void stopCarData() {
+        carData.stop();
+        if (cfg.carDataBackground) CarDataService.stop(this);
+    }
+
+    /** Puts one snapshot of car data on the dashboard. */
     private void showCarData(CarData.Reading r) {
         trip.odometer(r.odometer);
         trip.speed(r.speed, SystemClock.elapsedRealtime());

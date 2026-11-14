@@ -13,8 +13,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 /**
- * Talks to a Bluetooth OBD-II adapter (ELM327 type, e.g. Carista) on its own thread, only while Home is on
- * screen: connects to the paired adapter, sets it up, then asks for speed and manifold pressure (for turbo
+ * Talks to a Bluetooth OBD-II adapter (ELM327 type, e.g. Carista) on its own thread, from the CarDataService in the background (or only while Home is on
+ * screen with "car_data_background": false): connects to the paired adapter, sets it up, then asks for speed and manifold pressure (for turbo
  * boost) about 4 times a second, and air pressure, coolant, fuel level and torque every few seconds. Reports values and its state; reconnects when the
  * connection drops (engine off, adapter unplugged), waiting a little longer each time.
  */

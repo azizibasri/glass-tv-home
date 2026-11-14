@@ -35,7 +35,7 @@
     <string name="trip_reset">Reset</string>
     <string name="trip_confirm">Tap again</string>
     <string name="trip_from_odometer">From the car\'s odometer</string>
-    <string name="trip_from_speed">Counts while Home is open</string>
+    <string name="trip_from_speed">Counted from the speed</string>
     <string name="trip_was_reset">Trip reset to 0</string>
     <string name="done">Done</string>
     <string name="clock_style">Clock style</string>
@@ -62,4 +62,6 @@
     <string name="no_local_music">No music files on this unit: opening your music app</string>
     <string name="car_name_label">Name under the clock</string>
     <string name="car_name_hint">e.g. VW Jetta 1.4 TSI (empty: no name)</string>
+    <string name="car_data_channel">Car data</string>
+    <string name="car_data_running">Car data connected</string>
 </resources>

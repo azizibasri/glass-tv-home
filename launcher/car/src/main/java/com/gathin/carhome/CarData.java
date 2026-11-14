@@ -70,7 +70,28 @@ final class CarData {
     }
 
     private final Context ctx;
-    private final Listener listener;
+    private volatile Listener listener;
+    private static CarData shared;
+
+    /**
+     * The one CarData of the app, kept by {@link CarDataService} while the car-data connection runs in the
+     * background, and shown by Home whenever it is on screen.
+     */
+    static synchronized CarData shared(Context ctx, CarConfig cfg) {
+        if (shared == null) shared = new CarData(ctx.getApplicationContext(), cfg, null);
+        return shared;
+    }
+
+    /** Who gets each reading (Home), or null. */
+    void setListener(Listener l) {
+        listener = l;
+    }
+
+    private boolean started;
+
+    boolean isStarted() {
+        return started;
+    }
     private final boolean mph;
     private final CarConfig cfg;
     private String mode = "can", obdAddress = "";
@@ -120,6 +141,7 @@ final class CarData {
 
     @SuppressLint("MissingPermission")
     void start() {
+        started = true;
         if (usesObd()) {
             if (obd == null && !obdAddress.isEmpty()) {
                 obd = new ObdLink(obdAddress, new ObdLink.Listener() {
@@ -194,6 +216,7 @@ final class CarData {
     }
 
     void stop() {
+        started = false;
         if (obd != null) {
             obd.stop();
             obd = null;
@@ -224,7 +247,8 @@ final class CarData {
         r.coolant = coolant.fresh(now, SLOW_STALE_MS);
         r.range = range.fresh(now, SLOW_STALE_MS);
         r.odometer = odometer.fresh(now, SLOW_STALE_MS);
-        listener.onData(r);
+        Listener l = listener;
+        if (l != null) l.onData(r);
     }
 
     /** One value from the OBD-II adapter, on its thread. */
