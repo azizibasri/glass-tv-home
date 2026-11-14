@@ -26,6 +26,53 @@ final class Wallpaper {
         this.blurred = blurred;
     }
 
+    /**
+     * Which picture at which size: the chosen wallpaper's size and date, or the built-in one. The finished
+     * wallpaper is kept under this name, so the next start shows it at once instead of rebuilding it.
+     */
+    private static String key(Context ctx, CarConfig cfg, int w, int h) {
+        File d = CarConfig.dir(ctx);
+        File f = d == null ? null : new File(d, "wallpaper.jpg");
+        String src = cfg.wallpaper && f != null && f.isFile() ? f.length() + "-" + f.lastModified() : "aurora1";
+        return src + "-" + w + "x" + h;
+    }
+
+    private static File cacheDir(Context ctx) {
+        // Not the app's cache folder: the Clean button empties that.
+        File dir = new File(ctx.getFilesDir(), "wallpaper");
+        if (!dir.isDirectory()) dir.mkdirs();
+        return dir;
+    }
+
+    /** The finished wallpaper saved last time, if it matches; quick enough for the main thread. Else null. */
+    static Wallpaper cached(Context ctx, CarConfig cfg, int w, int h) {
+        try {
+            File dir = cacheDir(ctx);
+            File keyFile = new File(dir, "key"), sharpFile = new File(dir, "sharp.jpg"), blurFile = new File(dir, "blur.png");
+            if (!keyFile.isFile() || !sharpFile.isFile() || !blurFile.isFile()) return null;
+            byte[] k = new byte[(int) Math.min(512, keyFile.length())];
+            try (java.io.FileInputStream in = new java.io.FileInputStream(keyFile)) {
+                int n = in.read(k);
+                if (n <= 0 || !new String(k, 0, n, "UTF-8").equals(key(ctx, cfg, w, h))) return null;
+            }
+            Bitmap sharp = BitmapFactory.decodeFile(sharpFile.getPath());
+            Bitmap blur = BitmapFactory.decodeFile(blurFile.getPath());
+            if (sharp == null || blur == null || sharp.getWidth() != w || sharp.getHeight() != h) return null;
+            return new Wallpaper(sharp, blur);
+        } catch (Exception | OutOfMemoryError e) {
+            return null;
+        }
+    }
+
+    /** The small blurred wallpaper saved last time (whatever size), for the window to show from its first frame. */
+    static Bitmap lastBlur(Context ctx) {
+        try {
+            return BitmapFactory.decodeFile(new File(cacheDir(ctx), "blur.png").getPath());
+        } catch (RuntimeException | OutOfMemoryError e) {
+            return null;
+        }
+    }
+
     static Wallpaper make(Context ctx, CarConfig cfg, int w, int h) {
         Bitmap sharp = null;
         File d = CarConfig.dir(ctx);
@@ -38,7 +85,25 @@ final class Wallpaper {
         boxBlur(small, 3);
         boxBlur(small, 3);
         boxBlur(small, 2);
+        save(ctx, key(ctx, cfg, w, h), sharp, small);
         return new Wallpaper(sharp, small);
+    }
+
+    private static void save(Context ctx, String key, Bitmap sharp, Bitmap blur) {
+        try {
+            File dir = cacheDir(ctx);
+            try (java.io.FileOutputStream out = new java.io.FileOutputStream(new File(dir, "sharp.jpg"))) {
+                sharp.compress(Bitmap.CompressFormat.JPEG, 92, out);
+            }
+            try (java.io.FileOutputStream out = new java.io.FileOutputStream(new File(dir, "blur.png"))) {
+                blur.compress(Bitmap.CompressFormat.PNG, 100, out);
+            }
+            try (java.io.FileOutputStream out = new java.io.FileOutputStream(new File(dir, "key"))) {
+                out.write(key.getBytes("UTF-8"));
+            }
+        } catch (Exception ignored) {
+            // Not saved: it is simply made again next time.
+        }
     }
 
     /** The built-in background: deep night blue with soft colour glows, in the iOS dark palette. */

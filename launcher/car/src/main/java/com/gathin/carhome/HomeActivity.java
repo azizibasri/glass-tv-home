@@ -176,6 +176,13 @@ public final class HomeActivity extends Activity {
         // Stay inside the system bars: head units often keep a status bar and a navigation bar on screen.
         getWindow().setNavigationBarColor(0xFF000000);
 
+        // From the very first frame: the last wallpaper, blurred and stretched, instead of a black window.
+        Bitmap lastBlur = Wallpaper.lastBlur(this);
+        if (lastBlur != null) {
+            android.graphics.drawable.BitmapDrawable bd = new android.graphics.drawable.BitmapDrawable(getResources(), lastBlur);
+            bd.setFilterBitmap(true);
+            getWindow().setBackgroundDrawable(bd);
+        }
         root = new FrameLayout(this);
         glass.root = root;
         backdrop = new View(this) {
@@ -185,7 +192,7 @@ public final class HomeActivity extends Activity {
                 if (wp != null) c.drawBitmap(wp.sharp, null, new RectF(0, 0, getWidth(), getHeight()), null);
             }
         };
-        backdrop.setBackgroundColor(0xFF070B1E);
+
         root.addView(backdrop, new FrameLayout.LayoutParams(-1, -1));
         root.addOnLayoutChangeListener((v, l, t, r, b, ol, ot, or, ob) -> {
             if (r - l != builtW || b - t != builtH) main.post(this::build);
@@ -244,7 +251,7 @@ public final class HomeActivity extends Activity {
             main.removeCallbacks(dataTick);
             main.post(dataTick);
         }
-        if (bigClock != null) bigClock.setRunning(true);
+        if (bigClock != null) bigClock.setRunning(pager == null || pager.page() == 0);
         if (nowPlaying != null) nowPlaying.start();
     }
 
@@ -352,6 +359,13 @@ public final class HomeActivity extends Activity {
         fillPages();
         updateClock();
         if (glass.wallpaper == null || glass.wallpaper.sharp.getWidth() != w || glass.wallpaper.sharp.getHeight() != h) {
+            // The finished wallpaper from last time shows at once; it is only made again when it changed.
+            Wallpaper saved = Wallpaper.cached(this, cfg, w, h);
+            if (saved != null) {
+                glass.wallpaper = saved;
+                backdrop.invalidate();
+                return;
+            }
             worker.execute(() -> {
                 Wallpaper wp = Wallpaper.make(this, cfg, w, h);
                 main.post(() -> {
@@ -757,11 +771,18 @@ public final class HomeActivity extends Activity {
         refreshWallpaper();
     }
 
+    /** A new wallpaper: made in the background while the old one stays on screen, then swapped in. */
     private void refreshWallpaper() {
-        glass.wallpaper = null;
-        backdrop.invalidate();
-        builtW = 0;
-        build();
+        int w = root.getWidth(), h = root.getHeight();
+        if (w == 0 || h == 0) return;
+        worker.execute(() -> {
+            Wallpaper wp = Wallpaper.make(this, cfg, w, h);
+            main.post(() -> {
+                glass.wallpaper = wp;
+                backdrop.invalidate();
+                for (View v : glassViews) v.invalidate();
+            });
+        });
     }
 
     private void setIconStyle(String style) {
@@ -791,6 +812,10 @@ public final class HomeActivity extends Activity {
     }
 
     // ---- Clock style dialog ----
+
+    private final Runnable reglass = () -> {
+        for (View v : glassViews) v.invalidate();
+    };
 
     private void showCarName() {
         if (carNameView == null) return;
@@ -1333,6 +1358,10 @@ public final class HomeActivity extends Activity {
     }
 
     private void updateDots(int page, int count) {
+        // The clock only animates while its page is on screen; the glass is cut again once a swipe settles.
+        if (bigClock != null) bigClock.setRunning(resumed && page == 0);
+        main.removeCallbacks(reglass);
+        main.postDelayed(reglass, 400);
         if (dots == null) return;
         dots.removeAllViews();
         if (count <= 1) return;
