@@ -75,6 +75,10 @@ final class CarConfig {
     String carName = "VW Jetta 1.4 TSI";
     /** Dashboard clock height, 100 (normal) to 250 % taller, same width. */
     int clockHeight = 100;
+    /** Speedometer digits size, 40 to 100 % of the space they have (100: fill it). */
+    int speedSize = 100;
+    /** Speedometer digits height, 100 (normal) to 250 %: taller and narrower, kept inside their space. */
+    int speedHeight = 100;
     /** The soft glow behind the rainbow clock. */
     boolean clockGlow = false;
     /** App icons: "color" (as the apps draw them) or "glass" (clear frosted glass, white symbol). */
@@ -138,6 +142,10 @@ final class CarConfig {
             if (o.has("car_name")) c.carName = o.optString("car_name", c.carName).trim();
             int ch = o.optInt("clock_height", c.clockHeight);
             if (ch >= 100 && ch <= 250) c.clockHeight = ch;
+            int ss = o.optInt("speed_size", c.speedSize);
+            if (ss >= 40 && ss <= 100) c.speedSize = ss;
+            int sh = o.optInt("speed_height", c.speedHeight);
+            if (sh >= 100 && sh <= 250) c.speedHeight = sh;
             if (o.opt("clock_glow") instanceof Boolean) c.clockGlow = o.getBoolean("clock_glow");
             String style = o.optString("icon_style", c.iconStyle);
             if (style.equals("color") || style.equals("glass")) c.iconStyle = style;

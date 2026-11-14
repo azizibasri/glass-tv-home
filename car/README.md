@@ -40,7 +40,8 @@ Swipe left for the apps.
   your music app. It needs notification access, which `car/install.sh` grants; it reads no notifications.
   `"music_widget": false` hides it.
 
-- **Speedometer**: the speed in big digits, in the same font as the clock (⚙ → Clock style), with its unit
+- **Speedometer**: the speed in big digits, in the same font as the clock (⚙ → Clock style), with its own
+  size and height in ⚙ → Speedometer style, with its unit
   and where it comes from (CAN BUS, OBD-II or GPS).
 - **Turbo boost**: under the speed, `+0.85 bar` (or psi with `"boost_unit": "psi"`) and a bar from full vacuum
   on the left, through zero (outside air) to full boost on the right (`boost_max_bar`, default 1.5): blue
@@ -214,6 +215,8 @@ All keys optional; a bad file is ignored as a whole.
 | `torque_max` | 50 to 2000 | End of the torque bar in Nm, about the engine's peak (1.4 TSI: 250, 1.5 MPI: 145) |
 | `boost_unit` | `"bar"` or `"psi"` | Turbo boost unit. Default bar |
 | `boost_max_bar` | 0.3 to 4 | Right end of the boost bar, in bar. Default 1.5 |
+| `speed_size` | 40 to 100 | Speed digits size, % of their space (also ⚙ → Speedometer style). Default 100 |
+| `speed_height` | 100 to 250 | Speed digits height: taller and narrower. Default 100 |
 | `can_speed`, `can_boost`, `can_torque`, `can_coolant`, `can_range`, `can_odometer` | `{action, extra, scale}` | The CAN app's broadcast that carries each value; see Dashboard above |
 
 ## Safety

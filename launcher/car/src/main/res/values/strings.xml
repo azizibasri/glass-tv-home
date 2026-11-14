@@ -39,6 +39,8 @@
     <string name="trip_was_reset">Trip reset to 0</string>
     <string name="done">Done</string>
     <string name="clock_style">Clock style</string>
+    <string name="speed_style">Speedometer style</string>
+    <string name="speed_style_hint">100% fills the space above the turbo boost. Smaller leaves more room, spread evenly. Height makes the digits taller and narrower; past the space they have, they get narrower.</string>
     <string name="clock_size">Size: %1$d%%</string>
     <string name="clock_custom_hint">Your own font: copy a .ttf or .otf file into the Glass Car folder as clock.ttf (Android/data/com.gathin.carhome/files) and choose Custom.</string>
     <string name="data_source">Car data source</string>

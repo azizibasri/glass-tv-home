@@ -116,7 +116,7 @@ public final class HomeActivity extends Activity {
     private String iconStyle;
     /** Clock font and size (%), and the car data source: the ⚙ menu's choices, else config.json's. */
     private String clockFont, dataSource, obdAddress;
-    private int clockSize, clockHeight;
+    private int clockSize, clockHeight, speedSize, speedHeight;
     private boolean clockGlow, clockRainbow;
     private String carName;
     private TextView carNameView;
@@ -213,6 +213,8 @@ public final class HomeActivity extends Activity {
         clockFont = prefs.getString("clock_font", cfg.clockFont);
         clockSize = prefs.getInt("clock_size", cfg.clockSize);
         clockHeight = prefs.getInt("clock_height", cfg.clockHeight);
+        speedSize = prefs.getInt("speed_size", cfg.speedSize);
+        speedHeight = prefs.getInt("speed_height", cfg.speedHeight);
         clockGlow = prefs.getBoolean("clock_glow_v2", cfg.clockGlow);
         clockRainbow = prefs.getBoolean("clock_rainbow", cfg.clockRainbow);
         carName = prefs.getString("car_name", cfg.carName);
@@ -553,7 +555,8 @@ public final class HomeActivity extends Activity {
         bigSpeed.setTypeface(ClockFonts.typeface(this, clockFont));
         LinearLayout.LayoutParams speedLp = new LinearLayout.LayoutParams(-1, 0, 1f);
         speedLp.leftMargin = speedLp.rightMargin = dp(6);
-        bigSpeed.setGap(dp(12));   // the speed spaces itself evenly; the same 12 dp around the rows below
+        bigSpeed.setGap(dp(12));
+        bigSpeed.setDigitStyle(speedSize / 100f, speedHeight / 100f);   // the speed spaces itself evenly; the same 12 dp around the rows below
         right.addView(bigSpeed, speedLp);
         LinearLayout.LayoutParams tripLp = new LinearLayout.LayoutParams(-1, dp(52));
         tripLp.topMargin = 0;   // the speed view ends with the same even space
@@ -668,6 +671,7 @@ public final class HomeActivity extends Activity {
                 {"glass".equals(iconStyle) ? R.string.icons_color : R.string.icons_glass,
                         (Runnable) () -> setIconStyle("glass".equals(iconStyle) ? "color" : "glass")},
                 {R.string.clock_style, (Runnable) this::clockDialog},
+                {R.string.speed_style, (Runnable) this::speedDialog},
                 {R.string.data_source, (Runnable) this::dataSourceDialog},
         };
         LinearLayout row = null;
@@ -1082,6 +1086,68 @@ public final class HomeActivity extends Activity {
         body.addView(hint, new LinearLayout.LayoutParams(-1, -2));
         if (pager != null) pager.snapTo(0);
         panelDialog(R.string.clock_style, body).show();
+    }
+
+    /** Speedometer style: the size and height of the speed digits, like the clock's. */
+    private void speedDialog() {
+        LinearLayout body = new LinearLayout(this);
+        body.setOrientation(LinearLayout.VERTICAL);
+        Runnable apply = () -> {
+            if (bigSpeed != null) bigSpeed.setDigitStyle(speedSize / 100f, speedHeight / 100f);
+        };
+        body.addView(percentSlider(R.string.clock_size, 40, 100, speedSize, v -> {
+            speedSize = v;
+            apply.run();
+        }, v -> prefs.edit().putInt("speed_size", v).apply()));
+        body.addView(percentSlider(R.string.clock_height, 100, 250, speedHeight, v -> {
+            speedHeight = v;
+            apply.run();
+        }, v -> prefs.edit().putInt("speed_height", v).apply()));
+        TextView hint = text(11, false);
+        hint.setGravity(Gravity.START);
+        hint.setSingleLine(false);
+        hint.setAlpha(0.6f);
+        hint.setText(R.string.speed_style_hint);
+        LinearLayout.LayoutParams hlp = new LinearLayout.LayoutParams(-1, -2);
+        hlp.topMargin = dp(6);
+        body.addView(hint, hlp);
+        if (pager != null) pager.snapTo(0);
+        panelDialog(R.string.speed_style, body).show();
+    }
+
+    /** A label ("Size: 80%") over a glass slider from min to max; onChange while dragging, onDone at the end. */
+    private LinearLayout percentSlider(int labelRes, int min, int max, int value,
+                                       java.util.function.IntConsumer onChange, java.util.function.IntConsumer onDone) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        TextView label = text(14, false);
+        label.setGravity(Gravity.START);
+        label.setText(getString(labelRes, value));
+        LinearLayout.LayoutParams llp = new LinearLayout.LayoutParams(-1, -2);
+        llp.topMargin = dp(10);
+        box.addView(label, llp);
+        android.widget.SeekBar bar = new android.widget.SeekBar(this);
+        glassSeek(bar);
+        bar.setMax(max - min);
+        bar.setProgress(value - min);
+        bar.setOnSeekBarChangeListener(new android.widget.SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(android.widget.SeekBar b, int p, boolean user) {
+                label.setText(getString(labelRes, min + p));
+                onChange.accept(min + p);
+            }
+
+            @Override
+            public void onStartTrackingTouch(android.widget.SeekBar b) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(android.widget.SeekBar b) {
+                onDone.accept(min + b.getProgress());
+            }
+        });
+        box.addView(bar, new LinearLayout.LayoutParams(-1, dp(40)));
+        return box;
     }
 
     // ---- Car data source dialog: CAN bus + GPS, or Bluetooth OBD-II ----

@@ -85,6 +85,19 @@ final class BigSpeedView extends View {
     private float gap;
     private float digitsBase, unitBase, boostBase, torqueBase;
 
+    private float sizeScale = 1f, stretch = 1f;
+
+    /**
+     * The digits' size (0.4 to 1 of the space they have) and height (1 to 2.5: taller and narrower, still
+     * inside their space). The spacing stays even: smaller digits leave more room between everything.
+     */
+    void setDigitStyle(float size, float height) {
+        sizeScale = Math.max(0.4f, Math.min(1f, size));
+        stretch = Math.max(1f, Math.min(2.5f, height));
+        if (getWidth() > 0 && getHeight() > 0) onSizeChanged(getWidth(), getHeight(), getWidth(), getHeight());
+        invalidate();
+    }
+
     /** Sets the even spacing (at least {@code px}; more when there is room to spare). */
     void setGap(int px) {
         gap = px;
@@ -116,8 +129,11 @@ final class BigSpeedView extends View {
         // As tall as the room allows, as long as a three-digit speed still fits the width.
         digits.setTextSize(100f);
         float widthPer100 = digits.measureText("188") / 0.92f;
-        digits.setTextSize(Math.max(10 * d, Math.min(room / digitRatio, w * 100f / widthPer100)));
-        float digitCap = capHeight(digits, 1f);
+        float fit = Math.max(10 * d, Math.min(room / digitRatio, w * 100f / widthPer100));
+        // Size first, then the stretch, which never takes the digits out of their space: past it they get
+        // narrower instead.
+        float digitCap = Math.min(Math.max(room, 4 * d), fit * digitRatio * sizeScale * stretch);
+        digits.setTextSize(Math.max(4 * d, digitCap / (digitRatio * stretch)));
         // Room to spare (a wide speed hits its width limit first): share it evenly between the spaces.
         float spare = h - (digitCap + unitGap + unitCap + 2 * rowVis);
         g = Math.max(g, spare / 4f);
@@ -159,7 +175,14 @@ final class BigSpeedView extends View {
 
         // Speed.
         String text = Float.isNaN(speed) ? "--" : String.valueOf(SpeedMath.display(shownSpeed));
-        c.drawText(text, w / 2f, digitsBase, digits);
+        if (stretch > 1.001f) {
+            c.save();
+            c.scale(1f, stretch, w / 2f, digitsBase);
+            c.drawText(text, w / 2f, digitsBase, digits);
+            c.restore();
+        } else {
+            c.drawText(text, w / 2f, digitsBase, digits);
+        }
         c.drawText(unitText.toUpperCase(java.util.Locale.ROOT) + "  ·  " + source, w / 2f, unitBase, unit);
 
         // Turbo boost.
