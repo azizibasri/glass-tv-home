@@ -28,7 +28,8 @@ temperature and fuel range.
 Swipe left for the apps.
 
 - **Car name**: under the clock, in white, inside its box: "VW Jetta 1.4 TSI" by default. Change it (or
-  empty it to hide the line) in ⚙ → Clock style → *Name under the clock*, or with `"car_name"`.
+  empty it to hide the line) in ⚙ → Clock style → *Name under the clock*, or with `"car_name"`. The same
+  panel has **Name size** and **Date size** sliders (50 to 250 %) for the name and the date under the clock.
 - **Widgets you move, resize, hide and unbox**: the dashboard has five widgets, each in its own glass box:
   **Clock**, **Music**, **Speedometer** (speed, boost, torque, trip and tiles), **Wave** and
   **Volume**. Hold a widget until a dashed outline and a blue corner handle show: drag the widget to move
@@ -38,12 +39,12 @@ Swipe left for the apps.
   returns them to their first places.
 - **Wave**: a colourful wave with a soft mirrored fill whose peaks rise and fall at random, like an
   equaliser. It is decoration only and listens to no sound. It moves only while the dashboard is on screen.
-- **Volume**: big − and + buttons with the media volume between them as a number and a bar. Tap for one
-  step, hold to keep going. Each step is a press of the unit's own volume key, sent through its debugging
-  service (the one cache cleaning uses; the unit asks "Allow USB debugging?" once, tick Always allow), so
-  head units that keep their volume in the radio chip change too and show their own volume bar. When that
-  service is off, it changes Android's media volume and shows Android's volume bar. It follows the volume
-  when it is changed elsewhere.
+- **Volume**: three round buttons, evenly spaced: **−**, **mute** (a speaker; it shows a cross while
+  muted) and **+**. Tap − or + for one step, hold to keep going; a step also ends mute. Each press is the
+  unit's own volume or mute key, sent through its debugging service (the one cache cleaning uses; the unit
+  asks "Allow USB debugging?" once, tick Always allow), so head units that keep their volume in the radio
+  chip change too and show their own volume bar. When that service is off, it changes Android's media
+  volume. Resize and move it like the other widgets.
 - **Clock faces**: in ⚙ → Clock style, **Digital** or three analog faces in Apple's style: **Classic** (white
   dial, black numbers), **Night** (dark see-through dial, white numbers) and **Minimal** (hour marks only),
   each with an orange second hand that sweeps while the dashboard is on screen.

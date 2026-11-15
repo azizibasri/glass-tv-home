@@ -86,6 +86,8 @@
     <string name="music_channel">Music</string>
     <string name="no_local_music">No music files on this unit: opening your music app</string>
     <string name="car_name_label">Name under the clock</string>
+    <string name="name_size">Name size: %1$d%%</string>
+    <string name="date_size">Date size: %1$d%%</string>
     <string name="car_name_hint">e.g. VW Jetta 1.4 TSI (empty: no name)</string>
     <string name="car_data_channel">Car data</string>
     <string name="car_data_running">Car data connected</string>

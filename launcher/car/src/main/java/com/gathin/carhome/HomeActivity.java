@@ -117,6 +117,9 @@ public final class HomeActivity extends Activity {
     /** Clock font and size (%), and the car data source: the ⚙ menu's choices, else config.json's. */
     private String clockFont, dataSource, obdAddress;
     private int clockSize, clockHeight, speedSize, speedHeight;
+    /** Size of the name and the date under the clock, % of their normal size (50 to 250). */
+    private int nameSize, dateSize;
+    private boolean compactClock;
     private boolean clockGlow, clockRainbow;
     private String carName;
     private TextView carNameView;
@@ -222,6 +225,8 @@ public final class HomeActivity extends Activity {
         clockSize = prefs.getInt("clock_size", cfg.clockSize);
         clockHeight = prefs.getInt("clock_height", cfg.clockHeight);
         speedSize = prefs.getInt("speed_size", cfg.speedSize);
+        nameSize = prefs.getInt("name_size", 100);
+        dateSize = prefs.getInt("date_size", 100);
         speedHeight = prefs.getInt("speed_height", cfg.speedHeight);
         clockGlow = prefs.getBoolean("clock_glow_v2", cfg.clockGlow);
         clockRainbow = prefs.getBoolean("clock_rainbow_v2", cfg.clockRainbow);
@@ -570,17 +575,16 @@ public final class HomeActivity extends Activity {
         carNameView.setShadowLayer(0, 0, 0, 0);   // the clock area has no dark shadows
         carNameView.setTextColor(0xFFFFFFFF);
         carNameView.setLetterSpacing(0.06f);
-        carNameView.setAutoSizeTextTypeUniformWithConfiguration(10, compact ? 14 : 17, 1, TypedValue.COMPLEX_UNIT_SP);
-        LinearLayout.LayoutParams nlp2 = new LinearLayout.LayoutParams(-1, dp(compact ? 22 : 26));
+        compactClock = compact;
+        LinearLayout.LayoutParams nlp2 = new LinearLayout.LayoutParams(-1, dp(26));
         nlp2.topMargin = dp(4);
         clockBox.addView(carNameView, nlp2);
         showCarName();
         bigDate = text(16, false);
         bigDate.setShadowLayer(0, 0, 0, 0);
         bigDate.setAlpha(0.8f);
-        // Shrinks to fit rather than cutting the date short.
-        bigDate.setAutoSizeTextTypeUniformWithConfiguration(10, 16, 1, TypedValue.COMPLEX_UNIT_SP);
-        clockBox.addView(bigDate, new LinearLayout.LayoutParams(-1, dp(compact ? 20 : 24)));
+        clockBox.addView(bigDate, new LinearLayout.LayoutParams(-1, dp(24)));
+        applyUnderClockSizes();
         addCard(d, "clock", clockBox, leftFull, clockH, 0f, 0f);
 
         // Music: its own glass box.
@@ -1060,6 +1064,29 @@ public final class HomeActivity extends Activity {
         carNameView.setVisibility(carName == null || carName.isEmpty() ? View.GONE : View.VISIBLE);
     }
 
+    /**
+     * The name and the date under the clock at the sizes chosen in Clock style. Each shrinks to fit its
+     * line rather than being cut short; a bigger line leaves the clock a little less room.
+     */
+    private void applyUnderClockSizes() {
+        if (carNameView != null) {
+            float base = compactClock ? 14 : 17, sp = base * nameSize / 100f;
+            carNameView.setAutoSizeTextTypeUniformWithConfiguration(6,
+                    Math.max(7, Math.round(sp)), 1, TypedValue.COMPLEX_UNIT_SP);
+            LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) carNameView.getLayoutParams();
+            lp.height = dp(Math.round((compactClock ? 22 : 26) * nameSize / 100f));
+            carNameView.setLayoutParams(lp);
+        }
+        if (bigDate != null) {
+            float sp = 16 * dateSize / 100f;
+            bigDate.setAutoSizeTextTypeUniformWithConfiguration(6,
+                    Math.max(7, Math.round(sp)), 1, TypedValue.COMPLEX_UNIT_SP);
+            LinearLayout.LayoutParams lp = (LinearLayout.LayoutParams) bigDate.getLayoutParams();
+            lp.height = dp(Math.round((compactClock ? 20 : 24) * dateSize / 100f));
+            bigDate.setLayoutParams(lp);
+        }
+    }
+
     private void applyClockStyle() {
         if (bigSpeed != null) bigSpeed.setTypeface(ClockFonts.typeface(this, clockFont));
         if (bigClock == null) return;
@@ -1371,6 +1398,14 @@ public final class HomeActivity extends Activity {
         elp.topMargin = dp(6);
         elp.bottomMargin = dp(10);
         body.addView(nameEdit, elp);
+        body.addView(percentSlider(R.string.name_size, 50, 250, nameSize, v -> {
+            nameSize = v;
+            applyUnderClockSizes();
+        }, v -> prefs.edit().putInt("name_size", v).apply()));
+        body.addView(percentSlider(R.string.date_size, 50, 250, dateSize, v -> {
+            dateSize = v;
+            applyUnderClockSizes();
+        }, v -> prefs.edit().putInt("date_size", v).apply()));
         TextView hint = text(11, false);
         hint.setGravity(Gravity.START);
         hint.setSingleLine(false);

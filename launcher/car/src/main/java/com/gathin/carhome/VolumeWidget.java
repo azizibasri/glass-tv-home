@@ -1,11 +1,9 @@
 package com.gathin.carhome;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.RectF;
 import android.graphics.drawable.GradientDrawable;
 import android.media.AudioManager;
@@ -14,49 +12,86 @@ import android.os.Looper;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.Space;
 import android.widget.TextView;
 
 /**
- * Volume: a big minus and plus with the media volume between them as a bar and a number. Tap to change it
- * by one step, hold to keep changing it. Follows the volume when it changes elsewhere (the steering wheel,
- * the unit's own keys).
+ * Volume: minus, mute and plus, evenly spaced. Tap minus or plus for one step, hold to keep changing it;
+ * tap mute to mute or unmute. The buttons press the unit's own volume keys, so the unit shows its own
+ * volume bar. Resize and move it like every widget (hold, then drag).
  */
 final class VolumeWidget extends LinearLayout {
     private final AudioManager audio;
     private final Handler main = new Handler(Looper.getMainLooper());
-    private final Level level;
-    private final TextView number;
-    private BroadcastReceiver receiver;
+    private final MuteIcon muteIcon;
+    private boolean muted;
 
     VolumeWidget(Context ctx) {
         super(ctx);
         float d = getResources().getDisplayMetrics().density;
         audio = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
-        // Two rows: minus, the number, plus; and the volume bar under them across the whole width.
-        setOrientation(VERTICAL);
+        setOrientation(HORIZONTAL);
         setGravity(Gravity.CENTER);
-        int pad = Math.round(12 * d);
+        int pad = Math.round(14 * d);
         setPadding(pad, pad, pad, pad);
-        LinearLayout row = new LinearLayout(ctx);
-        row.setOrientation(HORIZONTAL);
-        row.setGravity(Gravity.CENTER_VERTICAL);
-        int btn = Math.round(52 * d);
-        row.addView(button(ctx, "\u2212", -1), new LayoutParams(btn, btn));
-        number = new TextView(ctx);
-        number.setTextColor(0xFFFFFFFF);
-        number.setTextSize(22);
-        number.setGravity(Gravity.CENTER);
-        number.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD));
-        number.setFontFeatureSettings("tnum");
-        row.addView(number, new LayoutParams(0, -2, 1f));
-        row.addView(button(ctx, "+", 1), new LayoutParams(btn, btn));
-        addView(row, new LayoutParams(-1, -2));
-        level = new Level(ctx);
-        LayoutParams llp = new LayoutParams(-1, Math.round(8 * d));
-        llp.topMargin = Math.round(12 * d);
-        addView(level, llp);
-        show();
+        int btn = Math.round(56 * d);
+        addView(button(ctx, "\u2212", -1), new LayoutParams(btn, btn));
+        addView(new Space(ctx), new LayoutParams(0, 1, 1f));
+        muteIcon = new MuteIcon(ctx);
+        addView(muteButton(ctx), new LayoutParams(btn, btn));
+        addView(new Space(ctx), new LayoutParams(0, 1, 1f));
+        addView(button(ctx, "+", 1), new LayoutParams(btn, btn));
+    }
+
+    private static GradientDrawable round(float d) {
+        GradientDrawable g = new GradientDrawable();
+        g.setShape(GradientDrawable.OVAL);
+        g.setColor(0x26FFFFFF);
+        g.setStroke(Math.max(1, Math.round(d)), 0x4DFFFFFF);
+        return g;
+    }
+
+    private View muteButton(Context ctx) {
+        float d = getResources().getDisplayMetrics().density;
+        FrameLayout b = new FrameLayout(ctx);
+        b.setBackground(round(d));
+        int in = Math.round(14 * d);
+        b.addView(muteIcon, new FrameLayout.LayoutParams(-1, -1));
+        b.setPadding(in, in, in, in);
+        b.setContentDescription("Mute");
+        b.setOnTouchListener((v, e) -> {
+            switch (e.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    v.animate().scaleX(0.88f).scaleY(0.88f).setDuration(80).start();
+                    return true;
+                case MotionEvent.ACTION_UP:
+                    v.animate().scaleX(1f).scaleY(1f).setDuration(120).start();
+                    toggleMute();
+                    return true;
+                case MotionEvent.ACTION_CANCEL:
+                    v.animate().scaleX(1f).scaleY(1f).setDuration(120).start();
+                    return true;
+                default:
+                    return true;
+            }
+        });
+        return b;
+    }
+
+    private void toggleMute() {
+        muted = !muted;
+        muteIcon.setMuted(muted);
+        // KEYCODE_VOLUME_MUTE, as the unit's own mute key; or Android's mute for the media volume.
+        press(164, () -> {
+            if (audio == null) return;
+            try {
+                audio.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_TOGGLE_MUTE,
+                        AudioManager.FLAG_SHOW_UI);
+            } catch (SecurityException ignored) {
+            }
+        });
     }
 
     private View button(Context ctx, String sign, int dir) {
@@ -66,11 +101,7 @@ final class VolumeWidget extends LinearLayout {
         b.setTextSize(30);
         b.setGravity(Gravity.CENTER);
         b.setIncludeFontPadding(false);
-        GradientDrawable g = new GradientDrawable();
-        g.setShape(GradientDrawable.OVAL);
-        g.setColor(0x26FFFFFF);
-        g.setStroke(Math.max(1, Math.round(getResources().getDisplayMetrics().density)), 0x4DFFFFFF);
-        b.setBackground(g);
+        b.setBackground(round(getResources().getDisplayMetrics().density));
         b.setContentDescription(dir > 0 ? "Volume up" : "Volume down");
         // Tap: one step. Hold: a step every 150 ms after a short wait.
         Runnable repeat = new Runnable() {
@@ -99,19 +130,27 @@ final class VolumeWidget extends LinearLayout {
         return b;
     }
 
-    /**
-     * One volume step, the way the unit's own volume keys do it: a volume key press through the unit's
-     * debugging service (the one cache cleaning uses), so head units that keep their volume outside
-     * Android (in the radio chip) change too and show their own volume bar. Where that service is off or
-     * not allowed, Android's volume for whatever is playing, with the system's volume bar.
-     */
+    /** One volume step; a step up or down also ends mute, as on the unit. */
     private void step(int dir) {
+        if (muted) {
+            muted = false;
+            muteIcon.setMuted(false);
+        }
+        press(dir > 0 ? 24 : 25, () -> androidStep(dir));
+    }
+
+    /**
+     * A key press through the unit's debugging service (the one cache cleaning uses), so head units that
+     * keep their volume outside Android (in the radio chip) change too and show their own volume bar.
+     * Where that service is off or not allowed, the fallback: Android's media volume.
+     */
+    private void press(int keyCode, Runnable fallback) {
         Context app = getContext().getApplicationContext();
         KEYS.execute(() -> {
             boolean viaKey = false;
             if (!shellRefused) {
                 try {
-                    viaKey = LocalShell.shell(app, false, "shell:input keyevent " + (dir > 0 ? 24 : 25));
+                    viaKey = LocalShell.shell(app, false, "shell:input keyevent " + keyCode);
                     if (!viaKey) {
                         shellRefused = true;   // not allowed yet: don't try each tap
                         askOnce(app);
@@ -120,8 +159,7 @@ final class VolumeWidget extends LinearLayout {
                     shellRefused = true;   // debugging service off
                 }
             }
-            if (!viaKey) main.post(() -> androidStep(dir));
-            main.postDelayed(this::show, 250);
+            if (!viaKey) main.post(fallback);
         });
     }
 
@@ -132,9 +170,8 @@ final class VolumeWidget extends LinearLayout {
             audio.adjustStreamVolume(AudioManager.STREAM_MUSIC,
                     dir > 0 ? AudioManager.ADJUST_RAISE : AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);
         } catch (SecurityException ignored) {
-            // Do Not Disturb can refuse it; the bar shows what it is.
+            // Do Not Disturb can refuse it.
         }
-        show();
     }
 
     /**
@@ -158,63 +195,57 @@ final class VolumeWidget extends LinearLayout {
     /** Set when the unit's debugging service is off or doesn't allow Glass Car: Android's volume then. */
     private static volatile boolean shellRefused;
 
-    private void show() {
-        if (audio == null) return;
-        int max = Math.max(1, audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC));
-        int v = audio.getStreamVolume(AudioManager.STREAM_MUSIC);
-        number.setText(String.valueOf(v));
-        level.set(v / (float) max);
-    }
-
-    /** Follows volume changes made elsewhere while Home is on screen. */
     void start() {
-        show();
-        if (receiver != null) return;
-        receiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context c, Intent i) {
-                show();
-            }
-        };
-        getContext().registerReceiver(receiver, new IntentFilter("android.media.VOLUME_CHANGED_ACTION"));
     }
 
     void stop() {
         main.removeCallbacksAndMessages(null);
-        if (receiver != null) {
-            try {
-                getContext().unregisterReceiver(receiver);
-            } catch (RuntimeException ignored) {
-            }
-            receiver = null;
-        }
     }
 
-    /** The volume as a rounded bar. */
-    private static final class Level extends View {
-        private final Paint track = new Paint(Paint.ANTI_ALIAS_FLAG), fill = new Paint(Paint.ANTI_ALIAS_FLAG);
+    /** A speaker with sound waves, or with a cross when muted. */
+    private static final class MuteIcon extends View {
+        private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Path speaker = new Path();
         private final RectF r = new RectF();
-        private float frac;
+        private boolean muted;
 
-        Level(Context ctx) {
+        MuteIcon(Context ctx) {
             super(ctx);
-            track.setColor(0x33FFFFFF);
-            fill.setColor(0xFFFFFFFF);
+            p.setColor(0xFFFFFFFF);
+            p.setStrokeCap(Paint.Cap.ROUND);
+            p.setStrokeJoin(Paint.Join.ROUND);
         }
 
-        void set(float f) {
-            frac = Math.max(0f, Math.min(1f, f));
+        void setMuted(boolean m) {
+            muted = m;
             invalidate();
         }
 
         @Override
         protected void onDraw(Canvas c) {
-            float rad = getHeight() / 2f;
-            r.set(0, 0, getWidth(), getHeight());
-            c.drawRoundRect(r, rad, rad, track);
-            if (frac > 0) {
-                r.set(0, 0, Math.max(getHeight(), getWidth() * frac), getHeight());
-                c.drawRoundRect(r, rad, rad, fill);
+            float s = Math.min(getWidth(), getHeight());
+            if (s <= 0) return;
+            float ox = (getWidth() - s) / 2f, oy = (getHeight() - s) / 2f;
+            speaker.reset();
+            speaker.moveTo(ox + s * 0.08f, oy + s * 0.36f);
+            speaker.lineTo(ox + s * 0.26f, oy + s * 0.36f);
+            speaker.lineTo(ox + s * 0.50f, oy + s * 0.14f);
+            speaker.lineTo(ox + s * 0.50f, oy + s * 0.86f);
+            speaker.lineTo(ox + s * 0.26f, oy + s * 0.64f);
+            speaker.lineTo(ox + s * 0.08f, oy + s * 0.64f);
+            speaker.close();
+            p.setStyle(Paint.Style.FILL);
+            c.drawPath(speaker, p);
+            p.setStyle(Paint.Style.STROKE);
+            p.setStrokeWidth(s * 0.08f);
+            if (muted) {
+                c.drawLine(ox + s * 0.64f, oy + s * 0.36f, ox + s * 0.92f, oy + s * 0.64f, p);
+                c.drawLine(ox + s * 0.92f, oy + s * 0.36f, ox + s * 0.64f, oy + s * 0.64f, p);
+            } else {
+                r.set(ox + s * 0.38f, oy + s * 0.32f, ox + s * 0.74f, oy + s * 0.68f);
+                c.drawArc(r, -50, 100, false, p);
+                r.set(ox + s * 0.30f, oy + s * 0.16f, ox + s * 0.94f, oy + s * 0.84f);
+                c.drawArc(r, -50, 100, false, p);
             }
         }
     }
