@@ -61,12 +61,20 @@ final class NowPlaying extends LinearLayout {
     private final Runnable tick = new Runnable() {
         @Override
         public void run() {
+            // A radio known only from a broadcast goes back to "nothing playing" once the broadcasts stop.
+            if (radioMode && controller == null && !RadioState.isOn()) refresh();
             updateProgress();
             if (running) main.postDelayed(this, 1_000);
         }
     };
     private MediaController controller;
-    private boolean running, listening;
+    private boolean running, listening, noAccess;
+    /** Showing the unit's radio: its package (to open it and send it keys). */
+    private boolean radioMode;
+    private String radioPkg;
+    /** Optional broadcasts from config.json with the radio's frequency and channel number. */
+    private CarConfig.CanKey radioFreqKey, radioChannelKey;
+    private android.content.BroadcastReceiver radioReceiver;
 
     NowPlaying(Context ctx, int heightPx, int widthPx, Runnable openMusicApp) {
         super(ctx);
@@ -149,13 +157,13 @@ final class NowPlaying extends LinearLayout {
         }
         if (!narrow) {
             buttonRow.addView(button(ctx, R.drawable.ic_prev, btn, v -> {
-                if (controller != null) controller.getTransportControls().skipToPrevious();
+                skip(false);
             }));
         }
         playPause = button(ctx, R.drawable.ic_play, Math.round(btn * 1.15f), v -> togglePlay());
         buttonRow.addView(playPause);
         buttonRow.addView(button(ctx, R.drawable.ic_next, btn, v -> {
-            if (controller != null) controller.getTransportControls().skipToNext();
+            skip(true);
         }));
         if (stacked) {   // room to spread the buttons out, easier to hit while driving
             for (int i = 0; i < buttonRow.getChildCount(); i++) {
@@ -223,11 +231,22 @@ final class NowPlaying extends LinearLayout {
         return enabled != null && enabled.contains(listener().flattenToString());
     }
 
-    /** Follows the music while Home is on screen. */
+    /** Radio broadcasts from config.json (radio_freq, radio_channel); either may be null. */
+    void setRadioBroadcasts(CarConfig.CanKey freq, CarConfig.CanKey channel) {
+        radioFreqKey = freq;
+        radioChannelKey = channel;
+    }
+
+    /** Follows the music (and the unit's radio) while Home is on screen. */
     void start() {
         running = true;
-        if (!hasAccess()) {
-            showNoAccess();
+        RadioState.setListener(this::refresh);
+        startRadioBroadcasts();
+        noAccess = !hasAccess();
+        if (noAccess) {
+            refresh();
+            main.removeCallbacks(tick);
+            main.post(tick);
             return;
         }
         MediaSessionManager msm = (MediaSessionManager) getContext().getSystemService(Context.MEDIA_SESSION_SERVICE);
@@ -247,6 +266,14 @@ final class NowPlaying extends LinearLayout {
 
     void stop() {
         running = false;
+        RadioState.setListener(null);
+        if (radioReceiver != null) {
+            try {
+                getContext().unregisterReceiver(radioReceiver);
+            } catch (RuntimeException ignored) {
+            }
+            radioReceiver = null;
+        }
         main.removeCallbacks(tick);
         if (listening) {
             try {
@@ -290,9 +317,53 @@ final class NowPlaying extends LinearLayout {
         refresh();
     }
 
+    private void startRadioBroadcasts() {
+        if (radioReceiver != null || (radioFreqKey == null && radioChannelKey == null)) return;
+        android.content.IntentFilter f = new android.content.IntentFilter();
+        if (radioFreqKey != null) f.addAction(radioFreqKey.action);
+        if (radioChannelKey != null && !f.hasAction(radioChannelKey.action)) f.addAction(radioChannelKey.action);
+        radioReceiver = new android.content.BroadcastReceiver() {
+            @Override
+            public void onReceive(Context c, Intent i) {
+                android.os.Bundle b = i.getExtras();
+                if (b == null) return;
+                RadioInfo info = null;
+                int ch = 0;
+                if (radioFreqKey != null && radioFreqKey.action.equals(i.getAction()) && b.containsKey(radioFreqKey.extra)) {
+                    float v = SpeedMath.parse(b.get(radioFreqKey.extra), radioFreqKey.scale);
+                    if (!Float.isNaN(v)) info = RadioInfo.fromNumber(v, 1f);
+                }
+                if (radioChannelKey != null && radioChannelKey.action.equals(i.getAction()) && b.containsKey(radioChannelKey.extra)) {
+                    float v = SpeedMath.parse(b.get(radioChannelKey.extra), radioChannelKey.scale);
+                    if (!Float.isNaN(v) && v >= 1 && v <= 99) ch = Math.round(v);
+                }
+                if (info != null || ch > 0) RadioState.broadcast(info, ch);
+            }
+        };
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            getContext().registerReceiver(radioReceiver, f, Context.RECEIVER_EXPORTED);
+        } else {
+            getContext().registerReceiver(radioReceiver, f);
+        }
+    }
+
+    private static boolean isPlaying(MediaController c) {
+        PlaybackState s = c == null ? null : c.getPlaybackState();
+        return s != null && s.getState() == PlaybackState.STATE_PLAYING;
+    }
+
     private void refresh() {
+        // Music that is playing comes first; otherwise the unit's radio when it is on.
+        boolean radioSession = controller != null && RadioInfo.isRadioPackage(controller.getPackageName());
+        boolean musicPlaying = controller != null && !radioSession && isPlaying(controller);
+        if (!musicPlaying && (radioSession || RadioState.isOn())) {
+            showRadio(radioSession ? controller : null);
+            return;
+        }
+        radioMode = false;
         if (controller == null) {
-            showEmpty();
+            if (noAccess) showNoAccess();
+            else showEmpty();
             return;
         }
         MediaMetadata m = controller.getMetadata();
@@ -332,7 +403,7 @@ final class NowPlaying extends LinearLayout {
                 frac = Math.max(0f, Math.min(1f, pos / (float) dur));
             }
         }
-        progress.setVisibility(controller == null ? INVISIBLE : VISIBLE);
+        progress.setVisibility(controller == null || radioMode ? INVISIBLE : VISIBLE);
         ViewGroupParams.setWidth(progressFill, Math.round(w * frac));
     }
 
@@ -347,7 +418,77 @@ final class NowPlaying extends LinearLayout {
         }
     }
 
+    /** The radio: frequency (or channel) as the title, channel and station under it, a radio picture. */
+    private void showRadio(MediaController c) {
+        radioMode = true;
+        RadioInfo info = null;
+        if (c != null) {
+            MediaMetadata m = c.getMetadata();
+            if (m != null) {
+                info = RadioInfo.parse(m.getText(MediaMetadata.METADATA_KEY_TITLE),
+                        m.getText(MediaMetadata.METADATA_KEY_DISPLAY_TITLE),
+                        m.getText(MediaMetadata.METADATA_KEY_ARTIST),
+                        m.getText(MediaMetadata.METADATA_KEY_ALBUM),
+                        m.getText(MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE));
+            }
+            radioPkg = c.getPackageName();
+        } else {
+            radioPkg = RadioState.pkg();
+        }
+        if (info == null || info.isEmpty()) {
+            RadioInfo state = RadioState.info();
+            if (info == null || !state.isEmpty()) info = state;
+        }
+        CharSequence label = labelOf(radioPkg);
+        String head = info.headline();
+        title.setText(head != null ? head : info.station != null ? info.station : getContext().getString(R.string.radio));
+        String detail = info.detail();
+        if (head == null && info.station != null) detail = null;
+        artist.setText(detail != null ? detail : label != null ? label : getContext().getString(R.string.radio));
+        art.setImageResource(R.drawable.ic_radio);
+        art.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        int p = art.getLayoutParams().width / 4;
+        art.setPadding(p, p, p, p);
+        art.setBackground(new GradientDrawable(GradientDrawable.Orientation.TL_BR, new int[]{0xFFFF9F0A, 0xFFFF375F}));
+        boolean playing = c == null || isPlaying(c);
+        playPause.setImageResource(playing ? R.drawable.ic_pause : R.drawable.ic_play);
+        setControlsEnabled(true);
+        progress.setVisibility(INVISIBLE);
+    }
+
+    private CharSequence labelOf(String pkg) {
+        if (pkg == null) return null;
+        try {
+            android.content.pm.PackageManager pm = getContext().getPackageManager();
+            return pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0));
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** Previous / next: the playing app's, or for a radio without a media session, the media keys. */
+    private void skip(boolean next) {
+        if (controller != null) {
+            if (next) controller.getTransportControls().skipToNext();
+            else controller.getTransportControls().skipToPrevious();
+        } else if (radioMode) {
+            mediaKey(next ? android.view.KeyEvent.KEYCODE_MEDIA_NEXT : android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS);
+        }
+    }
+
+    private void mediaKey(int code) {
+        android.media.AudioManager am = (android.media.AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+        if (am == null) return;
+        long now = SystemClock.uptimeMillis();
+        am.dispatchMediaKeyEvent(new android.view.KeyEvent(now, now, android.view.KeyEvent.ACTION_DOWN, code, 0));
+        am.dispatchMediaKeyEvent(new android.view.KeyEvent(now, now, android.view.KeyEvent.ACTION_UP, code, 0));
+    }
+
     private void togglePlay() {
+        if (controller == null && radioMode) {
+            mediaKey(android.view.KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
+            return;
+        }
         if (controller == null) {
             openMusicApp.run();
             return;
@@ -358,6 +499,11 @@ final class NowPlaying extends LinearLayout {
     }
 
     private void openApp() {
+        if (controller == null && radioMode && radioPkg != null) {
+            Intent ri = getContext().getPackageManager().getLaunchIntentForPackage(radioPkg);
+            if (ri != null) getContext().startActivity(ri.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            return;
+        }
         if (controller == null) {
             if (!hasAccess()) {
                 try {

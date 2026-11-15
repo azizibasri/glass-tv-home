@@ -124,8 +124,6 @@ public final class HomeActivity extends Activity {
     private int lastObdState = ObdLink.OFF;
     private RainbowClock bigClock;
     private CardFrame leftCard, rightCard;
-    /** The dashboard's two glass panels: width and height as fractions of their room (hold and drag). */
-    private float leftCardW, leftCardH, rightCardW, rightCardH;
     private TextView bigDate;
     private NowPlaying nowPlaying;
 
@@ -217,10 +215,6 @@ public final class HomeActivity extends Activity {
         clockSize = prefs.getInt("clock_size", cfg.clockSize);
         clockHeight = prefs.getInt("clock_height", cfg.clockHeight);
         speedSize = prefs.getInt("speed_size", cfg.speedSize);
-        leftCardW = prefs.getFloat("left_card_w", 1f);
-        leftCardH = prefs.getFloat("left_card_h", 1f);
-        rightCardW = prefs.getFloat("right_card_w", 1f);
-        rightCardH = prefs.getFloat("right_card_h", 1f);
         speedHeight = prefs.getInt("speed_height", cfg.speedHeight);
         clockGlow = prefs.getBoolean("clock_glow_v2", cfg.clockGlow);
         clockRainbow = prefs.getBoolean("clock_rainbow_v2", cfg.clockRainbow);
@@ -506,10 +500,12 @@ public final class HomeActivity extends Activity {
 
     /** The first page: a large clock, date and music widget, and the speedometer with boost and torque. */
     private View dashboard(int areaW, int areaH) {
-        LinearLayout d = new LinearLayout(this);
-        d.setOrientation(LinearLayout.HORIZONTAL);
+        // The two panels are cards on one board: each can be moved and resized anywhere on it.
+        FrameLayout d = new FrameLayout(this);
         int gap = dp(12);
         d.setPadding(0, 0, 0, gap);
+        float leftFull = ((areaW - gap) / 2.25f) / areaW;   // their first places: side by side, 1 : 1.25
+        float rightX = leftFull + gap / (float) areaW;
 
         LinearLayout left = new LinearLayout(this);
         left.setOrientation(LinearLayout.VERTICAL);
@@ -550,6 +546,7 @@ public final class HomeActivity extends Activity {
             // Big and easy to reach while driving: the room torque had, now under the turbo boost.
             int npH = Math.max(dp(72), Math.min(dp(140), Math.round(areaH * 0.30f)));
             nowPlaying = new NowPlaying(this, npH, leftW - 2 * lp2, this::openMusicApp);
+            nowPlaying.setRadioBroadcasts(cfg.radioFreq, cfg.radioChannel);
             LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(-1, npH);
             nlp.topMargin = dp(14);
             left.addView(nowPlaying, nlp);
@@ -557,8 +554,8 @@ public final class HomeActivity extends Activity {
         }
         // Each panel is a glass card the person can resize by holding and dragging it; what is on it scales
         // with the card.
-        leftCard = card(left, false, leftCardW, leftCardH, "left_card");
-        d.addView(leftCard, new LinearLayout.LayoutParams(0, -1, 1f));
+        leftCard = card(left, leftFull, 0f, "left_card");
+        d.addView(leftCard, new FrameLayout.LayoutParams(-1, -1));
 
         // Right: the big digital speedometer with turbo boost, torque, trip, coolant and fuel range.
         LinearLayout right = new LinearLayout(this);
@@ -588,31 +585,30 @@ public final class HomeActivity extends Activity {
                 Math.max(dp(64), Math.min(dp(84), Math.round(areaH * 0.18f))));
         tilesLp.topMargin = dp(12);
         right.addView(tiles, tilesLp);
-        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(0, -1, 1.25f);
-        rlp.leftMargin = gap;
-        rightCard = card(right, true, rightCardW, rightCardH, "right_card");
-        d.addView(rightCard, rlp);
+        rightCard = card(right, 1f - rightX, rightX, "right_card");
+        d.addView(rightCard, new FrameLayout.LayoutParams(-1, -1));
         updateClock();
         bigClock.setRunning(resumed);
         return d;
     }
 
-    /** A dashboard panel on a resizable glass card, anchored to the outer side of the screen. */
-    private CardFrame card(View content, boolean anchorRight, float w, float h, String key) {
-        CardFrame f = new CardFrame(this, content, anchorRight, dp(26));
+    /**
+     * A dashboard panel on a glass card the person can move and resize anywhere on the dashboard (hold,
+     * then drag it or its corner). fullWidth: its full width as a fraction of the dashboard's; defaultX:
+     * where it starts. Place and size are saved under key.
+     */
+    private CardFrame card(View content, float fullWidth, float defaultX, String key) {
+        CardFrame f = new CardFrame(this, content, fullWidth, defaultX, dp(26));
         f.card().setBackground(glassFor(f.card(), dp(26)));
-        f.setCardSize(w, h);
+        f.setCard(prefs.getFloat(key + "_w", 1f), prefs.getFloat(key + "_h", 1f),
+                prefs.getFloat(key + "_x", defaultX), prefs.getFloat(key + "_y", 0f));
         f.setListener(new CardFrame.Listener() {
             @Override
-            public void onCardSize(float cw, float ch, boolean done) {
-                if (anchorRight) {
-                    rightCardW = cw;
-                    rightCardH = ch;
-                } else {
-                    leftCardW = cw;
-                    leftCardH = ch;
+            public void onCard(CardFrame c, boolean done) {
+                if (done) {
+                    prefs.edit().putFloat(key + "_w", c.cardWidth()).putFloat(key + "_h", c.cardHeight())
+                            .putFloat(key + "_x", c.posX()).putFloat(key + "_y", c.posY()).apply();
                 }
-                if (done) prefs.edit().putFloat(key + "_w", cw).putFloat(key + "_h", ch).apply();
             }
 
             @Override

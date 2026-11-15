@@ -29,10 +29,11 @@ Swipe left for the apps.
 
 - **Car name**: under the clock, in white, inside its box: "VW Jetta 1.4 TSI" by default. Change it (or
   empty it to hide the line) in ⚙ → Clock style → *Name under the clock*, or with `"car_name"`.
-- **Panels you resize**: the two glass panels (clock and music; speed, boost, torque, trip and tiles) work
-  like home-screen widgets. Hold a panel until a dashed outline and a blue handle show, then drag: sideways
-  for the width, down and up for the height. Everything on the panel scales with it. Tap it when done (or
-  wait a few seconds); the size is kept. Each panel stays at the top, against its side of the screen.
+- **Panels you move and resize**: the two glass panels (clock and music; speed, boost, torque, trip and
+  tiles) work like home-screen widgets. Hold a panel until a dashed outline and a blue corner handle show:
+  drag the panel to move it anywhere on the dashboard, or drag the blue corner to resize it. Everything on
+  the panel scales with it, and it stays on screen. Tap it when done (or wait a few seconds); the place and
+  size are kept.
 - **Clock**: clean white digits straight on the glass panel, no shadow, like the speedometer. In ⚙ → Clock
   style, **Rainbow** fills them with a flowing rainbow and **Glow** adds a soft glow behind them (both off by
   default); those only animate while Home is on screen, and stand still when Android's animations are off.
@@ -41,8 +42,16 @@ Swipe left for the apps.
   read music files; with none it opens your music app). It keeps playing behind other apps, and the
   steering-wheel media buttons work with it. Otherwise the widget follows whatever is playing: Spotify, YouTube Music, the radio app or Bluetooth audio from a phone, if that app
   shares its playback with Android (most do). Tap the song to open the app; with nothing playing, play opens
-  your music app. It needs notification access, which `car/install.sh` grants; it reads no notifications.
-  `"music_widget": false` hides it.
+  your music app. It needs notification access, which `car/install.sh` grants; it reads no notifications
+  except the radio app's.
+- **Radio in the music widget**: when the unit's own radio plays (and no music is playing), the widget shows
+  a radio picture, the frequency as the title (`FM 98.8`, `AM 1035`) and the preset channel number under it
+  (`CH 3`), with the station name when the radio gives one. Previous / next change station, the middle
+  button mutes or plays, and tapping the widget opens the radio. Glass Car reads this from the radio app's
+  media session or its notification (any app whose package name says radio or fm). Some units only
+  broadcast the frequency: then set `radio_freq` and `radio_channel` in `config.json`, in the same
+  `{action, extra, scale}` form as the CAN values (for example a frequency of `9880` with `"scale": 0.01`
+  shows FM 98.8). `"music_widget": false` hides the widget.
 
 - **Speedometer**: the speed in big digits, in the same font as the clock (⚙ → Clock style), with its own
   size and height in ⚙ → Speedometer style, with its unit
@@ -222,6 +231,7 @@ All keys optional; a bad file is ignored as a whole.
 | `speed_size` | 40 to 100 | Speed digits size, % of their space (also ⚙ → Speedometer style). Default 100 |
 | `speed_height` | 100 to 250 | Speed digits height: taller and narrower. Default 100 |
 | `can_speed`, `can_boost`, `can_torque`, `can_coolant`, `can_range`, `can_odometer` | `{action, extra, scale}` | The CAN app's broadcast that carries each value; see Dashboard above |
+| `radio_freq`, `radio_channel` | `{action, extra, scale}` | The radio's broadcast with its frequency (scaled to MHz for FM, kHz for AM) and preset number; only for units whose radio app shows neither in a media session nor a notification |
 
 ## Safety
 

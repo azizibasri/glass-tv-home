@@ -11,21 +11,32 @@ import android.view.ViewConfiguration;
 import android.view.ViewParent;
 
 /**
- * Hold and drag to resize a glass box, like a phone's home-screen widget. Hold the box: it shows a dashed
- * outline and a corner handle. Drag: right and left change the width, down and up the height. Tap it (or
- * wait a few seconds) to finish; the new size is then saved. While resizing, the pages don't swipe.
+ * Hold and drag to move or resize a panel, like a phone's home-screen widget. Hold the panel: it shows a
+ * dashed outline and a round handle on its bottom-right corner, and the same drag moves it. Then drag the
+ * panel to move it, or the handle to resize it. Tap it (or wait a few seconds) to finish; the place and
+ * size are then saved. While editing, the pages don't swipe.
  */
 final class ResizeGesture {
-    /** What is being resized: its size as fractions of the space it has (0.4 to 1). */
+    /** What is being edited: its size (fractions of its full size) and place (fractions of its space). */
     interface Target {
         float boxWidth();
 
         float boxHeight();
 
-        /** The new size; called while dragging. */
+        float boxX();
+
+        float boxY();
+
+        /** The new size; called while dragging the handle. */
         void setBox(float width, float height);
 
-        /** Resizing started (true) or finished (false); on finish, save the size. */
+        /** The new place of the top-left corner; called while dragging the panel. */
+        void setPos(float x, float y);
+
+        /** True when (x, y) is on the resize handle. */
+        boolean onHandle(float x, float y);
+
+        /** Editing started (true) or finished (false); on finish, save. */
         void onEditing(boolean editing);
     }
 
@@ -34,23 +45,15 @@ final class ResizeGesture {
 
     private final View view;
     private final Target target;
-    /** How a drag maps to the size: 2 grows on both sides, 1 towards the right or down, -1 towards the left. */
-    private final float xFactor, yFactor;
     private final int slop;
-    private boolean editing, moved, editingAtDown;
-    private float lastX, lastY, startX, startY, startW, startH;
+    private boolean editing, moved, editingAtDown, resizing;
+    private float lastX, lastY, startX, startY, startW, startH, startPX, startPY;
     private final Runnable longPress = this::start;
-    private final Runnable idleFinish = () -> finish();
+    private final Runnable idleFinish = this::finish;
 
-    /**
-     * @param xFactor 2: the box grows on both sides; 1: its right edge moves; -1: its left edge moves
-     * @param yFactor 2: the box grows up and down; 1: its bottom edge moves
-     */
-    ResizeGesture(View view, Target target, float xFactor, float yFactor) {
+    ResizeGesture(View view, Target target) {
         this.view = view;
         this.target = target;
-        this.xFactor = xFactor;
-        this.yFactor = yFactor;
         slop = ViewConfiguration.get(view.getContext()).getScaledTouchSlop();
     }
 
@@ -59,10 +62,10 @@ final class ResizeGesture {
     }
 
     /**
-     * The view's touches. fullW and fullH: the box's size in pixels at fraction 1. Returns true while the
-     * touch belongs to the resize.
+     * The view's touches. sizeW and sizeH: the panel's size in pixels at full size; spaceW and spaceH: the
+     * space it moves in. Returns true while the touch belongs to the editing.
      */
-    boolean onTouch(MotionEvent e, float fullW, float fullH) {
+    boolean onTouch(MotionEvent e, float sizeW, float sizeH, float spaceW, float spaceH) {
         switch (e.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
                 lastX = startX = e.getX();
@@ -71,8 +74,7 @@ final class ResizeGesture {
                 editingAtDown = editing;
                 if (editing) {
                     view.removeCallbacks(idleFinish);
-                    startW = target.boxWidth();
-                    startH = target.boxHeight();
+                    remember(target.onHandle(startX, startY));
                     disallowParent(true);
                 } else {
                     view.postDelayed(longPress, ViewConfiguration.getLongPressTimeout());
@@ -87,16 +89,18 @@ final class ResizeGesture {
                 }
                 float dx = lastX - startX, dy = lastY - startY;
                 if (Math.hypot(dx, dy) > slop) moved = true;
-                float w = clamp(startW + xFactor * dx / Math.max(1f, fullW));
-                float h = clamp(startH + yFactor * dy / Math.max(1f, fullH));
-                target.setBox(w, h);
+                if (resizing) {
+                    target.setBox(clamp(startW + dx / Math.max(1f, sizeW)), clamp(startH + dy / Math.max(1f, sizeH)));
+                } else {
+                    target.setPos(startPX + dx / Math.max(1f, spaceW), startPY + dy / Math.max(1f, spaceH));
+                }
                 return true;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
                 view.removeCallbacks(longPress);
                 if (!editing) return false;
                 disallowParent(false);
-                // A tap while resizing finishes it; after a drag, wait for more or finish when idle.
+                // A tap while editing finishes it; after a drag, wait for more or finish when idle.
                 if (editingAtDown && !moved && e.getActionMasked() == MotionEvent.ACTION_UP) finish();
                 else view.postDelayed(idleFinish, IDLE_FINISH_MS);
                 return true;
@@ -105,14 +109,21 @@ final class ResizeGesture {
         }
     }
 
+    private void remember(boolean onHandle) {
+        resizing = onHandle;
+        startW = target.boxWidth();
+        startH = target.boxHeight();
+        startPX = target.boxX();
+        startPY = target.boxY();
+    }
+
     private void start() {
         editing = true;
         view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
-        // Drags from here on resize, starting at the size the box has now.
+        // The same drag moves the panel, starting where it is now.
         startX = lastX;
         startY = lastY;
-        startW = target.boxWidth();
-        startH = target.boxHeight();
+        remember(false);
         disallowParent(true);
         target.onEditing(true);
         view.invalidate();
@@ -136,8 +147,13 @@ final class ResizeGesture {
         return Math.max(MIN, Math.min(MAX, f));
     }
 
-    /** The resize look: a dashed outline round the box and a round handle on its bottom-right corner. */
-    static void drawEditFrame(Canvas c, RectF box, float radius, float density, boolean handleLeft) {
+    /** The resize handle's radius. */
+    static float handleRadius(float density) {
+        return 13 * density;
+    }
+
+    /** The editing look: a dashed outline round the box and a round handle on its bottom-right corner. */
+    static void drawEditFrame(Canvas c, RectF box, float radius, float density) {
         Paint line = new Paint(Paint.ANTI_ALIAS_FLAG);
         line.setStyle(Paint.Style.STROKE);
         line.setStrokeWidth(2 * density);
@@ -146,10 +162,10 @@ final class ResizeGesture {
         c.drawRoundRect(box, radius, radius, line);
         Paint dot = new Paint(Paint.ANTI_ALIAS_FLAG);
         dot.setColor(0xFF0A84FF);
-        float r = 11 * density;
-        float hx = handleLeft ? box.left + r * 0.6f : box.right - r * 0.6f;
-        c.drawCircle(hx, box.bottom - r * 0.6f, r, dot);
+        float r = handleRadius(density);
+        float hx = box.right - r * 0.6f, hy = box.bottom - r * 0.6f;
+        c.drawCircle(hx, hy, r, dot);
         dot.setColor(0xFFFFFFFF);
-        c.drawCircle(hx, box.bottom - r * 0.6f, r * 0.4f, dot);
+        c.drawCircle(hx, hy, r * 0.4f, dot);
     }
 }

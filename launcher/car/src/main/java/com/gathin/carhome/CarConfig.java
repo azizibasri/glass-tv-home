@@ -59,6 +59,8 @@ final class CarConfig {
     }
 
     CanKey canSpeed, canTorque, canBoost, canCoolant, canRange, canOdometer;
+    /** The radio's frequency and channel number, when the unit broadcasts them (see car/README.md). */
+    CanKey radioFreq, radioChannel;
     /** Keep car data (OBD-II, CAN, GPS) running while other apps are in front, in a background service. */
     boolean carDataBackground = true;
     /** Where car data comes from: "can" (CAN bus, GPS for speed when it has none) or "obd" (Bluetooth OBD-II). */
@@ -119,6 +121,8 @@ final class CarConfig {
             int tm = o.optInt("torque_max", c.torqueMax);
             if (tm >= 50 && tm <= 2000) c.torqueMax = tm;
             c.canSpeed = canKey(o.optJSONObject("can_speed"));
+            c.radioFreq = canKey(o.optJSONObject("radio_freq"));
+            c.radioChannel = canKey(o.optJSONObject("radio_channel"));
             c.canTorque = canKey(o.optJSONObject("can_torque"));
             c.canBoost = canKey(o.optJSONObject("can_boost"));
             c.boostPsi = "psi".equalsIgnoreCase(o.optString("boost_unit", "bar"));
