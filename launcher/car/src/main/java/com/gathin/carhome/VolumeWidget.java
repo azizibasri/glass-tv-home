@@ -34,6 +34,8 @@ final class VolumeWidget extends LinearLayout {
         audio = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
         setOrientation(HORIZONTAL);
         setGravity(Gravity.CENTER);
+        setClipToPadding(false);
+        setClipChildren(false);
         int pad = Math.round(12 * d);
         setPadding(pad, pad, pad, pad);
         int btn = Math.round(56 * d);
@@ -63,7 +65,8 @@ final class VolumeWidget extends LinearLayout {
         int w = MeasureSpec.getSize(wSpec), h = MeasureSpec.getSize(hSpec);
         if (w > 0 && h > 0) {
             int availW = w - getPaddingLeft() - getPaddingRight(), availH = h - getPaddingTop() - getPaddingBottom();
-            int btn = Math.max(1, Math.round(Math.min(availH, availW / 3f) * sizePct / 100f));
+            // 100 %: as big as fits with a small gap still between them.
+            int btn = Math.max(1, Math.round(Math.min(availH, availW / 3.3f) * sizePct / 100f));
             int gap = Math.max(0, Math.round((availW - 3 * btn) * gapPct / 200f));
             for (int i = 1; i < getChildCount(); i += 2) {
                 LayoutParams lp = (LayoutParams) getChildAt(i).getLayoutParams();
