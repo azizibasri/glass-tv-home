@@ -34,7 +34,7 @@ final class VolumeWidget extends LinearLayout {
         audio = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
         setOrientation(HORIZONTAL);
         setGravity(Gravity.CENTER);
-        int pad = Math.round(14 * d);
+        int pad = Math.round(12 * d);
         setPadding(pad, pad, pad, pad);
         int btn = Math.round(56 * d);
         addView(button(ctx, "\u2212", -1), new LayoutParams(btn, btn));
@@ -43,6 +43,27 @@ final class VolumeWidget extends LinearLayout {
         addView(muteButton(ctx), new LayoutParams(btn, btn));
         addView(new Space(ctx), new LayoutParams(0, 1, 1f));
         addView(button(ctx, "+", 1), new LayoutParams(btn, btn));
+    }
+
+    /** The three buttons as big as the widget allows, with an even gap of at least a third of a button. */
+    @Override
+    protected void onMeasure(int wSpec, int hSpec) {
+        int w = MeasureSpec.getSize(wSpec), h = MeasureSpec.getSize(hSpec);
+        if (w > 0 && h > 0) {
+            int availW = w - getPaddingLeft() - getPaddingRight(), availH = h - getPaddingTop() - getPaddingBottom();
+            int btn = Math.max(1, Math.min(availH, Math.round(availW / 3.67f)));
+            for (int i = 0; i < getChildCount(); i += 2) {
+                LayoutParams lp = (LayoutParams) getChildAt(i).getLayoutParams();
+                lp.width = lp.height = btn;
+                View c = getChildAt(i);
+                if (c instanceof TextView) ((TextView) c).setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, btn * 0.5f);
+                else {
+                    int in = Math.round(btn * 0.26f);
+                    c.setPadding(in, in, in, in);
+                }
+            }
+        }
+        super.onMeasure(wSpec, hSpec);
     }
 
     private static GradientDrawable round(float d) {

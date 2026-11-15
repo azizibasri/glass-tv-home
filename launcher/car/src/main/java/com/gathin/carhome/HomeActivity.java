@@ -551,7 +551,7 @@ public final class HomeActivity extends Activity {
         float leftFull = ((areaW - gap) / 2.25f) / areaW;
         float rightX = leftFull + gx;
         float clockH = 0.40f, musicY = clockH + gy, musicH = 0.30f, rowY = musicY + musicH + gy, rowH = 1f - rowY;
-        float waveW = leftFull * 0.56f, volX = waveW + gx, volW = leftFull - volX;
+        float waveW = leftFull * 0.46f, volX = waveW + gx, volW = leftFull - volX;
         int leftW = Math.round(areaW * leftFull);
         boolean compact = leftW < dp(340);
 
