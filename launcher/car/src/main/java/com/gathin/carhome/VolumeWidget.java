@@ -77,7 +77,7 @@ final class VolumeWidget extends LinearLayout {
             @Override
             public void run() {
                 step(dir);
-                main.postDelayed(this, 150);
+                main.postDelayed(this, 220);
             }
         };
         b.setOnTouchListener((v, e) -> {
@@ -99,16 +99,64 @@ final class VolumeWidget extends LinearLayout {
         return b;
     }
 
+    /**
+     * One volume step, the way the unit's own volume keys do it: a volume key press through the unit's
+     * debugging service (the one cache cleaning uses), so head units that keep their volume outside
+     * Android (in the radio chip) change too and show their own volume bar. Where that service is off or
+     * not allowed, Android's volume for whatever is playing, with the system's volume bar.
+     */
     private void step(int dir) {
+        Context app = getContext().getApplicationContext();
+        KEYS.execute(() -> {
+            boolean viaKey = false;
+            if (!shellRefused) {
+                try {
+                    viaKey = LocalShell.shell(app, false, "shell:input keyevent " + (dir > 0 ? 24 : 25));
+                    if (!viaKey) {
+                        shellRefused = true;   // not allowed yet: don't try each tap
+                        askOnce(app);
+                    }
+                } catch (Exception e) {
+                    shellRefused = true;   // debugging service off
+                }
+            }
+            if (!viaKey) main.post(() -> androidStep(dir));
+            main.postDelayed(this::show, 250);
+        });
+    }
+
+    private void androidStep(int dir) {
         if (audio == null) return;
         try {
+            // The media volume (music, radio, navigation voice), with the unit's volume bar as feedback.
             audio.adjustStreamVolume(AudioManager.STREAM_MUSIC,
-                    dir > 0 ? AudioManager.ADJUST_RAISE : AudioManager.ADJUST_LOWER, 0);
+                    dir > 0 ? AudioManager.ADJUST_RAISE : AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI);
         } catch (SecurityException ignored) {
             // Do Not Disturb can refuse it; the bar shows what it is.
         }
         show();
     }
+
+    /**
+     * Once ever: asks the unit to allow Glass Car ("Allow USB debugging?", tick Always allow), after this
+     * step has already gone through Android's volume. Once allowed, the next taps use the volume key.
+     */
+    private void askOnce(Context app) {
+        android.content.SharedPreferences p = app.getSharedPreferences("car", Context.MODE_PRIVATE);
+        if (p.getBoolean("volume_asked", false)) return;
+        p.edit().putBoolean("volume_asked", true).apply();
+        new Thread(() -> {
+            try {
+                if (LocalShell.shell(app, true, null)) shellRefused = false;
+            } catch (Exception ignored) {
+            }
+        }, "volume-allow").start();
+    }
+
+    /** Key presses one after another, off the main thread. */
+    private static final java.util.concurrent.ExecutorService KEYS = java.util.concurrent.Executors.newSingleThreadExecutor();
+    /** Set when the unit's debugging service is off or doesn't allow Glass Car: Android's volume then. */
+    private static volatile boolean shellRefused;
 
     private void show() {
         if (audio == null) return;

@@ -268,7 +268,7 @@ public final class HomeActivity extends Activity {
         startDashWidgets(pager == null || pager.page() == 0);
     }
 
-    /** The volume, the sound wave and the analog clock run only while the dashboard is on screen. */
+    /** The volume, the wave and the analog clock run only while the dashboard is on screen. */
     private void startDashWidgets(boolean onDash) {
         boolean on = resumed && onDash;
         if (analogClock != null) analogClock.setRunning(on);
@@ -278,11 +278,6 @@ public final class HomeActivity extends Activity {
         }
         if (soundWave != null) {
             if (on) {
-                // The sound wave needs the microphone permission to follow the music: ask once.
-                if (!SoundWaveView.hasPermission(this) && !prefs.getBoolean("asked_mic", false)) {
-                    prefs.edit().putBoolean("asked_mic", true).apply();
-                    requestPermissions(new String[]{android.Manifest.permission.RECORD_AUDIO}, 7);
-                }
                 soundWave.start();
             } else {
                 soundWave.stop();
@@ -293,14 +288,6 @@ public final class HomeActivity extends Activity {
     @Override
     public void onRequestPermissionsResult(int request, String[] perms, int[] results) {
         super.onRequestPermissionsResult(request, perms, results);
-        if (request == 7) {
-            // Microphone allowed (or not): the sound wave follows the music, or keeps its gentle wave.
-            if (soundWave != null && resumed) {
-                soundWave.stop();
-                soundWave.start();
-            }
-            return;
-        }
         if (request == 6) {
             // Music files allowed: play them now (or say there are none).
             if (results.length > 0 && results[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) openMusicApp();

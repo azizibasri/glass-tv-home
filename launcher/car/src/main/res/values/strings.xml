@@ -47,13 +47,13 @@
     <string name="widget_clock">Clock</string>
     <string name="widget_music">Music</string>
     <string name="widget_speed">Speedometer</string>
-    <string name="widget_wave">Sound wave</string>
+    <string name="widget_wave">Wave</string>
     <string name="widget_volume">Volume</string>
     <string name="widget_show">Show</string>
     <string name="widget_glass">Glass box</string>
     <string name="widgets_reset">Put all widgets back</string>
     <string name="widgets_reset_done">Widgets back in their first places</string>
-    <string name="widgets_hint">Hold a widget on the dashboard to move it; drag its blue corner to resize it. The sound wave follows the music with the microphone permission (the sound is only measured, never recorded); without it, it shows a gentle wave while music plays.</string>
+    <string name="widgets_hint">Hold a widget on the dashboard to move it; drag its blue corner to resize it.</string>
     <string name="clock_face">Clock face</string>
     <string name="clock_font_label">Digital font (also the speedometer\'s)</string>
     <string name="face_digital">Digital</string>
