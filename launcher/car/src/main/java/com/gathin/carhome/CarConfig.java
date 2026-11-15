@@ -37,7 +37,7 @@ final class CarConfig {
     /** First page: big clock, speedometer and torque. */
     boolean dashboard = true;
     /** The dashboard clock in a flowing, glowing rainbow; false for plain white. */
-    boolean clockRainbow = true;
+    boolean clockRainbow = false;
     /** The music widget under the clock. */
     boolean musicWidget = true;
     boolean mph = false;

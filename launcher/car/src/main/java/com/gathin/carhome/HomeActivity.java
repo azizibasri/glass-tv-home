@@ -216,7 +216,7 @@ public final class HomeActivity extends Activity {
         speedSize = prefs.getInt("speed_size", cfg.speedSize);
         speedHeight = prefs.getInt("speed_height", cfg.speedHeight);
         clockGlow = prefs.getBoolean("clock_glow_v2", cfg.clockGlow);
-        clockRainbow = prefs.getBoolean("clock_rainbow", cfg.clockRainbow);
+        clockRainbow = prefs.getBoolean("clock_rainbow_v2", cfg.clockRainbow);
         carName = prefs.getString("car_name", cfg.carName);
         dataSource = prefs.getString("data_source", cfg.dataSource);
         obdAddress = prefs.getString("obd_address", cfg.obdAddress);
@@ -1080,7 +1080,7 @@ public final class HomeActivity extends Activity {
         glassSwitch(rainbowSwitch);
         rainbowSwitch.setOnCheckedChangeListener((v, on) -> {
             clockRainbow = on;
-            prefs.edit().putBoolean("clock_rainbow", on).apply();
+            prefs.edit().putBoolean("clock_rainbow_v2", on).apply();
             applyClockStyle();
             if (bigClock != null) bigClock.setRunning(resumed);
         });

@@ -140,7 +140,8 @@ final class RainbowClock extends View {
         c.scale(1f, sy, cx, getHeight() / 2f);
         drawDigits(c, w, cx, y);
         c.restoreToCount(save);
-        if (running) postInvalidateDelayed(FRAME_MS);
+        // Plain white without glow is still: nothing to animate, no frames to draw.
+        if (running && (rainbow || glowOn)) postInvalidateDelayed(FRAME_MS);
     }
 
     /** The cached glow, tinted with this frame's colour and brightness. */

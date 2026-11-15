@@ -29,9 +29,9 @@ Swipe left for the apps.
 
 - **Car name**: under the clock, in white, inside its box: "VW Jetta 1.4 TSI" by default. Change it (or
   empty it to hide the line) in ⚙ → Clock style → *Name under the clock*, or with `"car_name"`.
-- **Clock**: straight on the glass panel; thin large digits filled with a rainbow that flows across them. A soft
-  glow behind them that shifts colour and breathes is off by default (⚙ → Clock style → Glow). It only animates while Home is on screen, and stands still when Android's animations
-  are turned off. `"clock_rainbow": false` makes it plain white.
+- **Clock**: clean white digits straight on the glass panel, no shadow, like the speedometer. In ⚙ → Clock
+  style, **Rainbow** fills them with a flowing rainbow and **Glow** adds a soft glow behind them (both off by
+  default); those only animate while Home is on screen, and stand still when Android's animations are off.
 - **Music widget**: cover art, song, artist, a progress line, and previous / play-pause / next. With nothing
   playing, play starts Glass Car's own player on the music files on the unit and USB sticks (it asks once to
   read music files; with none it opens your music app). It keeps playing behind other apps, and the
@@ -209,7 +209,7 @@ All keys optional; a bad file is ignored as a whole.
 | `icon_style` | `"color"`, `"glass"` or `"clear"` | App icons as the apps draw them, on a clear frosted-glass tile, or on the glass with no colour. The ⚙ menu wins over this |
 | `accent` | `#RRGGBB` | Colour of the RAM ring |
 | `dashboard` | bool | The first page with clock, music, speedometer, rev counter, torque, coolant and range. Default `true` |
-| `clock_rainbow` | bool | Flowing, glowing rainbow clock. Default `true`; `false` for plain white |
+| `clock_rainbow` | bool | Flowing rainbow clock (also a switch in ⚙ → Clock style). Default `false`: clean white, like the speedometer |
 | `music_widget` | bool | Music widget under the clock. Default `true` |
 | `speed_unit` | `"km/h"` or `"mph"` | Speedometer unit |
 | `torque_max` | 50 to 2000 | End of the torque bar in Nm, about the engine's peak (1.4 TSI: 250, 1.5 MPI: 145) |
