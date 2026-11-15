@@ -123,6 +123,9 @@ public final class HomeActivity extends Activity {
     private float clockBasePx;
     private int lastObdState = ObdLink.OFF;
     private RainbowClock bigClock;
+    private ResizeFrame clockFrame;
+    /** The clock's and the speed's glass boxes: width and height as fractions of their room. */
+    private float clockBoxW, clockBoxH, speedBoxW, speedBoxH;
     private TextView bigDate;
     private NowPlaying nowPlaying;
 
@@ -214,6 +217,10 @@ public final class HomeActivity extends Activity {
         clockSize = prefs.getInt("clock_size", cfg.clockSize);
         clockHeight = prefs.getInt("clock_height", cfg.clockHeight);
         speedSize = prefs.getInt("speed_size", cfg.speedSize);
+        clockBoxW = prefs.getFloat("clock_box_w", 1f);
+        clockBoxH = prefs.getFloat("clock_box_h", 1f);
+        speedBoxW = prefs.getFloat("speed_box_w", 1f);
+        speedBoxH = prefs.getFloat("speed_box_h", 1f);
         speedHeight = prefs.getInt("speed_height", cfg.speedHeight);
         clockGlow = prefs.getBoolean("clock_glow_v2", cfg.clockGlow);
         clockRainbow = prefs.getBoolean("clock_rainbow_v2", cfg.clockRainbow);
@@ -277,6 +284,8 @@ public final class HomeActivity extends Activity {
     @Override
     protected void onPause() {
         resumed = false;
+        if (clockFrame != null) clockFrame.finishEditing();
+        if (bigSpeed != null) bigSpeed.finishEditing();
         main.removeCallbacks(ramTick);
         main.removeCallbacks(autoClean);
         main.removeCallbacks(dataTick);
@@ -514,7 +523,7 @@ public final class HomeActivity extends Activity {
         bigClock = new RainbowClock(this, cfg.clockRainbow);
         clockBasePx = Math.min(areaH * 0.24f, areaW * 0.12f);
         applyClockStyle();
-        // Clock on top, the car's name in white under it, straight on the glass panel (no dark box).
+        // Clock on top, the car's name in white under it, in a clear glass box: hold and drag to resize it.
         LinearLayout clockBox = new LinearLayout(this);
         clockBox.setOrientation(LinearLayout.VERTICAL);
         clockBox.addView(bigClock, new LinearLayout.LayoutParams(-1, 0, 1f));
@@ -528,9 +537,26 @@ public final class HomeActivity extends Activity {
         nlp2.leftMargin = nlp2.rightMargin = dp(10);
         clockBox.addView(carNameView, nlp2);
         showCarName();
+        clockFrame = new ResizeFrame(this);
+        clockFrame.setBoxSize(clockBoxW, clockBoxH);
+        clockFrame.addView(clockBox);
+        clockFrame.setListener(new ResizeFrame.Listener() {
+            @Override
+            public void onBoxSize(float w, float h, boolean done) {
+                clockBoxW = w;
+                clockBoxH = h;
+                applyClockStyle();
+                if (done) prefs.edit().putFloat("clock_box_w", w).putFloat("clock_box_h", h).apply();
+            }
+
+            @Override
+            public void onEditing(boolean editing) {
+                if (editing) showToast(getString(R.string.resize_hint));
+            }
+        });
         LinearLayout.LayoutParams cblp = new LinearLayout.LayoutParams(-1, 0, 1f);
         cblp.bottomMargin = dp(10);
-        left.addView(clockBox, cblp);
+        left.addView(clockFrame, cblp);
         bigDate = text(18, false);
         bigDate.setShadowLayer(0, 0, 0, 0);
         bigDate.setAlpha(0.8f);
@@ -558,7 +584,21 @@ public final class HomeActivity extends Activity {
         LinearLayout.LayoutParams speedLp = new LinearLayout.LayoutParams(-1, 0, 1f);
         speedLp.leftMargin = speedLp.rightMargin = dp(6);
         bigSpeed.setGap(dp(12));
-        bigSpeed.setDigitStyle(speedSize / 100f, speedHeight / 100f);   // the speed spaces itself evenly; the same 12 dp around the rows below
+        bigSpeed.setDigitStyle(speedSize / 100f, speedHeight / 100f);
+        bigSpeed.setBoxSize(speedBoxW, speedBoxH);
+        bigSpeed.setBoxListener(new ResizeFrame.Listener() {
+            @Override
+            public void onBoxSize(float w, float h, boolean done) {
+                speedBoxW = w;
+                speedBoxH = h;
+                if (done) prefs.edit().putFloat("speed_box_w", w).putFloat("speed_box_h", h).apply();
+            }
+
+            @Override
+            public void onEditing(boolean editing) {
+                if (editing) showToast(getString(R.string.resize_hint));
+            }
+        });   // the speed spaces itself evenly; the same 12 dp around the rows below
         right.addView(bigSpeed, speedLp);
         LinearLayout.LayoutParams tripLp = new LinearLayout.LayoutParams(-1, dp(52));
         tripLp.topMargin = 0;   // the speed view ends with the same even space
@@ -894,7 +934,9 @@ public final class HomeActivity extends Activity {
         if (bigSpeed != null) bigSpeed.setTypeface(ClockFonts.typeface(this, clockFont));
         if (bigClock == null) return;
         bigClock.setTypeface(ClockFonts.typeface(this, clockFont));
-        bigClock.setTextSizePx(clockBasePx * clockSize / 100f * ClockFonts.widthFactor(clockFont));
+        // A smaller glass box makes the digits smaller with it, so they always fit inside.
+        float box = Math.min(clockBoxW, Math.min(1f, clockBoxH / 0.75f));
+        bigClock.setTextSizePx(clockBasePx * clockSize / 100f * ClockFonts.widthFactor(clockFont) * box);
         bigClock.setStretch(clockHeight / 100f);
         bigClock.setGlow(clockGlow);
         bigClock.setRainbow(clockRainbow);

@@ -16,7 +16,7 @@ import android.view.View;
  * right, blue below zero, orange to red above, with a mark at the highest boost of the last 10 seconds;
  * and under that engine torque, drawn the same way (same text sizes, same bar) from 0 to the peak torque.
  */
-final class BigSpeedView extends View {
+final class BigSpeedView extends View implements ResizeGesture.Target {
     private static final long PEAK_HOLD_MS = 10_000;
     private final float d;
     private final Paint digits = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -86,6 +86,59 @@ final class BigSpeedView extends View {
     private float digitsBase, unitBase, boostBase, torqueBase;
 
     private float sizeScale = 1f, stretch = 1f;
+    /** The clear glass box round the speed: its size as fractions of the room it has, resized by hold and drag. */
+    private float boxW = 1f, boxH = 1f, blockFull = 1f;
+    private final RectF speedBox = new RectF();
+    private final Paint boxFill = new Paint(Paint.ANTI_ALIAS_FLAG), boxRim = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final ResizeGesture gesture = new ResizeGesture(this, this, false);
+    private ResizeFrame.Listener boxListener;
+
+    void setBoxListener(ResizeFrame.Listener l) {
+        boxListener = l;
+    }
+
+    void setBoxSize(float w, float h) {
+        boxW = ResizeGesture.clamp(w);
+        boxH = ResizeGesture.clamp(h);
+        if (getWidth() > 0 && getHeight() > 0) onSizeChanged(getWidth(), getHeight(), getWidth(), getHeight());
+        invalidate();
+    }
+
+    void finishEditing() {
+        gesture.finish();
+    }
+
+    @Override
+    public float boxWidth() {
+        return boxW;
+    }
+
+    @Override
+    public float boxHeight() {
+        return boxH;
+    }
+
+    @Override
+    public void setBox(float width, float height) {
+        setBoxSize(width, height);
+        if (boxListener != null) boxListener.onBoxSize(boxW, boxH, false);
+    }
+
+    @Override
+    public void onEditing(boolean editing) {
+        if (boxListener != null) {
+            boxListener.onEditing(editing);
+            if (!editing) boxListener.onBoxSize(boxW, boxH, true);
+        }
+    }
+
+    @Override
+    public boolean onTouchEvent(android.view.MotionEvent e) {
+        // Only a hold on the speed's glass box starts a resize; the rest of the panel stays as it was.
+        if (e.getActionMasked() == android.view.MotionEvent.ACTION_DOWN && !gesture.isEditing()
+                && !speedBox.contains(e.getX(), e.getY())) return false;
+        return gesture.onTouch(e, getWidth(), blockFull);
+    }
 
     /**
      * The digits' size (0.4 to 1 of the space they have) and height (1 to 2.5: taller and narrower, still
@@ -124,22 +177,36 @@ final class BigSpeedView extends View {
         float rowVis = valueCap + bh * 0.9f + bh;          // value top to bar bottom
         float unitGap = unit.getTextSize() * 0.8f;
         float g = Math.max(gap, 4 * d);
-        float room = h - 4 * g - 2 * rowVis - unitGap - unitCap;
+        // The speed sits in its glass box: at full size the box takes all the room the rows leave.
+        float ip = 10 * d;
+        blockFull = Math.max(1f, h - 4 * g - 2 * rowVis);
+        float blockH = Math.max(2 * ip + unitGap + unitCap + 12 * d, blockFull * boxH);
+        float boxPx = w * boxW;
+        float room = blockH - 2 * ip - unitGap - unitCap;
         float digitRatio = capHeight(digits, 100f) / 100f;
-        // As tall as the room allows, as long as a three-digit speed still fits the width.
+        // As tall as the box allows, as long as a three-digit speed still fits its width.
         digits.setTextSize(100f);
         float widthPer100 = digits.measureText("188") / 0.92f;
-        float fit = Math.max(10 * d, Math.min(room / digitRatio, w * 100f / widthPer100));
+        float fit = Math.max(10 * d, Math.min(room / digitRatio, (boxPx - 2 * ip) * 100f / widthPer100));
         // Size first, then the stretch, which never takes the digits out of their space: past it they get
         // narrower instead.
         float digitCap = Math.min(Math.max(room, 4 * d), fit * digitRatio * sizeScale * stretch);
         digits.setTextSize(Math.max(4 * d, digitCap / (digitRatio * stretch)));
-        // Room to spare (a wide speed hits its width limit first): share it evenly between the spaces.
-        float spare = h - (digitCap + unitGap + unitCap + 2 * rowVis);
+        // Room to spare (a smaller box): share it evenly between the spaces.
+        float spare = h - (blockH + 2 * rowVis);
         g = Math.max(g, spare / 4f);
-        digitsBase = g + digitCap;
+        speedBox.set((w - boxPx) / 2f, g, (w + boxPx) / 2f, g + blockH);
+        // The digits and their unit, centred in the box.
+        float content = digitCap + unitGap + unitCap;
+        digitsBase = speedBox.top + (blockH - content) / 2f + digitCap;
         unitBase = digitsBase + unitGap + unitCap;
-        boostBase = unitBase + g + valueCap;
+        boostBase = speedBox.bottom + g + valueCap;
+        boxFill.setShader(new LinearGradient(0, speedBox.top, 0, speedBox.bottom, 0x2EFFFFFF, 0x0FFFFFFF,
+                Shader.TileMode.CLAMP));
+        boxRim.setStyle(Paint.Style.STROKE);
+        boxRim.setStrokeWidth(Math.max(1f, d));
+        boxRim.setShader(new LinearGradient(speedBox.left, speedBox.top, speedBox.right, speedBox.bottom,
+                new int[]{0x80FFFFFF, 0x1AFFFFFF, 0x4DFFFFFF}, new float[]{0f, 0.55f, 1f}, Shader.TileMode.CLAMP));
         bar.set(pad, boostBase + bh * 0.9f, w - pad, boostBase + bh * 1.9f);
         torqueBase = bar.bottom + g + valueCap;
         torqueBar.set(pad, torqueBase + bh * 0.9f, w - pad, torqueBase + bh * 1.9f);
@@ -173,7 +240,8 @@ final class BigSpeedView extends View {
         shownTorque = SpeedMath.smooth(shownTorque, Float.isNaN(torque) ? 0f : torque, dt);
         int w = getWidth();
 
-        // Speed.
+        // Speed, in its clear glass box.
+        ResizeGesture.drawGlassBox(c, speedBox, 20 * d, d, boxFill, boxRim);
         String text = Float.isNaN(speed) ? "--" : String.valueOf(SpeedMath.display(shownSpeed));
         if (stretch > 1.001f) {
             c.save();
@@ -218,6 +286,8 @@ final class BigSpeedView extends View {
                     torqueBar.left + Math.max(torqueBar.height(), torqueBar.width() * tf), torqueBar.bottom);
             c.drawRoundRect(lit, r, r, torqueFill);
         }
+
+        if (gesture.isEditing()) ResizeGesture.drawEditFrame(c, speedBox, 20 * d, d);
 
         boolean moving = Math.abs(shownTorque - (Float.isNaN(torque) ? 0f : torque)) > 0.05f || Math.abs(shownSpeed - (Float.isNaN(speed) ? 0f : speed)) > 0.05f
                 || Math.abs(shownBoost - (Float.isNaN(boost) ? 0f : boost)) > 0.002f;
