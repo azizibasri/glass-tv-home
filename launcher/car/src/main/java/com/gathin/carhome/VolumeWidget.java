@@ -45,13 +45,31 @@ final class VolumeWidget extends LinearLayout {
         addView(button(ctx, "+", 1), new LayoutParams(btn, btn));
     }
 
-    /** The three buttons as big as the widget allows, with an even gap of at least a third of a button. */
+    /** Button size, % of the biggest that fits (40 to 100), and spacing, % of the room left (0 to 100). */
+    private int sizePct = 80, gapPct = 100;
+
+    void setButtonStyle(int size, int gap) {
+        sizePct = Math.max(40, Math.min(100, size));
+        gapPct = Math.max(0, Math.min(100, gap));
+        requestLayout();
+    }
+
+    /**
+     * The three buttons at the chosen share of the biggest size that fits the widget, and the room left
+     * shared out as the chosen spacing between them (the rest stays round the outside, the row centred).
+     */
     @Override
     protected void onMeasure(int wSpec, int hSpec) {
         int w = MeasureSpec.getSize(wSpec), h = MeasureSpec.getSize(hSpec);
         if (w > 0 && h > 0) {
             int availW = w - getPaddingLeft() - getPaddingRight(), availH = h - getPaddingTop() - getPaddingBottom();
-            int btn = Math.max(1, Math.min(availH, Math.round(availW / 3.67f)));
+            int btn = Math.max(1, Math.round(Math.min(availH, availW / 3f) * sizePct / 100f));
+            int gap = Math.max(0, Math.round((availW - 3 * btn) * gapPct / 200f));
+            for (int i = 1; i < getChildCount(); i += 2) {
+                LayoutParams lp = (LayoutParams) getChildAt(i).getLayoutParams();
+                lp.weight = 0;
+                lp.width = gap;
+            }
             for (int i = 0; i < getChildCount(); i += 2) {
                 LayoutParams lp = (LayoutParams) getChildAt(i).getLayoutParams();
                 lp.width = lp.height = btn;

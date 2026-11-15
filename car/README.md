@@ -44,7 +44,8 @@ Swipe left for the apps.
   unit's own volume or mute key, sent through its debugging service (the one cache cleaning uses; the unit
   asks "Allow USB debugging?" once, tick Always allow), so head units that keep their volume in the radio
   chip change too and show their own volume bar. When that service is off, it changes Android's media
-  volume. Resize and move it like the other widgets.
+  volume. Resize and move it like the other widgets. In ⚙ → **Widgets** → *Volume buttons*, **Button
+  size** (40 to 100 % of what fits) and **Spacing** (0 to 100 % of the room left) set the buttons inside it.
 - **Clock faces**: in ⚙ → Clock style, **Digital** or three analog faces in Apple's style: **Classic** (white
   dial, black numbers), **Night** (dark see-through dial, white numbers) and **Minimal** (hour marks only),
   each with an orange second hand that sweeps while the dashboard is on screen.

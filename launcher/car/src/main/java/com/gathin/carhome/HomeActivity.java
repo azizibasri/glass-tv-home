@@ -604,6 +604,7 @@ public final class HomeActivity extends Activity {
         waveBox.addView(soundWave, new FrameLayout.LayoutParams(-1, -1));
         addCard(d, "wave", waveBox, waveW, rowH, 0f, rowY);
         volumeWidget = new VolumeWidget(this);
+        volumeWidget.setButtonStyle(prefs.getInt("volume_btn_size", 80), prefs.getInt("volume_btn_gap", 100));
         addCard(d, "volume", volumeWidget, volW, rowH, volX, rowY);
 
         // Right: the big digital speedometer with turbo boost, torque, trip, coolant and fuel range.
@@ -744,6 +745,21 @@ public final class HomeActivity extends Activity {
         LinearLayout.LayoutParams rslp = new LinearLayout.LayoutParams(-2, -2);
         rslp.topMargin = dp(10);
         body.addView(reset, rslp);
+        // The volume widget's three buttons: their size and the space between them.
+        TextView volTitle = text(14, true);
+        volTitle.setGravity(Gravity.START);
+        volTitle.setText(R.string.volume_buttons);
+        LinearLayout.LayoutParams vtlp = new LinearLayout.LayoutParams(-1, -2);
+        vtlp.topMargin = dp(16);
+        body.addView(volTitle, vtlp);
+        body.addView(percentSlider(R.string.volume_btn_size, 40, 100, prefs.getInt("volume_btn_size", 80), v -> {
+            if (volumeWidget != null) volumeWidget.setButtonStyle(v, prefs.getInt("volume_btn_gap", 100));
+            prefs.edit().putInt("volume_btn_size", v).apply();
+        }, v -> { }));
+        body.addView(percentSlider(R.string.volume_btn_gap, 0, 100, prefs.getInt("volume_btn_gap", 100), v -> {
+            if (volumeWidget != null) volumeWidget.setButtonStyle(prefs.getInt("volume_btn_size", 80), v);
+            prefs.edit().putInt("volume_btn_gap", v).apply();
+        }, v -> { }));
         TextView hint = text(11, false);
         hint.setGravity(Gravity.START);
         hint.setSingleLine(false);
