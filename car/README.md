@@ -29,11 +29,11 @@ Swipe left for the apps.
 
 - **Car name**: under the clock, in white, inside its box: "VW Jetta 1.4 TSI" by default. Change it (or
   empty it to hide the line) in ⚙ → Clock style → *Name under the clock*, or with `"car_name"`.
-- **Glass boxes you resize**: the clock and the speed each sit in a clear glass box. Hold a box, then drag:
-  right and left change its width, down and up its height (a dashed outline and a blue handle show it).
-  Tap the box when done; the size is kept. The digits shrink with a smaller box, and the speed panel keeps
-  even spacing.
-- **Clock**: clean white digits in a clear glass box, no shadow, like the speedometer. In ⚙ → Clock
+- **Panels you resize**: the two glass panels (clock and music; speed, boost, torque, trip and tiles) work
+  like home-screen widgets. Hold a panel until a dashed outline and a blue handle show, then drag: sideways
+  for the width, down and up for the height. Everything on the panel scales with it. Tap it when done (or
+  wait a few seconds); the size is kept. Each panel stays at the top, against its side of the screen.
+- **Clock**: clean white digits straight on the glass panel, no shadow, like the speedometer. In ⚙ → Clock
   style, **Rainbow** fills them with a flowing rainbow and **Glow** adds a soft glow behind them (both off by
   default); those only animate while Home is on screen, and stand still when Android's animations are off.
 - **Music widget**: cover art, song, artist, a progress line, and previous / play-pause / next. With nothing

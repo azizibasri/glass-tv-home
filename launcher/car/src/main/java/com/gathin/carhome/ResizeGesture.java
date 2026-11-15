@@ -34,8 +34,8 @@ final class ResizeGesture {
 
     private final View view;
     private final Target target;
-    /** How a drag maps to the size: the box's full width and height in pixels at fraction 1. */
-    private final boolean centred;
+    /** How a drag maps to the size: 2 grows on both sides, 1 towards the right or down, -1 towards the left. */
+    private final float xFactor, yFactor;
     private final int slop;
     private boolean editing, moved, editingAtDown;
     private float lastX, lastY, startX, startY, startW, startH;
@@ -43,13 +43,14 @@ final class ResizeGesture {
     private final Runnable idleFinish = () -> finish();
 
     /**
-     * @param centred the box grows from its middle (both sides move), else from its top edge (only the
-     *                bottom moves)
+     * @param xFactor 2: the box grows on both sides; 1: its right edge moves; -1: its left edge moves
+     * @param yFactor 2: the box grows up and down; 1: its bottom edge moves
      */
-    ResizeGesture(View view, Target target, boolean centred) {
+    ResizeGesture(View view, Target target, float xFactor, float yFactor) {
         this.view = view;
         this.target = target;
-        this.centred = centred;
+        this.xFactor = xFactor;
+        this.yFactor = yFactor;
         slop = ViewConfiguration.get(view.getContext()).getScaledTouchSlop();
     }
 
@@ -86,10 +87,8 @@ final class ResizeGesture {
                 }
                 float dx = lastX - startX, dy = lastY - startY;
                 if (Math.hypot(dx, dy) > slop) moved = true;
-                // The box stays centred across, so the width grows on both sides; the height grows on both
-                // sides too when centred, else only downwards.
-                float w = clamp(startW + 2f * dx / Math.max(1f, fullW));
-                float h = clamp(startH + (centred ? 2f : 1f) * dy / Math.max(1f, fullH));
+                float w = clamp(startW + xFactor * dx / Math.max(1f, fullW));
+                float h = clamp(startH + yFactor * dy / Math.max(1f, fullH));
                 target.setBox(w, h);
                 return true;
             case MotionEvent.ACTION_UP:
@@ -138,7 +137,7 @@ final class ResizeGesture {
     }
 
     /** The resize look: a dashed outline round the box and a round handle on its bottom-right corner. */
-    static void drawEditFrame(Canvas c, RectF box, float radius, float density) {
+    static void drawEditFrame(Canvas c, RectF box, float radius, float density, boolean handleLeft) {
         Paint line = new Paint(Paint.ANTI_ALIAS_FLAG);
         line.setStyle(Paint.Style.STROKE);
         line.setStrokeWidth(2 * density);
@@ -148,15 +147,9 @@ final class ResizeGesture {
         Paint dot = new Paint(Paint.ANTI_ALIAS_FLAG);
         dot.setColor(0xFF0A84FF);
         float r = 11 * density;
-        c.drawCircle(box.right - r * 0.6f, box.bottom - r * 0.6f, r, dot);
+        float hx = handleLeft ? box.left + r * 0.6f : box.right - r * 0.6f;
+        c.drawCircle(hx, box.bottom - r * 0.6f, r, dot);
         dot.setColor(0xFFFFFFFF);
-        c.drawCircle(box.right - r * 0.6f, box.bottom - r * 0.6f, r * 0.4f, dot);
-    }
-
-    /** The clear glass box itself: a light frosted fill, brighter at the top, and a thin bright rim. */
-    static void drawGlassBox(Canvas c, RectF box, float radius, float density, Paint fill, Paint rim) {
-        c.drawRoundRect(box, radius, radius, fill);
-        float h = rim.getStrokeWidth() / 2;
-        c.drawRoundRect(box.left + h, box.top + h, box.right - h, box.bottom - h, radius, radius, rim);
+        c.drawCircle(hx, box.bottom - r * 0.6f, r * 0.4f, dot);
     }
 }
