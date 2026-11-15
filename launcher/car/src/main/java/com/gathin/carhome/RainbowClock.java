@@ -79,7 +79,7 @@ final class RainbowClock extends View {
             glow.setShader(null);
             face.setColor(0xFFFFFFFF);
             glow.setColor(0xFFFFFFFF);
-            face.setShadowLayer(6, 0, 2, 0x99000000);
+            face.clearShadowLayer();   // clean digits, no dark shadow
         }
     }
 

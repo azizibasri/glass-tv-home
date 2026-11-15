@@ -519,6 +519,7 @@ public final class HomeActivity extends Activity {
         clockBox.setOrientation(LinearLayout.VERTICAL);
         clockBox.addView(bigClock, new LinearLayout.LayoutParams(-1, 0, 1f));
         carNameView = text(compact ? 14 : 17, true);
+        carNameView.setShadowLayer(0, 0, 0, 0);   // the clock area has no dark shadows
         carNameView.setTextColor(0xFFFFFFFF);
         carNameView.setLetterSpacing(0.06f);
         carNameView.setAutoSizeTextTypeUniformWithConfiguration(10, compact ? 14 : 17, 1, TypedValue.COMPLEX_UNIT_SP);
@@ -531,6 +532,7 @@ public final class HomeActivity extends Activity {
         cblp.bottomMargin = dp(10);
         left.addView(clockBox, cblp);
         bigDate = text(18, false);
+        bigDate.setShadowLayer(0, 0, 0, 0);
         bigDate.setAlpha(0.8f);
         // Shrinks to fit rather than cutting the date short.
         bigDate.setAutoSizeTextTypeUniformWithConfiguration(11, 18, 1, TypedValue.COMPLEX_UNIT_SP);
