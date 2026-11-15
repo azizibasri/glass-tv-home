@@ -5,6 +5,9 @@
     <!-- Close apps left running in the background (Clean button). Only background processes: never the
          app on screen, music that is playing or anything with a foreground service. -->
     <uses-permission android:name="android.permission.KILL_BACKGROUND_PROCESSES" />
+    <!-- The sound wave widget measures the sound playing (never records it): Visualizer needs these. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <!-- See every installed app, for the grid and for closing background apps. Sideloaded, never on Play. -->
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />

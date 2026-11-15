@@ -40,7 +40,8 @@ final class ResizeGesture {
         void onEditing(boolean editing);
     }
 
-    static final float MIN = 0.4f, MAX = 1f;
+    /** A widget goes from 40 % of its first size up to twice it (never bigger than the dashboard). */
+    static final float MIN = 0.4f, MAX = 2f;
     private static final long IDLE_FINISH_MS = 6_000;
 
     private final View view;

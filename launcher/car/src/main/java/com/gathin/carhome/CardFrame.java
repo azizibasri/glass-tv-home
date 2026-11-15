@@ -21,19 +21,22 @@ final class CardFrame extends FrameLayout implements ResizeGesture.Target {
     }
 
     private final View card, content;
-    /** The panel's full width as a fraction of the dashboard's. */
-    private final float fullW;
+    /** The widget's first (full) size as fractions of the dashboard's. */
+    private final float fullW, fullH;
     private final float radius, d;
     private final ResizeGesture gesture;
     private final RectF box = new RectF();
     private float cardW = 1f, cardH = 1f, posX, posY;
     private Listener listener;
 
-    CardFrame(Context ctx, View content, float fullWidth, float defaultX, float radius) {
+    CardFrame(Context ctx, View content, float fullWidth, float fullHeight, float defaultX, float defaultY,
+              float radius) {
         super(ctx);
         this.content = content;
         this.fullW = fullWidth;
+        this.fullH = fullHeight;
         this.posX = defaultX;
+        this.posY = defaultY;
         this.radius = radius;
         d = getResources().getDisplayMetrics().density;
         card = new View(ctx);
@@ -78,33 +81,33 @@ final class CardFrame extends FrameLayout implements ResizeGesture.Target {
     protected void onMeasure(int wSpec, int hSpec) {
         int w = MeasureSpec.getSize(wSpec), h = MeasureSpec.getSize(hSpec);
         setMeasuredDimension(w, h);
-        int full = Math.round(w * fullW);
-        card.measure(MeasureSpec.makeMeasureSpec(Math.round(full * cardW), MeasureSpec.EXACTLY),
-                MeasureSpec.makeMeasureSpec(Math.round(h * cardH), MeasureSpec.EXACTLY));
+        int full = Math.round(w * fullW), fullHt = Math.round(h * fullH);
+        card.measure(MeasureSpec.makeMeasureSpec(Math.min(w, Math.round(full * cardW)), MeasureSpec.EXACTLY),
+                MeasureSpec.makeMeasureSpec(Math.min(h, Math.round(fullHt * cardH)), MeasureSpec.EXACTLY));
         // The content keeps the full-size layout; it is scaled to the card when laid out.
         content.measure(MeasureSpec.makeMeasureSpec(full, MeasureSpec.EXACTLY),
-                MeasureSpec.makeMeasureSpec(h, MeasureSpec.EXACTLY));
+                MeasureSpec.makeMeasureSpec(fullHt, MeasureSpec.EXACTLY));
     }
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         int w = r - l, h = b - t;
-        int full = Math.round(w * fullW);
-        int bw = Math.round(full * cardW), bh = Math.round(h * cardH);
+        int full = Math.round(w * fullW), fullHt = Math.round(h * fullH);
+        int bw = Math.min(w, Math.round(full * cardW)), bh = Math.min(h, Math.round(fullHt * cardH));
         // Kept fully on the dashboard.
         int x = Math.max(0, Math.min(w - bw, Math.round(posX * w)));
         int y = Math.max(0, Math.min(h - bh, Math.round(posY * h)));
         box.set(x, y, x + bw, y + bh);
         card.layout(x, y, x + bw, y + bh);
-        content.layout(0, 0, full, h);
+        content.layout(0, 0, full, fullHt);
         // Scale evenly (never stretched) to fit the card, centred in it.
-        float s = Math.min(bw / (float) Math.max(1, full), bh / (float) Math.max(1, h));
+        float s = Math.min(bw / (float) Math.max(1, full), bh / (float) Math.max(1, fullHt));
         content.setPivotX(0);
         content.setPivotY(0);
         content.setScaleX(s);
         content.setScaleY(s);
         content.setTranslationX(x + (bw - full * s) / 2f);
-        content.setTranslationY(y + (bh - h * s) / 2f);
+        content.setTranslationY(y + (bh - fullHt * s) / 2f);
     }
 
     @Override
@@ -130,7 +133,7 @@ final class CardFrame extends FrameLayout implements ResizeGesture.Target {
     @Override
     public boolean onTouchEvent(MotionEvent e) {
         int w = getWidth(), h = getHeight();
-        return gesture.onTouch(e, w * fullW, h, w, h);
+        return gesture.onTouch(e, w * fullW, h * fullH, w, h);
     }
 
     @Override
@@ -170,7 +173,7 @@ final class CardFrame extends FrameLayout implements ResizeGesture.Target {
     @Override
     public void setPos(float x, float y) {
         // Kept on the dashboard here too, so the saved place is where it shows.
-        float maxX = 1f - fullW * cardW, maxY = 1f - cardH;
+        float maxX = 1f - Math.min(1f, fullW * cardW), maxY = 1f - Math.min(1f, fullH * cardH);
         setCard(cardW, cardH, Math.max(0f, Math.min(maxX, x)), Math.max(0f, Math.min(maxY, y)));
         if (listener != null) listener.onCard(this, false);
     }

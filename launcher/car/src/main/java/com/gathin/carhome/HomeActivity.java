@@ -123,7 +123,13 @@ public final class HomeActivity extends Activity {
     private float clockBasePx;
     private int lastObdState = ObdLink.OFF;
     private RainbowClock bigClock;
-    private CardFrame leftCard, rightCard;
+    /** The dashboard's widgets, each on a card the person can move, resize, hide and show without glass. */
+    private final List<CardFrame> cards = new ArrayList<>();
+    private AnalogClockView analogClock;
+    private VolumeWidget volumeWidget;
+    private SoundWaveView soundWave;
+    /** "digital", or one of AnalogClockView.FACES. */
+    private String clockFace;
     private TextView bigDate;
     private NowPlaying nowPlaying;
 
@@ -212,6 +218,7 @@ public final class HomeActivity extends Activity {
         carData.setListener(this::showCarData);
         iconStyle = prefs.getString("icon_style", cfg.iconStyle);
         clockFont = prefs.getString("clock_font", cfg.clockFont);
+        clockFace = prefs.getString("clock_face", "digital");
         clockSize = prefs.getInt("clock_size", cfg.clockSize);
         clockHeight = prefs.getInt("clock_height", cfg.clockHeight);
         speedSize = prefs.getInt("speed_size", cfg.speedSize);
@@ -258,11 +265,42 @@ public final class HomeActivity extends Activity {
         }
         if (bigClock != null) bigClock.setRunning(pager == null || pager.page() == 0);
         if (nowPlaying != null) nowPlaying.start();
+        startDashWidgets(pager == null || pager.page() == 0);
+    }
+
+    /** The volume, the sound wave and the analog clock run only while the dashboard is on screen. */
+    private void startDashWidgets(boolean onDash) {
+        boolean on = resumed && onDash;
+        if (analogClock != null) analogClock.setRunning(on);
+        if (volumeWidget != null) {
+            if (on) volumeWidget.start();
+            else volumeWidget.stop();
+        }
+        if (soundWave != null) {
+            if (on) {
+                // The sound wave needs the microphone permission to follow the music: ask once.
+                if (!SoundWaveView.hasPermission(this) && !prefs.getBoolean("asked_mic", false)) {
+                    prefs.edit().putBoolean("asked_mic", true).apply();
+                    requestPermissions(new String[]{android.Manifest.permission.RECORD_AUDIO}, 7);
+                }
+                soundWave.start();
+            } else {
+                soundWave.stop();
+            }
+        }
     }
 
     @Override
     public void onRequestPermissionsResult(int request, String[] perms, int[] results) {
         super.onRequestPermissionsResult(request, perms, results);
+        if (request == 7) {
+            // Microphone allowed (or not): the sound wave follows the music, or keeps its gentle wave.
+            if (soundWave != null && resumed) {
+                soundWave.stop();
+                soundWave.start();
+            }
+            return;
+        }
         if (request == 6) {
             // Music files allowed: play them now (or say there are none).
             if (results.length > 0 && results[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) openMusicApp();
@@ -278,8 +316,10 @@ public final class HomeActivity extends Activity {
     @Override
     protected void onPause() {
         resumed = false;
-        if (leftCard != null) leftCard.finishEditing();
-        if (rightCard != null) rightCard.finishEditing();
+        for (CardFrame c : cards) c.finishEditing();
+        if (volumeWidget != null) volumeWidget.stop();
+        if (soundWave != null) soundWave.stop();
+        if (analogClock != null) analogClock.setRunning(false);
         main.removeCallbacks(ramTick);
         main.removeCallbacks(autoClean);
         main.removeCallbacks(dataTick);
@@ -500,75 +540,91 @@ public final class HomeActivity extends Activity {
 
     /** The first page: a large clock, date and music widget, and the speedometer with boost and torque. */
     private View dashboard(int areaW, int areaH) {
-        // The two panels are cards on one board: each can be moved and resized anywhere on it.
+        // The widgets are cards on one board: each can be moved, resized, hidden, and shown with or
+        // without its glass box.
         FrameLayout d = new FrameLayout(this);
         int gap = dp(12);
         d.setPadding(0, 0, 0, gap);
-        float leftFull = ((areaW - gap) / 2.25f) / areaW;   // their first places: side by side, 1 : 1.25
-        float rightX = leftFull + gap / (float) areaW;
-
-        LinearLayout left = new LinearLayout(this);
-        left.setOrientation(LinearLayout.VERTICAL);
-        left.setGravity(Gravity.CENTER_HORIZONTAL);
-        // Narrow screens (dense or small units): less padding so the music widget and date fit.
-        int leftW = Math.round((areaW - dp(12)) / 2.25f);
+        int boardH = areaH - gap;
+        for (CardFrame c : cards) c.finishEditing();
+        cards.clear();
+        if (volumeWidget != null) volumeWidget.stop();
+        if (soundWave != null) soundWave.stop();
+        analogClock = null;
+        volumeWidget = null;
+        soundWave = null;
+        // First places: a left column (clock, music, then sound wave and volume side by side) and the
+        // speed panel on the right, 1 : 1.25.
+        float gx = gap / (float) areaW, gy = gap / (float) boardH;
+        float leftFull = ((areaW - gap) / 2.25f) / areaW;
+        float rightX = leftFull + gx;
+        float clockH = 0.40f, musicY = clockH + gy, musicH = 0.30f, rowY = musicY + musicH + gy, rowH = 1f - rowY;
+        float waveW = leftFull * 0.56f, volX = waveW + gx, volW = leftFull - volX;
+        int leftW = Math.round(areaW * leftFull);
         boolean compact = leftW < dp(340);
-        int lp2 = compact ? dp(12) : dp(24);
-        left.setPadding(lp2, compact ? dp(12) : dp(20), lp2, compact ? dp(12) : dp(20));
 
-        bigClock = new RainbowClock(this, cfg.clockRainbow);
-        clockBasePx = Math.min(areaH * 0.24f, areaW * 0.12f);
-        applyClockStyle();
-        // Clock on top, the car's name in white under it.
+        // Clock: digital or analog, the car's name under it, then the date.
         LinearLayout clockBox = new LinearLayout(this);
         clockBox.setOrientation(LinearLayout.VERTICAL);
-        clockBox.addView(bigClock, new LinearLayout.LayoutParams(-1, 0, 1f));
+        clockBox.setGravity(Gravity.CENTER_HORIZONTAL);
+        clockBox.setPadding(dp(16), dp(12), dp(16), dp(10));
+        bigClock = new RainbowClock(this, cfg.clockRainbow);
+        clockBasePx = Math.min(Math.min(areaH * 0.24f, areaW * 0.12f), boardH * clockH * 0.55f);
+        applyClockStyle();
+        int face = AnalogClockView.faceOf(clockFace);
+        if (face > 0) {
+            analogClock = new AnalogClockView(this);
+            analogClock.setFace(face);
+            clockBox.addView(analogClock, new LinearLayout.LayoutParams(-1, 0, 1f));
+        } else {
+            clockBox.addView(bigClock, new LinearLayout.LayoutParams(-1, 0, 1f));
+        }
         carNameView = text(compact ? 14 : 17, true);
         carNameView.setShadowLayer(0, 0, 0, 0);   // the clock area has no dark shadows
         carNameView.setTextColor(0xFFFFFFFF);
         carNameView.setLetterSpacing(0.06f);
         carNameView.setAutoSizeTextTypeUniformWithConfiguration(10, compact ? 14 : 17, 1, TypedValue.COMPLEX_UNIT_SP);
-        LinearLayout.LayoutParams nlp2 = new LinearLayout.LayoutParams(-1, dp(compact ? 24 : 30));
-        nlp2.bottomMargin = dp(compact ? 6 : 10);
-        nlp2.leftMargin = nlp2.rightMargin = dp(10);
+        LinearLayout.LayoutParams nlp2 = new LinearLayout.LayoutParams(-1, dp(compact ? 22 : 26));
+        nlp2.topMargin = dp(4);
         clockBox.addView(carNameView, nlp2);
         showCarName();
-        LinearLayout.LayoutParams cblp = new LinearLayout.LayoutParams(-1, 0, 1f);
-        cblp.bottomMargin = dp(10);
-        left.addView(clockBox, cblp);
-        bigDate = text(18, false);
+        bigDate = text(16, false);
         bigDate.setShadowLayer(0, 0, 0, 0);
         bigDate.setAlpha(0.8f);
         // Shrinks to fit rather than cutting the date short.
-        bigDate.setAutoSizeTextTypeUniformWithConfiguration(11, 18, 1, TypedValue.COMPLEX_UNIT_SP);
-        left.addView(bigDate, new LinearLayout.LayoutParams(-1, dp(compact ? 22 : 28)));
+        bigDate.setAutoSizeTextTypeUniformWithConfiguration(10, 16, 1, TypedValue.COMPLEX_UNIT_SP);
+        clockBox.addView(bigDate, new LinearLayout.LayoutParams(-1, dp(compact ? 20 : 24)));
+        addCard(d, "clock", clockBox, leftFull, clockH, 0f, 0f);
+
+        // Music: its own glass box.
         if (cfg.musicWidget) {
-            // Big and easy to reach while driving: the room torque had, now under the turbo boost.
-            int npH = Math.max(dp(72), Math.min(dp(140), Math.round(areaH * 0.30f)));
-            nowPlaying = new NowPlaying(this, npH, leftW - 2 * lp2, this::openMusicApp);
+            int npH = Math.round(boardH * musicH);
+            nowPlaying = new NowPlaying(this, npH, leftW, this::openMusicApp);
+            nowPlaying.setBackground(null);   // the card is its glass box
             nowPlaying.setRadioBroadcasts(cfg.radioFreq, cfg.radioChannel);
-            LinearLayout.LayoutParams nlp = new LinearLayout.LayoutParams(-1, npH);
-            nlp.topMargin = dp(14);
-            left.addView(nowPlaying, nlp);
+            addCard(d, "music", nowPlaying, leftFull, musicH, 0f, musicY);
             if (resumed) nowPlaying.start();
         }
-        // Each panel is a glass card the person can resize by holding and dragging it; what is on it scales
-        // with the card.
-        leftCard = card(left, leftFull, 0f, "left_card");
-        d.addView(leftCard, new FrameLayout.LayoutParams(-1, -1));
+
+        // Sound wave and volume, side by side under the music.
+        soundWave = new SoundWaveView(this);
+        FrameLayout waveBox = new FrameLayout(this);
+        waveBox.setPadding(dp(14), dp(12), dp(14), dp(12));
+        waveBox.addView(soundWave, new FrameLayout.LayoutParams(-1, -1));
+        addCard(d, "wave", waveBox, waveW, rowH, 0f, rowY);
+        volumeWidget = new VolumeWidget(this);
+        addCard(d, "volume", volumeWidget, volW, rowH, volX, rowY);
 
         // Right: the big digital speedometer with turbo boost, torque, trip, coolant and fuel range.
         LinearLayout right = new LinearLayout(this);
         right.setOrientation(LinearLayout.VERTICAL);
         right.setPadding(dp(12), 0, dp(12), dp(12));   // the speed view makes its own even space on top
-
         bigSpeed = new BigSpeedView(this, cfg.mph ? "mph" : "km/h", cfg.boostPsi, cfg.boostMaxBar, cfg.torqueMax);
         bigSpeed.setTypeface(ClockFonts.typeface(this, clockFont));
         LinearLayout.LayoutParams speedLp = new LinearLayout.LayoutParams(-1, 0, 1f);
         speedLp.leftMargin = speedLp.rightMargin = dp(6);
-        bigSpeed.setGap(dp(12));
+        bigSpeed.setGap(dp(12));   // the speed spaces itself evenly; the same 12 dp around the rows below
         bigSpeed.setDigitStyle(speedSize / 100f, speedHeight / 100f);
-        // the speed spaces itself evenly; the same 12 dp around the rows below
         right.addView(bigSpeed, speedLp);
         LinearLayout.LayoutParams tripLp = new LinearLayout.LayoutParams(-1, dp(52));
         tripLp.topMargin = 0;   // the speed view ends with the same even space
@@ -585,23 +641,37 @@ public final class HomeActivity extends Activity {
                 Math.max(dp(64), Math.min(dp(84), Math.round(areaH * 0.18f))));
         tilesLp.topMargin = dp(12);
         right.addView(tiles, tilesLp);
-        rightCard = card(right, 1f - rightX, rightX, "right_card");
-        d.addView(rightCard, new FrameLayout.LayoutParams(-1, -1));
+        addCard(d, "speed", right, 1f - rightX, 1f, rightX, 0f);
+
         updateClock();
         bigClock.setRunning(resumed);
+        startDashWidgets(pager == null || pager.page() == 0);
         return d;
     }
 
+    /** The dashboard's widgets: id and name, in the Widgets panel's order. */
+    private static final String[] WIDGET_IDS = {"clock", "music", "speed", "wave", "volume"};
+    private static final int[] WIDGET_NAMES = {R.string.widget_clock, R.string.widget_music, R.string.widget_speed,
+            R.string.widget_wave, R.string.widget_volume};
+
+    private boolean widgetShown(String id) {
+        return prefs.getBoolean("w_" + id + "_show", true);
+    }
+
+    private boolean widgetGlass(String id) {
+        return prefs.getBoolean("w_" + id + "_glass", true);
+    }
+
     /**
-     * A dashboard panel on a glass card the person can move and resize anywhere on the dashboard (hold,
-     * then drag it or its corner). fullWidth: its full width as a fraction of the dashboard's; defaultX:
-     * where it starts. Place and size are saved under key.
+     * Puts a widget on the dashboard on a card the person can move and resize (hold, then drag it or its
+     * blue corner). Its first size and place are fractions of the dashboard; what it is saved under w_id.
      */
-    private CardFrame card(View content, float fullWidth, float defaultX, String key) {
-        CardFrame f = new CardFrame(this, content, fullWidth, defaultX, dp(26));
-        f.card().setBackground(glassFor(f.card(), dp(26)));
+    private void addCard(FrameLayout board, String id, View content, float fullW, float fullH, float x, float y) {
+        CardFrame f = new CardFrame(this, content, fullW, fullH, x, y, dp(26));
+        if (widgetGlass(id)) f.card().setBackground(glassFor(f.card(), dp(26)));
+        String key = "w_" + id;
         f.setCard(prefs.getFloat(key + "_w", 1f), prefs.getFloat(key + "_h", 1f),
-                prefs.getFloat(key + "_x", defaultX), prefs.getFloat(key + "_y", 0f));
+                prefs.getFloat(key + "_x", x), prefs.getFloat(key + "_y", y));
         f.setListener(new CardFrame.Listener() {
             @Override
             public void onCard(CardFrame c, boolean done) {
@@ -616,7 +686,83 @@ public final class HomeActivity extends Activity {
                 if (editing) showToast(getString(R.string.resize_hint));
             }
         });
-        return f;
+        if (!widgetShown(id)) f.setVisibility(View.GONE);
+        cards.add(f);
+        board.addView(f, new FrameLayout.LayoutParams(-1, -1));
+    }
+
+    /** Widgets: each one shown or hidden, with or without its glass box; and the first layout back. */
+    private void widgetsDialog() {
+        LinearLayout body = new LinearLayout(this);
+        body.setOrientation(LinearLayout.VERTICAL);
+        for (int i = 0; i < WIDGET_IDS.length; i++) {
+            String id = WIDGET_IDS[i];
+            if (id.equals("music") && !cfg.musicWidget) continue;
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            row.setGravity(Gravity.CENTER_VERTICAL);
+            TextView name = text(15, true);
+            name.setGravity(Gravity.START);
+            name.setText(WIDGET_NAMES[i]);
+            row.addView(name, new LinearLayout.LayoutParams(0, -2, 1f));
+            android.widget.Switch show = new android.widget.Switch(this);
+            show.setText(R.string.widget_show);
+            show.setTextColor(0xFFFFFFFF);
+            show.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+            show.setChecked(widgetShown(id));
+            glassSwitch(show);
+            android.widget.Switch glassSw = new android.widget.Switch(this);
+            glassSw.setText(R.string.widget_glass);
+            glassSw.setTextColor(0xFFFFFFFF);
+            glassSw.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+            glassSw.setChecked(widgetGlass(id));
+            glassSwitch(glassSw);
+            show.setOnCheckedChangeListener((v, on) -> {
+                prefs.edit().putBoolean("w_" + id + "_show", on).apply();
+                fillPages();
+            });
+            glassSw.setOnCheckedChangeListener((v, on) -> {
+                prefs.edit().putBoolean("w_" + id + "_glass", on).apply();
+                fillPages();
+            });
+            LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(-2, -2);
+            slp.leftMargin = dp(16);
+            row.addView(show, slp);
+            row.addView(glassSw, slp);
+            LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(-1, dp(48));
+            body.addView(row, rlp);
+        }
+        TextView reset = text(14, true);
+        reset.setText(R.string.widgets_reset);
+        reset.setPadding(dp(16), dp(10), dp(16), dp(10));
+        android.graphics.drawable.GradientDrawable g = new android.graphics.drawable.GradientDrawable();
+        g.setColor(0x1FFFFFFF);
+        g.setCornerRadius(dp(16));
+        g.setStroke(Math.max(1, dp(1)), 0x40FFFFFF);
+        reset.setBackground(g);
+        reset.setOnClickListener(v -> {
+            android.content.SharedPreferences.Editor e = prefs.edit();
+            for (String id : WIDGET_IDS) {
+                for (String k : new String[]{"_x", "_y", "_w", "_h"}) e.remove("w_" + id + k);
+            }
+            e.apply();
+            fillPages();
+            showToast(getString(R.string.widgets_reset_done));
+        });
+        squish(reset);
+        LinearLayout.LayoutParams rslp = new LinearLayout.LayoutParams(-2, -2);
+        rslp.topMargin = dp(10);
+        body.addView(reset, rslp);
+        TextView hint = text(11, false);
+        hint.setGravity(Gravity.START);
+        hint.setSingleLine(false);
+        hint.setAlpha(0.6f);
+        hint.setText(R.string.widgets_hint);
+        LinearLayout.LayoutParams hlp = new LinearLayout.LayoutParams(-1, -2);
+        hlp.topMargin = dp(10);
+        body.addView(hint, hlp);
+        if (pager != null) pager.snapTo(0);
+        panelDialog(R.string.widgets, body).show();
     }
 
     /** The trip row under the dials: TRIP, the distance, where it comes from, and Reset. */
@@ -709,6 +855,7 @@ public final class HomeActivity extends Activity {
                 {R.string.icons_style, (Runnable) this::iconStyleDialog},
                 {R.string.clock_style, (Runnable) this::clockDialog},
                 {R.string.speed_style, (Runnable) this::speedDialog},
+                {R.string.widgets, (Runnable) this::widgetsDialog},
                 {R.string.data_source, (Runnable) this::dataSourceDialog},
         };
         LinearLayout row = null;
@@ -1005,6 +1152,67 @@ public final class HomeActivity extends Activity {
     private void clockDialog() {
         LinearLayout body = new LinearLayout(this);
         body.setOrientation(LinearLayout.VERTICAL);
+        // Face: digital, or one of three analog clocks in Apple's style.
+        TextView faceLabel = text(14, false);
+        faceLabel.setGravity(Gravity.START);
+        faceLabel.setText(R.string.clock_face);
+        body.addView(faceLabel, new LinearLayout.LayoutParams(-1, -2));
+        LinearLayout faces = new LinearLayout(this);
+        faces.setOrientation(LinearLayout.HORIZONTAL);
+        String[] faceKeys = {"digital", AnalogClockView.FACES[0], AnalogClockView.FACES[1], AnalogClockView.FACES[2]};
+        int[] faceNames = {R.string.face_digital, R.string.face_analog1, R.string.face_analog2, R.string.face_analog3};
+        Runnable markFaces = () -> {
+            for (int i = 0; i < faces.getChildCount(); i++) {
+                boolean on = faceKeys[i].equals(clockFace);
+                android.graphics.drawable.GradientDrawable g = new android.graphics.drawable.GradientDrawable();
+                g.setCornerRadius(dp(16));
+                g.setColor(on ? 0x400A84FF : 0x1AFFFFFF);
+                g.setStroke(dp(on ? 2 : 1), on ? 0xFF0A84FF : 0x33FFFFFF);
+                faces.getChildAt(i).setBackground(g);
+            }
+        };
+        for (int i = 0; i < faceKeys.length; i++) {
+            String key = faceKeys[i];
+            LinearLayout chip = new LinearLayout(this);
+            chip.setOrientation(LinearLayout.VERTICAL);
+            chip.setGravity(Gravity.CENTER);
+            chip.setPadding(dp(8), dp(8), dp(8), dp(8));
+            int f = AnalogClockView.faceOf(key);
+            if (f > 0) {
+                AnalogClockView a = new AnalogClockView(this);
+                a.setFace(f);
+                chip.addView(a, new LinearLayout.LayoutParams(dp(56), dp(56)));
+            } else {
+                TextView digits = text(24, false);
+                digits.setText(DateFormat.format(DateFormat.is24HourFormat(this) ? "H:mm" : "h:mm", new Date()));
+                digits.setTypeface(ClockFonts.typeface(this, clockFont));
+                chip.addView(digits, new LinearLayout.LayoutParams(-2, dp(56)));
+                digits.setGravity(Gravity.CENTER);
+            }
+            TextView name = text(12, false);
+            name.setText(faceNames[i]);
+            name.setAlpha(0.75f);
+            chip.addView(name);
+            chip.setOnClickListener(v -> {
+                clockFace = key;
+                prefs.edit().putString("clock_face", key).apply();
+                markFaces.run();
+                fillPages();
+            });
+            squish(chip);
+            LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(0, -2, 1f);
+            if (i > 0) clp.leftMargin = dp(8);
+            faces.addView(chip, clp);
+        }
+        markFaces.run();
+        LinearLayout.LayoutParams flp = new LinearLayout.LayoutParams(-1, -2);
+        flp.topMargin = dp(6);
+        flp.bottomMargin = dp(14);
+        body.addView(faces, flp);
+        TextView fontLabel = text(14, false);
+        fontLabel.setGravity(Gravity.START);
+        fontLabel.setText(R.string.clock_font_label);
+        body.addView(fontLabel, new LinearLayout.LayoutParams(-1, -2));
         android.widget.HorizontalScrollView scroll = new android.widget.HorizontalScrollView(this);
         scroll.setHorizontalScrollBarEnabled(false);
         LinearLayout chips = new LinearLayout(this);
@@ -1540,6 +1748,7 @@ public final class HomeActivity extends Activity {
     private void updateDots(int page, int count) {
         // The clock only animates while its page is on screen; the glass is cut again once a swipe settles.
         if (bigClock != null) bigClock.setRunning(resumed && page == 0);
+        startDashWidgets(page == 0);
         main.removeCallbacks(reglass);
         main.postDelayed(reglass, 400);
         if (dots == null) return;
@@ -1563,6 +1772,7 @@ public final class HomeActivity extends Activity {
         String pattern = DateFormat.is24HourFormat(this) ? "H:mm" : "h:mm";
         clock.setText(DateFormat.format(pattern, now));
         date.setText(DateFormat.format(DateFormat.getBestDateTimePattern(Locale.getDefault(), "EEEd"), now));
+        if (analogClock != null) analogClock.invalidate();
         if (bigClock != null) {
             bigClock.setText(DateFormat.format(pattern, now));
             bigDate.setText(DateFormat.format(DateFormat.getBestDateTimePattern(Locale.getDefault(), "EEEEdMMMM"), now));
