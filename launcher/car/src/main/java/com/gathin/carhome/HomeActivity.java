@@ -109,6 +109,9 @@ public final class HomeActivity extends Activity {
     private InfoTile coolantTile, rangeTile;
     private static final int REQUEST_WALLPAPER = 11;
     private final TripMeter trip = new TripMeter();
+    private final DriveTimer driveTimer = new DriveTimer();
+    private TextView driveValue, driveReset;
+    private boolean driveResetArmed;
     private TextView tripLabel, tripValue, tripNote, tripReset;
     private boolean tripResetArmed;
     private long tripSavedAt;
@@ -236,6 +239,7 @@ public final class HomeActivity extends Activity {
         carData.setSource(dataSource, obdAddress);
         trip.baseOdometer = prefs.getFloat("trip_base", Float.NaN);
         trip.accumulated = prefs.getFloat("trip_acc", 0f);
+        driveTimer.drivenMs = prefs.getLong("drive_ms", 0L);
         loadApps();
     }
 
@@ -513,6 +517,7 @@ public final class HomeActivity extends Activity {
         if (nowPlaying != null) nowPlaying.stop();
         bigClock = null;
         bigDate = null;
+        driveValue = null;
         nowPlaying = null;
         if (dash == 1) pager.addView(dashboard(areaW, areaH));
         int cellW = areaW / g.columns, cellH = areaH / g.rows;
@@ -551,7 +556,9 @@ public final class HomeActivity extends Activity {
         float leftFull = ((areaW - gap) / 2.25f) / areaW;
         float rightX = leftFull + gx;
         float clockH = 0.40f, musicY = clockH + gy, musicH = 0.30f, rowY = musicY + musicH + gy, rowH = 1f - rowY;
-        float waveW = leftFull * 0.46f, volX = waveW + gx, volW = leftFull - volX;
+        // The bottom row: wave, driving time and volume side by side.
+        float waveW = leftFull * 0.24f, driveX = waveW + gx, driveW = leftFull * 0.36f - gx;
+        float volX = driveX + driveW + gx, volW = leftFull - volX;
         int leftW = Math.round(areaW * leftFull);
         boolean compact = leftW < dp(340);
 
@@ -603,6 +610,7 @@ public final class HomeActivity extends Activity {
         waveBox.setPadding(dp(14), dp(12), dp(14), dp(12));
         waveBox.addView(soundWave, new FrameLayout.LayoutParams(-1, -1));
         addCard(d, "wave", waveBox, waveW, rowH, 0f, rowY);
+        addCard(d, "drive", driveTimeWidget(), driveW, rowH, driveX, rowY);
         volumeWidget = new VolumeWidget(this);
         volumeWidget.setButtonStyle(prefs.getInt("volume_btn_size", 80), prefs.getInt("volume_btn_gap", 100));
         addCard(d, "volume", volumeWidget, volW, rowH, volX, rowY);
@@ -651,9 +659,9 @@ public final class HomeActivity extends Activity {
     }
 
     /** The dashboard's widgets: id and name, in the Widgets panel's order. */
-    private static final String[] WIDGET_IDS = {"clock", "music", "speed", "wave", "volume"};
+    private static final String[] WIDGET_IDS = {"clock", "music", "speed", "wave", "drive", "volume"};
     private static final int[] WIDGET_NAMES = {R.string.widget_clock, R.string.widget_music, R.string.widget_speed,
-            R.string.widget_wave, R.string.widget_volume};
+            R.string.widget_wave, R.string.widget_drive, R.string.widget_volume};
 
     private boolean widgetShown(String id) {
         return prefs.getBoolean("w_" + id + "_show", true);
@@ -781,6 +789,80 @@ public final class HomeActivity extends Activity {
         panelDialog(R.string.widgets, body).show();
     }
 
+    /** Driving time: DRIVING TIME, the time (h:mm:ss), what it counts, and Reset. Its own widget. */
+    private View driveTimeWidget() {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setGravity(Gravity.CENTER);
+        box.setPadding(dp(10), dp(8), dp(10), dp(8));
+        TextView label = text(11, true);
+        label.setText(R.string.drive_time);
+        label.setLetterSpacing(0.12f);
+        label.setAlpha(0.65f);
+        label.setShadowLayer(0, 0, 0, 0);
+        box.addView(label, new LinearLayout.LayoutParams(-1, -2));
+        driveValue = text(24, true);
+        driveValue.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
+        driveValue.setFontFeatureSettings("tnum");
+        driveValue.setShadowLayer(0, 0, 0, 0);
+        driveValue.setAutoSizeTextTypeUniformWithConfiguration(10, 24, 1, TypedValue.COMPLEX_UNIT_SP);
+        LinearLayout.LayoutParams vlp = new LinearLayout.LayoutParams(-1, dp(32));
+        vlp.topMargin = dp(2);
+        box.addView(driveValue, vlp);
+        TextView note = text(10, false);
+        note.setText(R.string.drive_time_note);
+        note.setAlpha(0.6f);
+        note.setShadowLayer(0, 0, 0, 0);
+        box.addView(note, new LinearLayout.LayoutParams(-1, -2));
+        driveReset = text(13, true);
+        driveReset.setText(R.string.trip_reset);
+        driveReset.setShadowLayer(0, 0, 0, 0);
+        driveReset.setPadding(dp(16), dp(6), dp(16), dp(6));
+        android.graphics.drawable.GradientDrawable pill = new android.graphics.drawable.GradientDrawable();
+        pill.setColor(0x24FFFFFF);
+        pill.setCornerRadius(dp(18));
+        pill.setStroke(Math.max(1, dp(1)), 0x4DFFFFFF);
+        driveReset.setBackground(pill);
+        driveReset.setOnClickListener(v -> resetDriveTime());
+        squish(driveReset);
+        LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(-2, -2);
+        rlp.topMargin = dp(8);
+        box.addView(driveReset, rlp);
+        driveResetArmed = false;
+        showDriveTime();
+        return box;
+    }
+
+    private final Runnable disarmDrive = () -> {
+        driveResetArmed = false;
+        if (driveReset != null) {
+            driveReset.setText(R.string.trip_reset);
+            driveReset.setTextColor(0xFFFFFFFF);
+        }
+    };
+
+    /** Like the trip: the first tap arms it ("Tap again"), a second tap within 3 seconds resets. */
+    private void resetDriveTime() {
+        if (!driveResetArmed) {
+            driveResetArmed = true;
+            driveReset.setText(R.string.trip_confirm);
+            driveReset.setTextColor(0xFFFF9F0A);
+            main.removeCallbacks(disarmDrive);
+            main.postDelayed(disarmDrive, 3_000);
+            return;
+        }
+        main.removeCallbacks(disarmDrive);
+        disarmDrive.run();
+        driveTimer.reset();
+        saveTrip();
+        showDriveTime();
+        showToast(getString(R.string.drive_time_was_reset));
+    }
+
+    private void showDriveTime() {
+        if (driveValue != null) driveValue.setText(DriveTimer.format(driveTimer.drivenMs));
+    }
+
     /** The trip row under the dials: TRIP, the distance, where it comes from, and Reset. */
     private View tripRow() {
         LinearLayout row = new LinearLayout(this);
@@ -858,7 +940,8 @@ public final class HomeActivity extends Activity {
 
     private void saveTrip() {
         tripSavedAt = SystemClock.elapsedRealtime();
-        prefs.edit().putFloat("trip_base", trip.baseOdometer).putFloat("trip_acc", trip.accumulated).apply();
+        prefs.edit().putFloat("trip_base", trip.baseOdometer).putFloat("trip_acc", trip.accumulated)
+                .putLong("drive_ms", driveTimer.drivenMs).apply();
     }
 
     // ---- Settings menu: wallpaper and icon style ----
@@ -1670,7 +1753,9 @@ public final class HomeActivity extends Activity {
     private void showCarData(CarData.Reading r) {
         trip.odometer(r.odometer);
         trip.speed(r.speed, SystemClock.elapsedRealtime());
+        driveTimer.speed(r.speed, SystemClock.elapsedRealtime());
         showTrip();
+        showDriveTime();
         if (SystemClock.elapsedRealtime() - tripSavedAt > 15_000) saveTrip();
         if (bigSpeed == null) return;
         if (r.obdState != lastObdState) {

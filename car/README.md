@@ -31,14 +31,18 @@ Swipe left for the apps.
   empty it to hide the line) in ⚙ → Clock style → *Name under the clock*, or with `"car_name"`. The same
   panel has **Name size** and **Date size** sliders (50 to 250 %) for the name and the date under the clock.
 - **Widgets you move, resize, hide and unbox**: the dashboard has five widgets, each in its own glass box:
-  **Clock**, **Music**, **Speedometer** (speed, boost, torque, trip and tiles), **Wave** and
-  **Volume**. Hold a widget until a dashed outline and a blue corner handle show: drag the widget to move
+  **Clock**, **Music**, **Speedometer** (speed, boost, torque, trip and tiles), **Wave**, **Driving
+  time** and **Volume**. Hold a widget until a dashed outline and a blue corner handle show: drag the widget to move
   it anywhere, or drag the blue corner to resize it (from 40 % of its first size to twice it). Everything
   on it scales with it. Tap it when done (or wait a few seconds); place and size are kept. In ⚙ →
   **Widgets**, each one can be shown or hidden and have its glass box on or off; **Put all widgets back**
   returns them to their first places.
 - **Wave**: a colourful wave with a soft mirrored fill whose peaks rise and fall at random, like an
   equaliser. It is decoration only and listens to no sound. It moves only while the dashboard is on screen.
+- **Driving time**: its own widget, the time the car has been driving as hours, minutes and seconds
+  (`1:23:45`), from the same speed as the trip (CAN, OBD-II or GPS). Short stops such as traffic lights
+  count, up to 3 minutes each; a longer stop is parking and the clock waits until the car moves again.
+  **Reset** asks for a second tap ("Tap again") so it is not reset by accident. Kept across restarts.
 - **Volume**: three round buttons, evenly spaced: **−**, **mute** (a speaker; it shows a cross while
   muted) and **+**. Tap − or + for one step, hold to keep going; a step also ends mute. Each press is the
   unit's own volume or mute key, sent through its debugging service (the one cache cleaning uses; the unit

@@ -49,6 +49,10 @@
     <string name="widget_speed">Speedometer</string>
     <string name="widget_wave">Wave</string>
     <string name="widget_volume">Volume</string>
+    <string name="widget_drive">Driving time</string>
+    <string name="drive_time">DRIVING TIME</string>
+    <string name="drive_time_note">Counted while driving</string>
+    <string name="drive_time_was_reset">Driving time reset to 0</string>
     <string name="volume_buttons">Volume buttons</string>
     <string name="volume_btn_size">Button size: %1$d%%</string>
     <string name="volume_btn_gap">Spacing: %1$d%%</string>

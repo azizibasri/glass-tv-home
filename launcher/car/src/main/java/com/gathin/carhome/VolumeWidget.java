@@ -65,13 +65,19 @@ final class VolumeWidget extends LinearLayout {
         int w = MeasureSpec.getSize(wSpec), h = MeasureSpec.getSize(hSpec);
         if (w > 0 && h > 0) {
             int availW = w - getPaddingLeft() - getPaddingRight(), availH = h - getPaddingTop() - getPaddingBottom();
-            // 100 %: as big as fits with a small gap still between them.
-            int btn = Math.max(1, Math.round(Math.min(availH, availW / 3.3f) * sizePct / 100f));
-            int gap = Math.max(0, Math.round((availW - 3 * btn) * gapPct / 200f));
+            // In a row, or one above the other when the box is tall and narrow: whichever gives bigger
+            // buttons. 100 %: as big as fits with a small gap still between them.
+            float row = Math.min(availH, availW / 3.3f), column = Math.min(availW, availH / 3.3f);
+            boolean vertical = column > row * 1.1f;
+            if ((getOrientation() == VERTICAL) != vertical) setOrientation(vertical ? VERTICAL : HORIZONTAL);
+            int btn = Math.max(1, Math.round(Math.max(row, column) * sizePct / 100f));
+            int free = vertical ? availH : availW;
+            int gap = Math.max(0, Math.round((free - 3 * btn) * gapPct / 200f));
             for (int i = 1; i < getChildCount(); i += 2) {
                 LayoutParams lp = (LayoutParams) getChildAt(i).getLayoutParams();
                 lp.weight = 0;
-                lp.width = gap;
+                lp.width = vertical ? 1 : gap;
+                lp.height = vertical ? gap : 1;
             }
             for (int i = 0; i < getChildCount(); i += 2) {
                 LayoutParams lp = (LayoutParams) getChildAt(i).getLayoutParams();
