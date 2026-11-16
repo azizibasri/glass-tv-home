@@ -17,10 +17,11 @@ import java.util.Random;
  * while the dashboard is on screen (about 25 frames a second) and stands still otherwise.
  */
 final class SoundWaveView extends View {
-    private static final int BANDS = 24;
+    /** One peak about every 8 dp, so a longer wave has more of them rather than wider ones. */
+    private int bands = 24;
     /** How often each peak picks a new random height. */
     private static final long RETARGET_MS = 260;
-    private final float[] target = new float[BANDS], shown = new float[BANDS];
+    private float[] target = new float[24], shown = new float[24];
     private final Paint line = new Paint(Paint.ANTI_ALIAS_FLAG), area = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Path path = new Path(), fillPath = new Path();
     private final Random random = new Random();
@@ -34,7 +35,7 @@ final class SoundWaveView extends View {
         line.setStrokeWidth(2.5f * d);
         line.setStrokeJoin(Paint.Join.ROUND);
         line.setStrokeCap(Paint.Cap.ROUND);
-        for (int b = 0; b < BANDS; b++) shown[b] = target[b] = 0.2f;
+        for (int b = 0; b < bands; b++) shown[b] = target[b] = 0.2f;
     }
 
     void start() {
@@ -50,8 +51,8 @@ final class SoundWaveView extends View {
     /** New random heights: taller in the middle-left like music, with a little smoothing between bands. */
     private void retarget() {
         float prev = 0.3f;
-        for (int b = 0; b < BANDS; b++) {
-            float x = b / (float) (BANDS - 1);
+        for (int b = 0; b < bands; b++) {
+            float x = b / (float) (bands - 1);
             float shape = 0.55f + 0.45f * (float) Math.sin(Math.PI * Math.min(1f, x * 1.4f));
             float r = 0.15f + 0.85f * random.nextFloat();
             float v = Math.max(0.06f, Math.min(1f, shape * r));
@@ -62,6 +63,18 @@ final class SoundWaveView extends View {
 
     @Override
     protected void onSizeChanged(int w, int h, int ow, int oh) {
+        int n = Math.max(12, Math.min(240, Math.round(w / (8 * getResources().getDisplayMetrics().density))));
+        if (n != bands) {
+            float[] t = new float[n], sh = new float[n];
+            for (int b = 0; b < n; b++) {
+                int from = Math.min(bands - 1, Math.round(b * (bands - 1) / (float) Math.max(1, n - 1)));
+                t[b] = target[from];
+                sh[b] = shown[from];
+            }
+            bands = n;
+            target = t;
+            shown = sh;
+        }
         line.setShader(new LinearGradient(0, 0, w, 0,
                 new int[]{0xFF64D2FF, 0xFF0A84FF, 0xFFBF5AF2, 0xFFFF375F, 0xFFFF9F0A}, null, Shader.TileMode.CLAMP));
         area.setShader(new LinearGradient(0, 0, w, 0,
@@ -78,15 +91,15 @@ final class SoundWaveView extends View {
             retarget();
         }
         float k = 1f - (float) Math.exp(-dt / 110.0);
-        for (int b = 0; b < BANDS; b++) shown[b] += (target[b] - shown[b]) * k;
+        for (int b = 0; b < bands; b++) shown[b] += (target[b] - shown[b]) * k;
 
         int w = getWidth(), h = getHeight();
         float mid = h / 2f, amp = h * 0.46f;
         // The top line through the peaks (a smooth curve), mirrored below the middle.
         path.reset();
         fillPath.reset();
-        float step = w / (float) (BANDS - 1);
-        for (int b = 0; b < BANDS; b++) {
+        float step = w / (float) (bands - 1);
+        for (int b = 0; b < bands; b++) {
             float x = b * step, y = mid - shown[b] * amp;
             if (b == 0) {
                 path.moveTo(x, y);
@@ -96,9 +109,9 @@ final class SoundWaveView extends View {
             }
         }
         fillPath.addPath(path);
-        for (int b = BANDS - 1; b >= 0; b--) {
+        for (int b = bands - 1; b >= 0; b--) {
             float x = b * step, y = mid + shown[b] * amp;
-            if (b == BANDS - 1) {
+            if (b == bands - 1) {
                 fillPath.lineTo(x, y);
             } else {
                 float px = (b + 1) * step, py = mid + shown[b + 1] * amp;

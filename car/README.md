@@ -39,6 +39,8 @@ Swipe left for the apps.
   returns them to their first places.
 - **Wave**: a colourful wave with a soft mirrored fill whose peaks rise and fall at random, like an
   equaliser. It is decoration only and listens to no sound. It moves only while the dashboard is on screen.
+  Make its box longer and the wave gets longer with it, with more peaks (it can be as wide as the
+  dashboard), rather than just being scaled.
 - **Driving time**: its own widget, the time the car has been driving as hours, minutes and seconds
   (`1:23:45`), from the same speed as the trip (CAN, OBD-II or GPS). Short stops such as traffic lights
   count, up to 3 minutes each; a longer stop is parking and the clock waits until the car moves again.

@@ -28,6 +28,8 @@ final class CardFrame extends FrameLayout implements ResizeGesture.Target {
     private final RectF box = new RectF();
     private float cardW = 1f, cardH = 1f, posX, posY;
     private Listener listener;
+    /** Stretch: the content fills the card at its real size (and the card can grow up to the whole dashboard). */
+    private boolean stretch;
 
     CardFrame(Context ctx, View content, float fullWidth, float fullHeight, float defaultX, float defaultY,
               float radius) {
@@ -51,14 +53,31 @@ final class CardFrame extends FrameLayout implements ResizeGesture.Target {
         return card;
     }
 
+    /**
+     * For content that should get longer or taller with its box (the wave): laid out at the card's own
+     * size instead of scaled evenly, and the card can be made as wide or tall as the dashboard.
+     */
+    void setStretch(boolean on) {
+        stretch = on;
+        requestLayout();
+    }
+
+    private float clampW(float f) {
+        return stretch ? Math.max(ResizeGesture.MIN, Math.min(1f / Math.max(0.01f, fullW), f)) : ResizeGesture.clamp(f);
+    }
+
+    private float clampH(float f) {
+        return stretch ? Math.max(ResizeGesture.MIN, Math.min(1f / Math.max(0.01f, fullH), f)) : ResizeGesture.clamp(f);
+    }
+
     void setListener(Listener l) {
         listener = l;
     }
 
     /** Size (fractions of the full panel) and place (top-left corner, fractions of the dashboard). */
     void setCard(float w, float h, float x, float y) {
-        cardW = ResizeGesture.clamp(w);
-        cardH = ResizeGesture.clamp(h);
+        cardW = clampW(w);
+        cardH = clampH(h);
         posX = x;
         posY = y;
         requestLayout();
@@ -84,6 +103,11 @@ final class CardFrame extends FrameLayout implements ResizeGesture.Target {
         int full = Math.round(w * fullW), fullHt = Math.round(h * fullH);
         card.measure(MeasureSpec.makeMeasureSpec(Math.min(w, Math.round(full * cardW)), MeasureSpec.EXACTLY),
                 MeasureSpec.makeMeasureSpec(Math.min(h, Math.round(fullHt * cardH)), MeasureSpec.EXACTLY));
+        if (stretch) {
+            content.measure(MeasureSpec.makeMeasureSpec(card.getMeasuredWidth(), MeasureSpec.EXACTLY),
+                    MeasureSpec.makeMeasureSpec(card.getMeasuredHeight(), MeasureSpec.EXACTLY));
+            return;
+        }
         // The content keeps the full-size layout; it is scaled to the card when laid out.
         content.measure(MeasureSpec.makeMeasureSpec(full, MeasureSpec.EXACTLY),
                 MeasureSpec.makeMeasureSpec(fullHt, MeasureSpec.EXACTLY));
@@ -99,6 +123,14 @@ final class CardFrame extends FrameLayout implements ResizeGesture.Target {
         int y = Math.max(0, Math.min(h - bh, Math.round(posY * h)));
         box.set(x, y, x + bw, y + bh);
         card.layout(x, y, x + bw, y + bh);
+        if (stretch) {
+            content.setScaleX(1f);
+            content.setScaleY(1f);
+            content.setTranslationX(0);
+            content.setTranslationY(0);
+            content.layout(x, y, x + bw, y + bh);
+            return;
+        }
         content.layout(0, 0, full, fullHt);
         // Scale evenly (never stretched) to fit the card, centred in it.
         float s = Math.min(bw / (float) Math.max(1, full), bh / (float) Math.max(1, fullHt));

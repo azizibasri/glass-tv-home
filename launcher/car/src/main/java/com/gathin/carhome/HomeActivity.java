@@ -557,7 +557,7 @@ public final class HomeActivity extends Activity {
         float rightX = leftFull + gx;
         float clockH = 0.40f, musicY = clockH + gy, musicH = 0.30f, rowY = musicY + musicH + gy, rowH = 1f - rowY;
         // The bottom row: wave, driving time and volume side by side.
-        float waveW = leftFull * 0.24f, driveX = waveW + gx, driveW = leftFull * 0.36f - gx;
+        float waveW = leftFull * 0.34f, driveX = waveW + gx, driveW = leftFull * 0.33f - gx;
         float volX = driveX + driveW + gx, volW = leftFull - volX;
         int leftW = Math.round(areaW * leftFull);
         boolean compact = leftW < dp(340);
@@ -675,8 +675,10 @@ public final class HomeActivity extends Activity {
      * Puts a widget on the dashboard on a card the person can move and resize (hold, then drag it or its
      * blue corner). Its first size and place are fractions of the dashboard; what it is saved under w_id.
      */
-    private void addCard(FrameLayout board, String id, View content, float fullW, float fullH, float x, float y) {
+    private CardFrame addCard(FrameLayout board, String id, View content, float fullW, float fullH, float x, float y) {
         CardFrame f = new CardFrame(this, content, fullW, fullH, x, y, dp(26));
+        // The wave gets longer (more peaks) with its box rather than being scaled.
+        if (id.equals("wave")) f.setStretch(true);
         if (widgetGlass(id)) f.card().setBackground(glassFor(f.card(), dp(26)));
         String key = "w_" + id;
         f.setCard(prefs.getFloat(key + "_w", 1f), prefs.getFloat(key + "_h", 1f),
@@ -698,6 +700,7 @@ public final class HomeActivity extends Activity {
         if (!widgetShown(id)) f.setVisibility(View.GONE);
         cards.add(f);
         board.addView(f, new FrameLayout.LayoutParams(-1, -1));
+        return f;
     }
 
     /** Widgets: each one shown or hidden, with or without its glass box; and the first layout back. */

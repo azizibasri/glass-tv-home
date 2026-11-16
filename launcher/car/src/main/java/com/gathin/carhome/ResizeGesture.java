@@ -91,7 +91,8 @@ final class ResizeGesture {
                 float dx = lastX - startX, dy = lastY - startY;
                 if (Math.hypot(dx, dy) > slop) moved = true;
                 if (resizing) {
-                    target.setBox(clamp(startW + dx / Math.max(1f, sizeW)), clamp(startH + dy / Math.max(1f, sizeH)));
+                    // The target keeps it within its own limits.
+                    target.setBox(startW + dx / Math.max(1f, sizeW), startH + dy / Math.max(1f, sizeH));
                 } else {
                     target.setPos(startPX + dx / Math.max(1f, spaceW), startPY + dy / Math.max(1f, spaceH));
                 }
