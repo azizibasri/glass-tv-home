@@ -44,6 +44,7 @@ Swipe left for the apps.
 - **Driving time**: its own widget, the time the car has been driving as hours, minutes and seconds
   (`1:23:45`), from the same speed as the trip (CAN, OBD-II or GPS). Short stops such as traffic lights
   count, up to 3 minutes each; a longer stop is parking and the clock waits until the car moves again.
+  Reset sits at its side, so the widget can be made long and low: the time grows to fill its box.
   **Reset** asks for a second tap ("Tap again") so it is not reset by accident. Kept across restarts.
 - **Volume**: three round buttons, evenly spaced: **−**, **mute** (a speaker; it shows a cross while
   muted) and **+**. Tap − or + for one step, hold to keep going; a step also ends mute. Each press is the

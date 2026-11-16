@@ -557,7 +557,7 @@ public final class HomeActivity extends Activity {
         float rightX = leftFull + gx;
         float clockH = 0.40f, musicY = clockH + gy, musicH = 0.30f, rowY = musicY + musicH + gy, rowH = 1f - rowY;
         // The bottom row: wave, driving time and volume side by side.
-        float waveW = leftFull * 0.34f, driveX = waveW + gx, driveW = leftFull * 0.33f - gx;
+        float waveW = leftFull * 0.24f, driveX = waveW + gx, driveW = leftFull * 0.50f - gx;
         float volX = driveX + driveW + gx, volW = leftFull - volX;
         int leftW = Math.round(areaW * leftFull);
         boolean compact = leftW < dp(340);
@@ -678,7 +678,7 @@ public final class HomeActivity extends Activity {
     private CardFrame addCard(FrameLayout board, String id, View content, float fullW, float fullH, float x, float y) {
         CardFrame f = new CardFrame(this, content, fullW, fullH, x, y, dp(26));
         // The wave gets longer (more peaks) with its box rather than being scaled.
-        if (id.equals("wave")) f.setStretch(true);
+        if (id.equals("wave") || id.equals("drive")) f.setStretch(true);
         if (widgetGlass(id)) f.card().setBackground(glassFor(f.card(), dp(26)));
         String key = "w_" + id;
         f.setCard(prefs.getFloat(key + "_w", 1f), prefs.getFloat(key + "_h", 1f),
@@ -792,35 +792,51 @@ public final class HomeActivity extends Activity {
         panelDialog(R.string.widgets, body).show();
     }
 
-    /** Driving time: DRIVING TIME, the time (h:mm:ss), what it counts, and Reset. Its own widget. */
+    /**
+     * Driving time: DRIVING TIME over the time (h:mm:ss) and what it counts, with Reset at the side. Its own
+     * widget, laid out at its box's real size: a longer box gives a longer widget, and the time grows to fill
+     * the box's height.
+     */
     private View driveTimeWidget() {
         LinearLayout box = new LinearLayout(this);
-        box.setOrientation(LinearLayout.VERTICAL);
-        box.setGravity(Gravity.CENTER);
-        box.setPadding(dp(10), dp(8), dp(10), dp(8));
+        box.setOrientation(LinearLayout.HORIZONTAL);
+        box.setGravity(Gravity.CENTER_VERTICAL);
+        box.setPadding(dp(14), dp(8), dp(10), dp(8));
+        LinearLayout texts = new LinearLayout(this);
+        texts.setOrientation(LinearLayout.VERTICAL);
+        texts.setGravity(Gravity.CENTER_VERTICAL);
         TextView label = text(11, true);
         label.setText(R.string.drive_time);
         label.setLetterSpacing(0.12f);
         label.setAlpha(0.65f);
+        label.setGravity(Gravity.START);
         label.setShadowLayer(0, 0, 0, 0);
-        box.addView(label, new LinearLayout.LayoutParams(-1, -2));
+        fitOneLine(label);
+        label.setAutoSizeTextTypeUniformWithConfiguration(7, 13, 1, TypedValue.COMPLEX_UNIT_SP);
+        texts.addView(label, new LinearLayout.LayoutParams(-1, dp(16)));
         driveValue = text(24, true);
         driveValue.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
         driveValue.setFontFeatureSettings("tnum");
+        driveValue.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
         driveValue.setShadowLayer(0, 0, 0, 0);
-        driveValue.setAutoSizeTextTypeUniformWithConfiguration(10, 24, 1, TypedValue.COMPLEX_UNIT_SP);
-        LinearLayout.LayoutParams vlp = new LinearLayout.LayoutParams(-1, dp(32));
-        vlp.topMargin = dp(2);
-        box.addView(driveValue, vlp);
+        driveValue.setIncludeFontPadding(false);
+        // As big as the box allows, in both directions.
+        fitOneLine(driveValue);
+        driveValue.setAutoSizeTextTypeUniformWithConfiguration(10, 72, 1, TypedValue.COMPLEX_UNIT_SP);
+        texts.addView(driveValue, new LinearLayout.LayoutParams(-1, 0, 1f));
         TextView note = text(10, false);
         note.setText(R.string.drive_time_note);
         note.setAlpha(0.6f);
+        note.setGravity(Gravity.START);
         note.setShadowLayer(0, 0, 0, 0);
-        box.addView(note, new LinearLayout.LayoutParams(-1, -2));
+        fitOneLine(note);
+        note.setAutoSizeTextTypeUniformWithConfiguration(6, 11, 1, TypedValue.COMPLEX_UNIT_SP);
+        texts.addView(note, new LinearLayout.LayoutParams(-1, dp(15)));
+        box.addView(texts, new LinearLayout.LayoutParams(0, -1, 1f));
         driveReset = text(13, true);
         driveReset.setText(R.string.trip_reset);
         driveReset.setShadowLayer(0, 0, 0, 0);
-        driveReset.setPadding(dp(16), dp(6), dp(16), dp(6));
+        driveReset.setPadding(dp(14), dp(8), dp(14), dp(8));
         android.graphics.drawable.GradientDrawable pill = new android.graphics.drawable.GradientDrawable();
         pill.setColor(0x24FFFFFF);
         pill.setCornerRadius(dp(18));
@@ -829,11 +845,19 @@ public final class HomeActivity extends Activity {
         driveReset.setOnClickListener(v -> resetDriveTime());
         squish(driveReset);
         LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(-2, -2);
-        rlp.topMargin = dp(8);
+        rlp.leftMargin = dp(8);
         box.addView(driveReset, rlp);
         driveResetArmed = false;
         showDriveTime();
         return box;
+    }
+
+    /** Auto-size needs a plain one-line text (not "single line", which scrolls and cuts with "…"). */
+    private static void fitOneLine(TextView t) {
+        t.setSingleLine(false);
+        t.setMaxLines(1);
+        t.setEllipsize(null);
+        t.setHorizontallyScrolling(false);
     }
 
     private final Runnable disarmDrive = () -> {
