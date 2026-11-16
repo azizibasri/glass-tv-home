@@ -63,6 +63,18 @@ final class BigSpeedView extends View {
         mark.setStrokeWidth(Math.max(1.5f, 1.5f * d));
     }
 
+    /** Told the row label and value text sizes (px) whenever they change, so other rows can match them. */
+    interface TextSizes {
+        void onTextSizes(float labelPx, float valuePx);
+    }
+
+    private TextSizes textSizes;
+
+    void setTextSizesListener(TextSizes l) {
+        textSizes = l;
+        if (l != null && getHeight() > 0) l.onTextSizes(label.getTextSize(), value.getTextSize());
+    }
+
     void setTypeface(Typeface t) {
         digits.setTypeface(t);
         invalidate();
@@ -119,6 +131,10 @@ final class BigSpeedView extends View {
         label.setTextSize(Math.max(10 * d, rowH * 0.17f));
         value.setTextSize(Math.max(15 * d, rowH * 0.30f));
         unit.setTextSize(Math.max(11 * d, h * 0.045f));
+        if (textSizes != null) {
+            float lp = label.getTextSize(), vp = value.getTextSize();
+            post(() -> textSizes.onTextSizes(lp, vp));
+        }
         float bh = Math.max(6 * d, rowH * 0.13f), pad = 6 * d;
         float valueCap = capHeight(value, 1f), unitCap = capHeight(unit, 1f);
         float rowVis = valueCap + bh * 0.9f + bh;          // value top to bar bottom

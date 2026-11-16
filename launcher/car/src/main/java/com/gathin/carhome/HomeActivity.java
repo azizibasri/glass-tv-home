@@ -109,7 +109,7 @@ public final class HomeActivity extends Activity {
     private InfoTile coolantTile, rangeTile;
     private static final int REQUEST_WALLPAPER = 11;
     private final TripMeter trip = new TripMeter();
-    private TextView tripValue, tripNote, tripReset;
+    private TextView tripLabel, tripValue, tripNote, tripReset;
     private boolean tripResetArmed;
     private long tripSavedAt;
     /** "color" or "glass": the person's choice in the settings menu, else config.json's. */
@@ -618,9 +618,18 @@ public final class HomeActivity extends Activity {
         bigSpeed.setGap(dp(12));   // the speed spaces itself evenly; the same 12 dp around the rows below
         bigSpeed.setDigitStyle(speedSize / 100f, speedHeight / 100f);
         right.addView(bigSpeed, speedLp);
-        LinearLayout.LayoutParams tripLp = new LinearLayout.LayoutParams(-1, dp(52));
+        LinearLayout.LayoutParams tripLp = new LinearLayout.LayoutParams(-1, -2);
         tripLp.topMargin = 0;   // the speed view ends with the same even space
-        right.addView(tripRow(), tripLp);
+        View tripRowView = tripRow();
+        tripRowView.setMinimumHeight(dp(52));
+        right.addView(tripRowView, tripLp);
+        // TRIP and its distance in the same text sizes as TURBO BOOST and TORQUE above them.
+        bigSpeed.setTextSizesListener((labelPx, valuePx) -> {
+            if (tripLabel == null || tripValue == null) return;
+            if (Math.abs(tripLabel.getTextSize() - labelPx) < 0.5f && Math.abs(tripValue.getTextSize() - valuePx) < 0.5f) return;
+            tripLabel.setTextSize(TypedValue.COMPLEX_UNIT_PX, labelPx);
+            tripValue.setTextSize(TypedValue.COMPLEX_UNIT_PX, valuePx);
+        });
         LinearLayout tiles = new LinearLayout(this);
         tiles.setOrientation(LinearLayout.HORIZONTAL);
         coolantTile = new InfoTile(this, R.drawable.ic_coolant, getString(R.string.coolant));
@@ -783,11 +792,14 @@ public final class HomeActivity extends Activity {
         label.setText(R.string.trip);
         label.setLetterSpacing(0.12f);
         label.setAlpha(0.65f);
+        label.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL));
+        tripLabel = label;
         row.addView(label, new LinearLayout.LayoutParams(-2, -2));
         LinearLayout values = new LinearLayout(this);
         values.setOrientation(LinearLayout.VERTICAL);
         values.setPadding(dp(12), 0, dp(8), 0);
         tripValue = text(20, true);
+        tripValue.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD));
         tripValue.setGravity(Gravity.START);
         tripValue.setFontFeatureSettings("tnum");
         tripNote = text(10, false);
