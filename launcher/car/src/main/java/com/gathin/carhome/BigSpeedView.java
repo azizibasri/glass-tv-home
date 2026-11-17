@@ -75,6 +75,22 @@ final class BigSpeedView extends View {
         if (l != null && getHeight() > 0) l.onTextSizes(label.getTextSize(), value.getTextSize());
     }
 
+    /** GPS-only cars: one row, DRIVING TIME and the time, in place of the turbo boost and torque rows. */
+    private boolean driveOnly;
+    private String driveText = "0:00:00";
+
+    void setDriveTimeOnly(boolean on) {
+        driveOnly = on;
+        requestLayout();
+        invalidate();
+    }
+
+    void setDriveTime(String text) {
+        if (text.equals(driveText)) return;
+        driveText = text;
+        invalidate();
+    }
+
     void setTypeface(Typeface t) {
         digits.setTypeface(t);
         invalidate();
@@ -137,10 +153,12 @@ final class BigSpeedView extends View {
         }
         float bh = Math.max(6 * d, rowH * 0.13f), pad = 6 * d;
         float valueCap = capHeight(value, 1f), unitCap = capHeight(unit, 1f);
-        float rowVis = valueCap + bh * 0.9f + bh;          // value top to bar bottom
+        // Rows: turbo boost and torque, each with its bar; or only the driving time, with no bar.
+        int rows = driveOnly ? 1 : 2;
+        float rowVis = driveOnly ? valueCap : valueCap + bh * 0.9f + bh;   // value top to bar bottom
         float unitGap = unit.getTextSize() * 0.8f;
         float g = Math.max(gap, 4 * d);
-        float room = h - 4 * g - 2 * rowVis - unitGap - unitCap;
+        float room = h - (rows + 2) * g - rows * rowVis - unitGap - unitCap;
         float digitRatio = capHeight(digits, 100f) / 100f;
         // As tall as the room allows, as long as a three-digit speed still fits the width.
         digits.setTextSize(100f);
@@ -151,8 +169,8 @@ final class BigSpeedView extends View {
         float digitCap = Math.min(Math.max(room, 4 * d), fit * digitRatio * sizeScale * stretch);
         digits.setTextSize(Math.max(4 * d, digitCap / (digitRatio * stretch)));
         // Room to spare (a wide speed hits its width limit first): share it evenly between the spaces.
-        float spare = h - (digitCap + unitGap + unitCap + 2 * rowVis);
-        g = Math.max(g, spare / 4f);
+        float spare = h - (digitCap + unitGap + unitCap + rows * rowVis);
+        g = Math.max(g, spare / (rows + 2f));
         digitsBase = g + digitCap;
         unitBase = digitsBase + unitGap + unitCap;
         boostBase = unitBase + g + valueCap;
@@ -200,6 +218,15 @@ final class BigSpeedView extends View {
             c.drawText(text, w / 2f, digitsBase, digits);
         }
         c.drawText(unitText.toUpperCase(java.util.Locale.ROOT) + "  ·  " + source, w / 2f, unitBase, unit);
+
+        if (driveOnly) {
+            // Driving time: the same label and value as the boost row, without a bar.
+            c.drawText(getContext().getString(R.string.drive_time), bar.left, boostBase, label);
+            c.drawText(driveText, bar.right, boostBase, value);
+            if (Math.abs(shownSpeed - (Float.isNaN(speed) ? 0f : speed)) > 0.05f) postInvalidateOnAnimation();
+            else lastFrame = 0;
+            return;
+        }
 
         // Turbo boost.
         float rowY = boostBase;

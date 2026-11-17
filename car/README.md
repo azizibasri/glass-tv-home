@@ -133,6 +133,17 @@ When one carries the value, add it to `config.json`:
 `scale` converts the raw number (e.g. `0.1` when the box sends tenths). A CAN speed older than 3 seconds
 falls back to GPS; boost and torque older than 3 seconds, and coolant and range older than 30, show `--`.
 
+## Cars without OBD-II or CAN: the GPS version
+
+[`release/glass-car-gps.apk`](../release/glass-car-gps.apk) is the same Glass Car for a car with no OBD-II
+adapter and no CAN data: the speed comes from the unit's GPS, the speed panel shows **DRIVING TIME** where
+turbo boost is, and torque, coolant and fuel range are left out. The trip and every widget stay the same;
+the Driving time widget is the one with Reset. ⚙ has no *Car data source* there. Allow location when asked
+(precise location on Android 12 and newer: the speed needs it).
+
+Build it with `./gradlew -PgpsOnly :car:assembleRelease`, or turn any build into it with `"gps_only": true`
+in `config.json`.
+
 ## OBD-II Bluetooth adapter (Carista and others)
 
 Torque over OBD-II: the actual-torque values (PIDs 62/63) when the car gives them; many cars before about

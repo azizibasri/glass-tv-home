@@ -14,6 +14,9 @@ android {
         targetSdk 34
         versionCode 1
         versionName '1.0.0'
+        // -PgpsOnly builds the version for cars without OBD-II or CAN: speed from GPS, driving time in
+        // place of turbo boost, no torque, coolant or fuel range (also "gps_only" in config.json).
+        resValue 'bool', 'gps_only', project.hasProperty('gpsOnly') ? 'true' : 'false'
     }
 
     buildTypes {

@@ -22,6 +22,7 @@ Pelancar skrin utama (*home screen launcher*) ultra-ringan dengan rekaan *froste
 Skrin utama sentuh untuk pemain kereta Android: jam, muzik, meter laju digital besar dengan tekanan turbo, status pintu, trip, suhu penyejuk dan jarak minyak, pembersih RAM dan cache. Butiran: [`car/README.md`](../car/README.md).
 
 * **Fail APK**: [`glass-car.apk`](glass-car.apk)
+* **Kereta tanpa OBD-II / cars without OBD-II or CAN**: [`glass-car-gps.apk`](glass-car-gps.apk): laju dari GPS, masa memandu menggantikan tekanan turbo; tiada tork, suhu penyejuk atau jarak minyak / speed from GPS, driving time in place of turbo boost; no torque, coolant or fuel range
 * **Versi Semasa**: `v1.0.0` (binaan pertama; belum diuji pada unit sebenar / first build, not yet tested on a real unit)
 * **Pasang / Install**: `CAR_HOST=<ip> car/install.sh` (guna fail ini jika tiada binaan baharu / uses this file when there is no fresh build)
 * **Saiz Fail**: ~270 KB

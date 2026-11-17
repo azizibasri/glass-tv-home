@@ -50,7 +50,8 @@ public final class CarDataService extends Service {
             if (!data.isStarted()) {
                 // The source chosen in the settings panel wins over config.json, as on Home.
                 android.content.SharedPreferences p = getSharedPreferences("car", MODE_PRIVATE);
-                data.setSource(p.getString("data_source", cfg.dataSource), p.getString("obd_address", cfg.obdAddress));
+                data.setSource(cfg.gpsOnly ? "can" : p.getString("data_source", cfg.dataSource),
+                        p.getString("obd_address", cfg.obdAddress));
                 data.start();
             }
             main.post(tick);

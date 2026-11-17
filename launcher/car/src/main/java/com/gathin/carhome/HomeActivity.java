@@ -234,7 +234,8 @@ public final class HomeActivity extends Activity {
         clockGlow = prefs.getBoolean("clock_glow_v2", cfg.clockGlow);
         clockRainbow = prefs.getBoolean("clock_rainbow_v2", cfg.clockRainbow);
         carName = prefs.getString("car_name", cfg.carName);
-        dataSource = prefs.getString("data_source", cfg.dataSource);
+        // A GPS-only car has no OBD-II adapter to choose: the CAN/GPS source, which uses GPS for the speed.
+        dataSource = cfg.gpsOnly ? "can" : prefs.getString("data_source", cfg.dataSource);
         obdAddress = prefs.getString("obd_address", cfg.obdAddress);
         carData.setSource(dataSource, obdAddress);
         trip.baseOdometer = prefs.getFloat("trip_base", Float.NaN);
@@ -625,6 +626,7 @@ public final class HomeActivity extends Activity {
         speedLp.leftMargin = speedLp.rightMargin = dp(6);
         bigSpeed.setGap(dp(12));   // the speed spaces itself evenly; the same 12 dp around the rows below
         bigSpeed.setDigitStyle(speedSize / 100f, speedHeight / 100f);
+        bigSpeed.setDriveTimeOnly(cfg.gpsOnly);
         right.addView(bigSpeed, speedLp);
         LinearLayout.LayoutParams tripLp = new LinearLayout.LayoutParams(-1, -2);
         tripLp.topMargin = 0;   // the speed view ends with the same even space
@@ -638,6 +640,17 @@ public final class HomeActivity extends Activity {
             tripLabel.setTextSize(TypedValue.COMPLEX_UNIT_PX, labelPx);
             tripValue.setTextSize(TypedValue.COMPLEX_UNIT_PX, valuePx);
         });
+        if (!cfg.gpsOnly) addTiles(right, areaH);
+        addCard(d, "speed", right, 1f - rightX, 1f, rightX, 0f);
+
+        updateClock();
+        bigClock.setRunning(resumed);
+        startDashWidgets(pager == null || pager.page() == 0);
+        return d;
+    }
+
+    /** Coolant and fuel range under the trip (not on GPS-only cars). */
+    private void addTiles(LinearLayout right, int areaH) {
         LinearLayout tiles = new LinearLayout(this);
         tiles.setOrientation(LinearLayout.HORIZONTAL);
         coolantTile = new InfoTile(this, R.drawable.ic_coolant, getString(R.string.coolant));
@@ -650,12 +663,6 @@ public final class HomeActivity extends Activity {
                 Math.max(dp(64), Math.min(dp(84), Math.round(areaH * 0.18f))));
         tilesLp.topMargin = dp(12);
         right.addView(tiles, tilesLp);
-        addCard(d, "speed", right, 1f - rightX, 1f, rightX, 0f);
-
-        updateClock();
-        bigClock.setRunning(resumed);
-        startDashWidgets(pager == null || pager.page() == 0);
-        return d;
     }
 
     /** The dashboard's widgets: id and name, in the Widgets panel's order. */
@@ -887,7 +894,9 @@ public final class HomeActivity extends Activity {
     }
 
     private void showDriveTime() {
-        if (driveValue != null) driveValue.setText(DriveTimer.format(driveTimer.drivenMs));
+        String t = DriveTimer.format(driveTimer.drivenMs);
+        if (driveValue != null) driveValue.setText(t);
+        if (bigSpeed != null) bigSpeed.setDriveTime(t);
     }
 
     /** The trip row under the dials: TRIP, the distance, where it comes from, and Reset. */
@@ -978,15 +987,17 @@ public final class HomeActivity extends Activity {
         LinearLayout body = new LinearLayout(this);
         body.setOrientation(LinearLayout.VERTICAL);
         android.app.Dialog[] holder = new android.app.Dialog[1];
-        Object[][] items = {
+        Object[][] all = {
                 {R.string.wallpaper_pick, (Runnable) () -> pickPicture(REQUEST_WALLPAPER)},
                 {R.string.wallpaper_reset, (Runnable) this::resetWallpaper},
                 {R.string.icons_style, (Runnable) this::iconStyleDialog},
                 {R.string.clock_style, (Runnable) this::clockDialog},
                 {R.string.speed_style, (Runnable) this::speedDialog},
                 {R.string.widgets, (Runnable) this::widgetsDialog},
-                {R.string.data_source, (Runnable) this::dataSourceDialog},
+                cfg.gpsOnly ? null : new Object[]{R.string.data_source, (Runnable) this::dataSourceDialog},
         };
+        // GPS-only cars have no car data source to choose.
+        Object[][] items = java.util.Arrays.stream(all).filter(java.util.Objects::nonNull).toArray(Object[][]::new);
         LinearLayout row = null;
         for (int i = 0; i < items.length; i++) {
             if (i % 2 == 0) {
@@ -1795,6 +1806,7 @@ public final class HomeActivity extends Activity {
         bigSpeed.set(r.speed, src == SpeedMath.CAN ? r.carLabel : src == SpeedMath.GPS ? "GPS"
                 : carData.usesObd() ? missing : carData.hasGpsPermission() ? "NO SIGNAL" : "NO GPS PERMISSION", r.boost);
         bigSpeed.setTorque(r.torque, r.torqueEstimated);
+        if (coolantTile == null || rangeTile == null) return;
         if (Float.isNaN(r.coolant)) {
             coolantTile.set("-- °C", Float.NaN, 0x80FFFFFF, getString(R.string.no_data));
         } else {

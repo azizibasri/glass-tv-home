@@ -65,6 +65,11 @@ final class CarConfig {
     boolean carDataBackground = true;
     /** Where car data comes from: "can" (CAN bus, GPS for speed when it has none) or "obd" (Bluetooth OBD-II). */
     String dataSource = "can";
+    /**
+     * A car without OBD-II or CAN: speed from GPS only, driving time in place of turbo boost, and no torque,
+     * coolant or fuel range. Set by the GPS-only build, or "gps_only" in config.json.
+     */
+    boolean gpsOnly;
     /** The paired OBD-II adapter's Bluetooth address, when dataSource is "obd". */
     String obdAddress = "";
     /** For fuel range over OBD-II, which only gives the tank level: tank size and usual use. Jetta 2017: 55 L. */
@@ -95,6 +100,10 @@ final class CarConfig {
 
     static CarConfig load(Context ctx) {
         CarConfig c = new CarConfig();
+        try {
+            c.gpsOnly = ctx.getResources().getBoolean(R.bool.gps_only);
+        } catch (RuntimeException ignored) {
+        }
         File d = dir(ctx);
         File f = d == null ? null : new File(d, "config.json");
         if (f == null || !f.isFile()) return c;
@@ -132,6 +141,7 @@ final class CarConfig {
             c.canRange = canKey(o.optJSONObject("can_range"));
             c.canOdometer = canKey(o.optJSONObject("can_odometer"));
             if (o.opt("car_data_background") instanceof Boolean) c.carDataBackground = o.getBoolean("car_data_background");
+            if (o.opt("gps_only") instanceof Boolean) c.gpsOnly = o.getBoolean("gps_only");
             String src = o.optString("data_source", c.dataSource);
             if (src.equals("can") || src.equals("obd")) c.dataSource = src;
             c.obdAddress = o.optString("obd_address", c.obdAddress).trim();
