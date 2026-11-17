@@ -46,6 +46,7 @@ final class Glass extends Drawable {
     private Wallpaper cachedFor;
     private int cachedX = Integer.MIN_VALUE, cachedY = Integer.MIN_VALUE;
     private boolean rebuildPosted;
+    private long builtAt;
     private final Runnable rebuild = () -> {
         rebuildPosted = false;
         cachedFor = null;   // forces a fresh cut at the new place
@@ -103,6 +104,16 @@ final class Glass extends Drawable {
         root.getLocationOnScreen(rootAt);
         int x = at[0] - rootAt[0] + b.left, y = at[1] - rootAt[1] + b.top;
         boolean sizeOk = cache != null && cache.getWidth() == b.width() && cache.getHeight() == b.height();
+        long now = android.os.SystemClock.uptimeMillis();
+        if (cache != null && cachedFor == wp && !sizeOk && now - builtAt < 150) {
+            // Being resized (a new size every frame): stretch the last cut for now, cut again when it stops.
+            dst.set(b);
+            c.drawBitmap(cache, null, dst, cachePaint);
+            owner.removeCallbacks(rebuild);
+            rebuildPosted = true;
+            owner.postDelayed(rebuild, 160);
+            return;
+        }
         if (!sizeOk || cachedFor != wp) {
             build(b, wp, root, x, y);
         } else if (x != cachedX || y != cachedY) {
@@ -119,8 +130,10 @@ final class Glass extends Drawable {
     }
 
     private void build(Rect b, Wallpaper wp, View root, int x, int y) {
+        builtAt = android.os.SystemClock.uptimeMillis();
         if (cache == null || cache.getWidth() != b.width() || cache.getHeight() != b.height()) {
-            if (cache != null) cache.recycle();
+            // The old bitmap is left to the garbage collector, never recycled here: the screen may still
+            // be drawing it on the render thread, and a recycled bitmap there crashes the app.
             cache = Bitmap.createBitmap(b.width(), b.height(), Bitmap.Config.ARGB_8888);
         } else {
             cache.eraseColor(0);

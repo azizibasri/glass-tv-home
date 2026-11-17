@@ -75,19 +75,12 @@ final class BigSpeedView extends View {
         if (l != null && getHeight() > 0) l.onTextSizes(label.getTextSize(), value.getTextSize());
     }
 
-    /** GPS-only cars: one row, DRIVING TIME and the time, in place of the turbo boost and torque rows. */
+    /** GPS-only cars: only the speed (driving time and trip are rows of their own under it). */
     private boolean driveOnly;
-    private String driveText = "0:00:00";
 
     void setDriveTimeOnly(boolean on) {
         driveOnly = on;
         requestLayout();
-        invalidate();
-    }
-
-    void setDriveTime(String text) {
-        if (text.equals(driveText)) return;
-        driveText = text;
         invalidate();
     }
 
@@ -153,8 +146,8 @@ final class BigSpeedView extends View {
         }
         float bh = Math.max(6 * d, rowH * 0.13f), pad = 6 * d;
         float valueCap = capHeight(value, 1f), unitCap = capHeight(unit, 1f);
-        // Rows: turbo boost and torque, each with its bar; or only the driving time, with no bar.
-        int rows = driveOnly ? 1 : 2;
+        // Rows: turbo boost and torque, each with its bar; or none (the speed alone, centred).
+        int rows = driveOnly ? 0 : 2;
         float rowVis = driveOnly ? valueCap : valueCap + bh * 0.9f + bh;   // value top to bar bottom
         float unitGap = unit.getTextSize() * 0.8f;
         float g = Math.max(gap, 4 * d);
@@ -220,9 +213,6 @@ final class BigSpeedView extends View {
         c.drawText(unitText.toUpperCase(java.util.Locale.ROOT) + "  ·  " + source, w / 2f, unitBase, unit);
 
         if (driveOnly) {
-            // Driving time: the same label and value as the boost row, without a bar.
-            c.drawText(getContext().getString(R.string.drive_time), bar.left, boostBase, label);
-            c.drawText(driveText, bar.right, boostBase, value);
             if (Math.abs(shownSpeed - (Float.isNaN(speed) ? 0f : speed)) > 0.05f) postInvalidateOnAnimation();
             else lastFrame = 0;
             return;

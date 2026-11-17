@@ -136,9 +136,9 @@ falls back to GPS; boost and torque older than 3 seconds, and coolant and range 
 ## Cars without OBD-II or CAN: the GPS version
 
 [`release/glass-car-gps.apk`](../release/glass-car-gps.apk) is the same Glass Car for a car with no OBD-II
-adapter and no CAN data: the speed comes from the unit's GPS, the speed panel shows **DRIVING TIME** where
-turbo boost is, and torque, coolant and fuel range are left out. The trip and every widget stay the same;
-the Driving time widget is the one with Reset. ⚙ has no *Car data source* there. Allow location when asked
+adapter and no CAN data: the speed comes from the unit's GPS, and under it the speed panel has two matching
+dark rows, **DRIVING TIME** and **TRIP**, each with its own Reset, evenly spaced; torque, coolant and fuel
+range are left out. Every widget stays the same. ⚙ has no *Car data source* there. Allow location when asked
 (precise location on Android 12 and newer: the speed needs it).
 
 Build it with `./gradlew -PgpsOnly :car:assembleRelease`, or turn any build into it with `"gps_only": true`

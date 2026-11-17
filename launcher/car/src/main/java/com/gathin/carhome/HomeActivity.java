@@ -110,7 +110,8 @@ public final class HomeActivity extends Activity {
     private static final int REQUEST_WALLPAPER = 11;
     private final TripMeter trip = new TripMeter();
     private final DriveTimer driveTimer = new DriveTimer();
-    private TextView driveValue, driveReset;
+    /** The driving time's value and Reset button in the widget and (GPS-only cars) the speedometer row. */
+    private final List<TextView> driveValues = new ArrayList<>(), driveResets = new ArrayList<>();
     private boolean driveResetArmed;
     private TextView tripLabel, tripValue, tripNote, tripReset;
     private boolean tripResetArmed;
@@ -402,7 +403,24 @@ public final class HomeActivity extends Activity {
         dots = new LinearLayout(this);
         dots.setGravity(Gravity.CENTER);
         area.addView(dots, new FrameLayout.LayoutParams(-1, dp(18), Gravity.BOTTOM));
-        pager.setListener(this::updateDots);
+        pager.setListener(new Pager.Listener() {
+            @Override
+            public void onPage(int page, int count) {
+                updateDots(page, count);
+            }
+
+            @Override
+            public void onMoving(boolean moving) {
+                // Nothing animates while the pages slide (they move as still pictures); back on when they rest.
+                if (moving) {
+                    if (bigClock != null) bigClock.setRunning(false);
+                    startDashWidgets(false);
+                } else if (pager != null) {
+                    if (bigClock != null) bigClock.setRunning(resumed && pager.page() == 0);
+                    startDashWidgets(pager.page() == 0);
+                }
+            }
+        });
 
         toast = new TextView(this);
         toast.setTextColor(0xFFFFFFFF);
@@ -528,7 +546,8 @@ public final class HomeActivity extends Activity {
         if (nowPlaying != null) nowPlaying.stop();
         bigClock = null;
         bigDate = null;
-        driveValue = null;
+        driveValues.clear();
+        driveResets.clear();
         nowPlaying = null;
         if (dash == 1) pager.addView(dashboard(areaW, areaH));
         int cellW = areaW / g.columns, cellH = areaH / g.rows;
@@ -555,6 +574,7 @@ public final class HomeActivity extends Activity {
         d.setPadding(0, 0, 0, gap);
         int boardH = areaH - gap;
         for (CardFrame c : cards) c.finishEditing();
+        for (CardFrame c : cards) glassViews.remove(c.card());   // the old dashboard's glass
         cards.clear();
         if (volumeWidget != null) volumeWidget.stop();
         if (soundWave != null) soundWave.stop();
@@ -638,9 +658,32 @@ public final class HomeActivity extends Activity {
         bigSpeed.setDigitStyle(speedSize / 100f, speedHeight / 100f);
         bigSpeed.setDriveTimeOnly(cfg.gpsOnly);
         right.addView(bigSpeed, speedLp);
+        if (cfg.gpsOnly) {
+            // The speed, then driving time and trip as two matching rows, all with the same 12 dp between.
+            int dataRowH = Math.max(dp(56), Math.min(dp(84), Math.round(areaH * 0.17f)));
+            DataRow drive = driveRow(), tripR = tripRow();
+            sizeRows(dataRowH, drive, tripR);
+            LinearLayout.LayoutParams dlp = new LinearLayout.LayoutParams(-1, dataRowH);
+            right.addView(drive.row, dlp);
+            LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(-1, dataRowH);
+            tlp.topMargin = dp(12);
+            right.addView(tripR.row, tlp);
+        } else {
+            addTripRow(right, areaH);
+        }
+        addCard(d, "speed", right, 1f - rightX, 1f, rightX, 0f);
+
+        updateClock();
+        bigClock.setRunning(resumed);
+        startDashWidgets(pager == null || pager.page() == 0);
+        return d;
+    }
+
+    /** The trip row under turbo boost and torque, in their text sizes. */
+    private void addTripRow(LinearLayout right, int areaH) {
         LinearLayout.LayoutParams tripLp = new LinearLayout.LayoutParams(-1, -2);
         tripLp.topMargin = 0;   // the speed view ends with the same even space
-        View tripRowView = tripRow();
+        View tripRowView = tripRow().row;
         tripRowView.setMinimumHeight(dp(52));
         right.addView(tripRowView, tripLp);
         // TRIP and its distance in the same text sizes as TURBO BOOST and TORQUE above them.
@@ -650,13 +693,7 @@ public final class HomeActivity extends Activity {
             tripLabel.setTextSize(TypedValue.COMPLEX_UNIT_PX, labelPx);
             tripValue.setTextSize(TypedValue.COMPLEX_UNIT_PX, valuePx);
         });
-        if (!cfg.gpsOnly) addTiles(right, areaH);
-        addCard(d, "speed", right, 1f - rightX, 1f, rightX, 0f);
-
-        updateClock();
-        bigClock.setRunning(resumed);
-        startDashWidgets(pager == null || pager.page() == 0);
-        return d;
+        addTiles(right, areaH);
     }
 
     /** Coolant and fuel range under the trip (not on GPS-only cars). */
@@ -831,7 +868,8 @@ public final class HomeActivity extends Activity {
         fitOneLine(label);
         label.setAutoSizeTextTypeUniformWithConfiguration(7, 13, 1, TypedValue.COMPLEX_UNIT_SP);
         texts.addView(label, new LinearLayout.LayoutParams(-1, dp(16)));
-        driveValue = text(24, true);
+        TextView driveValue = text(24, true);
+        driveValues.add(driveValue);
         driveValue.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
         driveValue.setFontFeatureSettings("tnum");
         driveValue.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
@@ -850,7 +888,8 @@ public final class HomeActivity extends Activity {
         note.setAutoSizeTextTypeUniformWithConfiguration(6, 11, 1, TypedValue.COMPLEX_UNIT_SP);
         texts.addView(note, new LinearLayout.LayoutParams(-1, dp(15)));
         box.addView(texts, new LinearLayout.LayoutParams(0, -1, 1f));
-        driveReset = text(13, true);
+        TextView driveReset = text(13, true);
+        driveResets.add(driveReset);
         driveReset.setText(R.string.trip_reset);
         driveReset.setShadowLayer(0, 0, 0, 0);
         driveReset.setPadding(dp(14), dp(8), dp(14), dp(8));
@@ -879,9 +918,9 @@ public final class HomeActivity extends Activity {
 
     private final Runnable disarmDrive = () -> {
         driveResetArmed = false;
-        if (driveReset != null) {
-            driveReset.setText(R.string.trip_reset);
-            driveReset.setTextColor(0xFFFFFFFF);
+        for (TextView r : driveResets) {
+            r.setText(R.string.trip_reset);
+            r.setTextColor(0xFFFFFFFF);
         }
     };
 
@@ -889,8 +928,10 @@ public final class HomeActivity extends Activity {
     private void resetDriveTime() {
         if (!driveResetArmed) {
             driveResetArmed = true;
-            driveReset.setText(R.string.trip_confirm);
-            driveReset.setTextColor(0xFFFF9F0A);
+            for (TextView r : driveResets) {
+                r.setText(R.string.trip_confirm);
+                r.setTextColor(0xFFFF9F0A);
+            }
             main.removeCallbacks(disarmDrive);
             main.postDelayed(disarmDrive, 3_000);
             return;
@@ -905,51 +946,105 @@ public final class HomeActivity extends Activity {
 
     private void showDriveTime() {
         String t = DriveTimer.format(driveTimer.drivenMs);
-        if (driveValue != null) driveValue.setText(t);
-        if (bigSpeed != null) bigSpeed.setDriveTime(t);
+        for (TextView v : driveValues) v.setText(t);
     }
 
-    /** The trip row under the dials: TRIP, the distance, where it comes from, and Reset. */
-    private View tripRow() {
+    /** A dark glass row: a label, a value with a small note under it, and a Reset pill at the side. */
+    private static final class DataRow {
+        LinearLayout row;
+        TextView label, value, note, reset;
+    }
+
+    private DataRow dataRow(int labelRes, Runnable onReset) {
+        DataRow r = new DataRow();
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
         row.setPadding(dp(14), dp(6), dp(8), dp(6));
         row.setBackground(NowPlaying.darkPanel(this));
         TextView label = text(11, true);
-        label.setText(R.string.trip);
+        label.setText(labelRes);
         label.setLetterSpacing(0.12f);
         label.setAlpha(0.65f);
+        label.setGravity(Gravity.START | Gravity.CENTER_VERTICAL);
         label.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL));
-        tripLabel = label;
         row.addView(label, new LinearLayout.LayoutParams(-2, -2));
         LinearLayout values = new LinearLayout(this);
         values.setOrientation(LinearLayout.VERTICAL);
         values.setPadding(dp(12), 0, dp(8), 0);
-        tripValue = text(20, true);
-        tripValue.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD));
-        tripValue.setGravity(Gravity.START);
-        tripValue.setFontFeatureSettings("tnum");
-        tripNote = text(10, false);
-        tripNote.setGravity(Gravity.START);
-        tripNote.setAlpha(0.6f);
-        values.addView(tripValue);
-        values.addView(tripNote);
+        TextView value = text(20, true);
+        value.setTypeface(android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD));
+        value.setGravity(Gravity.START);
+        value.setFontFeatureSettings("tnum");
+        TextView note = text(10, false);
+        note.setGravity(Gravity.START);
+        note.setAlpha(0.6f);
+        values.addView(value);
+        values.addView(note);
         row.addView(values, new LinearLayout.LayoutParams(0, -2, 1f));
-        tripReset = text(13, true);
-        tripReset.setText(R.string.trip_reset);
-        tripReset.setPadding(dp(16), dp(8), dp(16), dp(8));
+        TextView reset = text(13, true);
+        reset.setText(R.string.trip_reset);
+        reset.setPadding(dp(16), dp(8), dp(16), dp(8));
         android.graphics.drawable.GradientDrawable pill = new android.graphics.drawable.GradientDrawable();
         pill.setColor(0x24FFFFFF);
         pill.setCornerRadius(dp(18));
         pill.setStroke(Math.max(1, dp(1)), 0x4DFFFFFF);
-        tripReset.setBackground(pill);
-        tripReset.setOnClickListener(v -> resetTrip());
-        squish(tripReset);
-        row.addView(tripReset, new LinearLayout.LayoutParams(-2, -2));
+        reset.setBackground(pill);
+        reset.setOnClickListener(v -> onReset.run());
+        squish(reset);
+        row.addView(reset, new LinearLayout.LayoutParams(-2, -2));
+        r.row = row;
+        r.label = label;
+        r.value = value;
+        r.note = note;
+        r.reset = reset;
+        return r;
+    }
+
+    /** The trip row under the dials: TRIP, the distance, where it comes from, and Reset. */
+    private DataRow tripRow() {
+        DataRow r = dataRow(R.string.trip, this::resetTrip);
+        tripLabel = r.label;
+        tripValue = r.value;
+        tripNote = r.note;
+        tripReset = r.reset;
         tripResetArmed = false;
         showTrip();
-        return row;
+        return r;
+    }
+
+    /** GPS-only cars: DRIVING TIME as a row like the trip's, with its own Reset, in the speedometer. */
+    private DataRow driveRow() {
+        DataRow r = dataRow(R.string.drive_time, this::resetDriveTime);
+        r.note.setText(R.string.drive_time_note);
+        driveValues.add(r.value);
+        driveResets.add(r.reset);
+        showDriveTime();
+        return r;
+    }
+
+    /**
+     * The speedometer's rows (GPS-only cars: driving time and trip) at one height and one set of text
+     * sizes, with their labels the same width so the values line up.
+     */
+    private void sizeRows(int rowH, DataRow... rows) {
+        float labelPx = rowH * 0.18f, valuePx = rowH * 0.34f, notePx = rowH * 0.15f, resetPx = rowH * 0.2f;
+        android.graphics.Paint p = new android.graphics.Paint();
+        int labelW = 0;
+        for (DataRow r : rows) {
+            r.label.setTextSize(TypedValue.COMPLEX_UNIT_PX, labelPx);
+            p.setTextSize(labelPx);
+            p.setTypeface(r.label.getTypeface());
+            p.setLetterSpacing(r.label.getLetterSpacing());
+            labelW = Math.max(labelW, (int) Math.ceil(p.measureText(r.label.getText().toString())));
+        }
+        for (DataRow r : rows) {
+            r.label.setMinWidth(labelW + dp(2));
+            r.value.setTextSize(TypedValue.COMPLEX_UNIT_PX, valuePx);
+            r.note.setTextSize(TypedValue.COMPLEX_UNIT_PX, notePx);
+            r.reset.setTextSize(TypedValue.COMPLEX_UNIT_PX, resetPx);
+            r.row.setPadding(dp(16), 0, dp(10), 0);
+        }
     }
 
     private final Runnable disarmTrip = () -> {
@@ -1407,6 +1502,16 @@ public final class HomeActivity extends Activity {
         box.addView(done, new LinearLayout.LayoutParams(-1, -2));
         d.setContentView(box);
         glassViews.add(box);
+        box.addOnAttachStateChangeListener(new View.OnAttachStateChangeListener() {
+            @Override
+            public void onViewAttachedToWindow(View v) {
+            }
+
+            @Override
+            public void onViewDetachedFromWindow(View v) {
+                glassViews.remove(v);   // the dialog closed
+            }
+        });
         if (d.getWindow() != null) {
             d.getWindow().setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(0));
             d.getWindow().setLayout(Math.min(builtW - dp(48), dp(620)), ViewGroup.LayoutParams.WRAP_CONTENT);

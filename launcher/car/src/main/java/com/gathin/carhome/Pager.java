@@ -13,6 +13,25 @@ import android.view.animation.DecelerateInterpolator;
 final class Pager extends ViewGroup {
     interface Listener {
         void onPage(int page, int count);
+
+        /** A swipe started (true) or the pages came to rest (false). */
+        default void onMoving(boolean moving) {
+        }
+    }
+
+    private boolean moving;
+
+    /**
+     * While the pages move each one is drawn once into a layer and slid as a picture, which a slow head unit
+     * can do smoothly; back to normal drawing when they rest.
+     */
+    private void setMoving(boolean on) {
+        if (moving == on) return;
+        moving = on;
+        for (int i = 0; i < getChildCount(); i++) {
+            getChildAt(i).setLayerType(on ? LAYER_TYPE_HARDWARE : LAYER_TYPE_NONE, null);
+        }
+        if (listener != null) listener.onMoving(on);
     }
 
     private final int touchSlop, minFling;
@@ -75,6 +94,7 @@ final class Pager extends ViewGroup {
                 float dx = Math.abs(e.getX() - downX), dy = Math.abs(e.getY() - downY);
                 if (dx > touchSlop && dx > dy) {
                     dragging = true;
+                    setMoving(true);
                     downX = e.getX();
                     startScroll = getScrollX();
                     getParent().requestDisallowInterceptTouchEvent(true);
@@ -132,6 +152,20 @@ final class Pager extends ViewGroup {
         settle.setDuration(280);
         settle.setInterpolator(new DecelerateInterpolator(1.6f));
         settle.addUpdateListener(a -> scrollTo((int) a.getAnimatedValue(), 0));
+        setMoving(true);
+        settle.addListener(new android.animation.AnimatorListenerAdapter() {
+            private boolean cancelled;
+
+            @Override
+            public void onAnimationCancel(android.animation.Animator a) {
+                cancelled = true;   // a new swipe or settle carries on moving
+            }
+
+            @Override
+            public void onAnimationEnd(android.animation.Animator a) {
+                if (!cancelled && !dragging) setMoving(false);
+            }
+        });
         settle.start();
         if (listener != null) listener.onPage(page, count);
     }
