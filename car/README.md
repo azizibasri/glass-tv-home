@@ -217,7 +217,7 @@ Undo Glass Car: `CAR_HOST=<ip> car/restore-home.sh <original home printed by ins
 The gear on the left rail, above Clean, opens a glass settings panel in the middle of the screen with every
 option as a big button (it scrolls on short screens):
 
-- **Wallpaper from gallery**: pick any photo with the unit's gallery. Glass Car keeps a copy, turns it the
+- **Wallpaper from gallery**: pick any photo from Glass Car's own picture panel: the pictures on the unit and USB sticks, newest first, so no gallery app is needed (it asks once to see photos; a gallery app is used only if the panel finds none). Glass Car keeps a copy, turns it the
   right way up and blurs it behind every glass panel. **Default wallpaper** goes back to the built-in one.
 - **Clock style**: seven fonts modelled on the iOS lock-screen clock styles (Thin, Light, Regular, Heavy,
   Condensed, Serif, and Inter, an open font close to Apple's), a size slider (60 to 140 %), a **Height**

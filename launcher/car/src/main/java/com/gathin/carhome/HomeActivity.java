@@ -298,6 +298,12 @@ public final class HomeActivity extends Activity {
     @Override
     public void onRequestPermissionsResult(int request, String[] perms, int[] results) {
         super.onRequestPermissionsResult(request, perms, results);
+        if (request == 7) {
+            // Pictures allowed: show them (or fall back to a gallery app).
+            if (results.length > 0 && results[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) pictureDialog();
+            else galleryApp();
+            return;
+        }
         if (request == 6) {
             // Music files allowed: play them now (or say there are none).
             if (results.length > 0 && results[0] == android.content.pm.PackageManager.PERMISSION_GRANTED) openMusicApp();
@@ -347,12 +353,16 @@ public final class HomeActivity extends Activity {
         super.onActivityResult(request, result, data);
         if (request == Cleaner.REQUEST_CLEAR_CACHE && result == RESULT_OK) showToast(getString(R.string.clean) + " ✓");
         if (request == REQUEST_WALLPAPER && result == RESULT_OK && data != null && data.getData() != null) {
-            copyPicture(data.getData(), "wallpaper.jpg", () -> {
-                cfg.wallpaper = true;
-                refreshWallpaper();
-                showToast(getString(R.string.wallpaper_set));
-            });
+            setWallpaperFrom(data.getData());
         }
+    }
+
+    private void setWallpaperFrom(Uri uri) {
+        copyPicture(uri, "wallpaper.jpg", () -> {
+            cfg.wallpaper = true;
+            refreshWallpaper();
+            showToast(getString(R.string.wallpaper_set));
+        });
     }
 
     // ---- Building the screen ----
@@ -1038,7 +1048,123 @@ public final class HomeActivity extends Activity {
         holder[0].show();
     }
 
+    /**
+     * Wallpaper from a picture: Glass Car's own picture panel (the pictures on the unit and USB sticks, so
+     * no gallery app is needed); a gallery app only when the panel can't list pictures.
+     */
     private void pickPicture(int request) {
+        String perm = Build.VERSION.SDK_INT >= 33 ? "android.permission.READ_MEDIA_IMAGES"
+                : android.Manifest.permission.READ_EXTERNAL_STORAGE;
+        if (checkSelfPermission(perm) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{perm}, 7);
+            return;
+        }
+        pictureDialog();
+    }
+
+    /** The pictures as a grid of small previews, newest first; tap one to make it the wallpaper. */
+    private void pictureDialog() {
+        worker.execute(() -> {
+            List<Uri> pics = new ArrayList<>();
+            String[] cols = {android.provider.MediaStore.Images.Media._ID};
+            try (android.database.Cursor c = getContentResolver().query(
+                    android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cols, null, null,
+                    android.provider.MediaStore.Images.Media.DATE_MODIFIED + " DESC")) {
+                while (c != null && c.moveToNext() && pics.size() < 200) {
+                    pics.add(android.content.ContentUris.withAppendedId(
+                            android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI, c.getLong(0)));
+                }
+            } catch (RuntimeException ignored) {
+                // No media library: a gallery app, if there is one.
+            }
+            main.post(() -> {
+                if (isFinishing()) return;
+                if (pics.isEmpty()) {
+                    galleryApp();
+                    return;
+                }
+                showPictures(pics);
+            });
+        });
+    }
+
+    private void showPictures(List<Uri> pics) {
+        LinearLayout body = new LinearLayout(this);
+        body.setOrientation(LinearLayout.VERTICAL);
+        int cols = 4, gap = dp(8);
+        int panelW = Math.min(builtW - dp(48), dp(620)) - dp(44);
+        int cell = Math.max(dp(60), (panelW - gap * (cols - 1)) / cols);
+        android.app.Dialog[] holder = new android.app.Dialog[1];
+        java.util.concurrent.ExecutorService thumbs = Executors.newSingleThreadExecutor();
+        LinearLayout row = null;
+        for (int i = 0; i < pics.size(); i++) {
+            if (i % cols == 0) {
+                row = new LinearLayout(this);
+                row.setOrientation(LinearLayout.HORIZONTAL);
+                LinearLayout.LayoutParams rlp = new LinearLayout.LayoutParams(-1, cell);
+                if (i > 0) rlp.topMargin = gap;
+                body.addView(row, rlp);
+            }
+            Uri uri = pics.get(i);
+            android.widget.ImageView iv = new android.widget.ImageView(this);
+            iv.setScaleType(android.widget.ImageView.ScaleType.CENTER_CROP);
+            android.graphics.drawable.GradientDrawable ph = new android.graphics.drawable.GradientDrawable();
+            ph.setColor(0x1FFFFFFF);
+            ph.setCornerRadius(dp(10));
+            iv.setBackground(ph);
+            iv.setClipToOutline(true);
+            iv.setOnClickListener(v -> {
+                if (holder[0] != null) holder[0].dismiss();
+                setWallpaperFrom(uri);
+            });
+            squish(iv);
+            LinearLayout.LayoutParams ilp = new LinearLayout.LayoutParams(cell, cell);
+            if (i % cols > 0) ilp.leftMargin = gap;
+            row.addView(iv, ilp);
+            thumbs.execute(() -> {
+                android.graphics.Bitmap b = thumbnail(uri, cell);
+                if (b != null) main.post(() -> iv.setImageBitmap(b));
+            });
+        }
+        TextView hint = text(11, false);
+        hint.setGravity(Gravity.START);
+        hint.setSingleLine(false);
+        hint.setAlpha(0.6f);
+        hint.setText(R.string.pictures_hint);
+        LinearLayout.LayoutParams hlp = new LinearLayout.LayoutParams(-1, -2);
+        hlp.topMargin = dp(10);
+        body.addView(hint, hlp);
+        holder[0] = panelDialog(R.string.wallpaper_pick, body);
+        holder[0].setOnDismissListener(x -> thumbs.shutdownNow());
+        holder[0].show();
+    }
+
+    /** A small preview of a picture, about {@code size} pixels, decoded to save memory. */
+    private android.graphics.Bitmap thumbnail(Uri uri, int size) {
+        try {
+            if (Build.VERSION.SDK_INT >= 29) {
+                return getContentResolver().loadThumbnail(uri, new android.util.Size(size, size), null);
+            }
+            android.graphics.BitmapFactory.Options o = new android.graphics.BitmapFactory.Options();
+            o.inJustDecodeBounds = true;
+            try (java.io.InputStream in = getContentResolver().openInputStream(uri)) {
+                android.graphics.BitmapFactory.decodeStream(in, null, o);
+            }
+            int sample = 1;
+            while (o.outWidth / (sample * 2) >= size && o.outHeight / (sample * 2) >= size) sample *= 2;
+            o.inJustDecodeBounds = false;
+            o.inSampleSize = sample;
+            try (java.io.InputStream in = getContentResolver().openInputStream(uri)) {
+                return android.graphics.BitmapFactory.decodeStream(in, null, o);
+            }
+        } catch (Exception | OutOfMemoryError e) {
+            return null;
+        }
+    }
+
+    /** A gallery app picks the picture; with none, say where to put pictures. */
+    private void galleryApp() {
+        int request = REQUEST_WALLPAPER;
         Intent pick = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         Intent any = new Intent(Intent.ACTION_GET_CONTENT).setType("image/*").addCategory(Intent.CATEGORY_OPENABLE);
         for (Intent i : new Intent[]{pick, any}) {

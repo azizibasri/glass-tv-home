@@ -19,6 +19,8 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <!-- The music widget's own player: reads music files, keeps playing behind other apps. -->
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <!-- The wallpaper picker: pictures on the unit and USB sticks (Android 13+; older uses READ_EXTERNAL_STORAGE). -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <!-- The car-data connection keeps running behind the reverse camera and other apps. -->
