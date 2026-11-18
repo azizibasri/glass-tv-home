@@ -74,6 +74,11 @@ final class CarConfig {
     String obdAddress = "";
     /** For fuel range over OBD-II, which only gives the tank level: tank size and usual use. Jetta 2017: 55 L. */
     float fuelTankLitres = 55f, fuelLitresPer100km = 7.5f;
+    /**
+     * Fuel range as a countdown, for a car whose fuel sensor can't be trusted: starts at this many km after
+     * Reset (fill up, then tap Reset) and goes down with the distance driven. 0 shows the car's own range.
+     */
+    int fuelCountdownKm = 500;
     /** Dashboard clock: "thin", "light", "regular", "heavy", "condensed", "serif", "inter" or "custom". */
     String clockFont = "thin";
     /** Dashboard clock size, 60 to 140 % of the size that fits. */
@@ -145,6 +150,8 @@ final class CarConfig {
             String src = o.optString("data_source", c.dataSource);
             if (src.equals("can") || src.equals("obd")) c.dataSource = src;
             c.obdAddress = o.optString("obd_address", c.obdAddress).trim();
+            int cd = o.optInt("fuel_countdown_km", c.fuelCountdownKm);
+            if (cd >= 0 && cd <= 2000) c.fuelCountdownKm = cd;
             double tank = o.optDouble("fuel_tank_l", c.fuelTankLitres);
             if (tank >= 20 && tank <= 200) c.fuelTankLitres = (float) tank;
             double use = o.optDouble("fuel_l_per_100km", c.fuelLitresPer100km);

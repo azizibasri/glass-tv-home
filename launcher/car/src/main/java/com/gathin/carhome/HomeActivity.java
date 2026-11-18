@@ -110,6 +110,11 @@ public final class HomeActivity extends Activity {
     private static final int REQUEST_WALLPAPER = 11;
     private final TripMeter trip = new TripMeter();
     private final DriveTimer driveTimer = new DriveTimer();
+    /** The distance since the fuel Reset, for the fuel range countdown (see CarConfig.fuelCountdownKm). */
+    private final TripMeter fuelMeter = new TripMeter();
+    private TextView fuelReset;
+    private boolean fuelResetArmed;
+    private float lastCarRange = Float.NaN;
     /** The driving time's value and Reset button in the widget and (GPS-only cars) the speedometer row. */
     private final List<TextView> driveValues = new ArrayList<>(), driveResets = new ArrayList<>();
     private boolean driveResetArmed;
@@ -242,6 +247,8 @@ public final class HomeActivity extends Activity {
         trip.baseOdometer = prefs.getFloat("trip_base", Float.NaN);
         trip.accumulated = prefs.getFloat("trip_acc", 0f);
         driveTimer.drivenMs = prefs.getLong("drive_ms", 0L);
+        fuelMeter.baseOdometer = prefs.getFloat("fuel_base", Float.NaN);
+        fuelMeter.accumulated = prefs.getFloat("fuel_acc", 0f);
         loadApps();
     }
 
@@ -705,7 +712,33 @@ public final class HomeActivity extends Activity {
         tiles.addView(coolantTile, new LinearLayout.LayoutParams(0, -1, 1f));
         LinearLayout.LayoutParams rangeLp = new LinearLayout.LayoutParams(0, -1, 1f);
         rangeLp.leftMargin = dp(10);
-        tiles.addView(rangeTile, rangeLp);
+        if (cfg.fuelCountdownKm > 0) {
+            // The countdown has a Reset pill on the right of its tile, for after filling up.
+            FrameLayout box = new FrameLayout(this);
+            box.addView(rangeTile, new FrameLayout.LayoutParams(-1, -1));
+            fuelReset = text(12, true);
+            fuelReset.setText(R.string.trip_reset);
+            fuelReset.setShadowLayer(0, 0, 0, 0);
+            fuelReset.setPadding(dp(10), dp(6), dp(10), dp(6));
+            android.graphics.drawable.GradientDrawable pill = new android.graphics.drawable.GradientDrawable();
+            pill.setColor(0x24FFFFFF);
+            pill.setCornerRadius(dp(16));
+            pill.setStroke(Math.max(1, dp(1)), 0x4DFFFFFF);
+            fuelReset.setBackground(pill);
+            fuelReset.setOnClickListener(v -> resetFuel());
+            squish(fuelReset);
+            int pillW = dp(72);
+            FrameLayout.LayoutParams plp = new FrameLayout.LayoutParams(pillW, -2, Gravity.END | Gravity.CENTER_VERTICAL);
+            plp.rightMargin = dp(10);
+            box.addView(fuelReset, plp);
+            rangeTile.setRightInset(pillW + dp(14));
+            fuelResetArmed = false;
+            tiles.addView(box, rangeLp);
+            showRange();
+        } else {
+            fuelReset = null;
+            tiles.addView(rangeTile, rangeLp);
+        }
         LinearLayout.LayoutParams tilesLp = new LinearLayout.LayoutParams(-1,
                 Math.max(dp(64), Math.min(dp(84), Math.round(areaH * 0.18f))));
         tilesLp.topMargin = dp(12);
@@ -1082,7 +1115,8 @@ public final class HomeActivity extends Activity {
     private void saveTrip() {
         tripSavedAt = SystemClock.elapsedRealtime();
         prefs.edit().putFloat("trip_base", trip.baseOdometer).putFloat("trip_acc", trip.accumulated)
-                .putLong("drive_ms", driveTimer.drivenMs).apply();
+                .putLong("drive_ms", driveTimer.drivenMs)
+                .putFloat("fuel_base", fuelMeter.baseOdometer).putFloat("fuel_acc", fuelMeter.accumulated).apply();
     }
 
     // ---- Settings menu: wallpaper and icon style ----
@@ -2023,6 +2057,9 @@ public final class HomeActivity extends Activity {
         trip.odometer(r.odometer);
         trip.speed(r.speed, SystemClock.elapsedRealtime());
         driveTimer.speed(r.speed, SystemClock.elapsedRealtime());
+        fuelMeter.odometer(r.odometer);
+        fuelMeter.speed(r.speed, SystemClock.elapsedRealtime());
+        lastCarRange = r.range;
         showTrip();
         showDriveTime();
         if (SystemClock.elapsedRealtime() - tripSavedAt > 15_000) saveTrip();
@@ -2047,14 +2084,55 @@ public final class HomeActivity extends Activity {
                     getString(level == SpeedMath.COLD ? R.string.coolant_cold
                             : level == SpeedMath.HOT ? R.string.coolant_hot : R.string.coolant_normal));
         }
-        if (Float.isNaN(r.range)) {
-            rangeTile.set("-- km", Float.NaN, 0x80FFFFFF, getString(R.string.no_data));
+        showRange();
+    }
+
+    /** The fuel range tile: the countdown from the last fuel Reset, or the car's own range. */
+    private void showRange() {
+        if (rangeTile == null) return;
+        float range;
+        float full;
+        if (cfg.fuelCountdownKm > 0) {
+            full = cfg.fuelCountdownKm;
+            range = Math.max(0f, full - fuelMeter.distance());
         } else {
-            boolean low = r.range < SpeedMath.RANGE_LOW_KM, veryLow = r.range < SpeedMath.RANGE_LOW_KM / 3f;
-            rangeTile.set(Math.round(r.range) + " km", SpeedMath.rangeFraction(r.range),
-                    veryLow ? 0xFFFF453A : low ? 0xFFFF9F0A : 0xFF30D158,
-                    getString(low ? R.string.range_low : R.string.range_ok));
+            full = 700f;
+            range = lastCarRange;
         }
+        if (Float.isNaN(range)) {
+            rangeTile.set("-- km", Float.NaN, 0x80FFFFFF, getString(R.string.no_data));
+            return;
+        }
+        boolean low = range < SpeedMath.RANGE_LOW_KM, veryLow = range < SpeedMath.RANGE_LOW_KM / 3f;
+        rangeTile.set(Math.round(range) + " km", Math.max(0f, Math.min(1f, range / full)),
+                veryLow ? 0xFFFF453A : low ? 0xFFFF9F0A : 0xFF30D158,
+                getString(low ? R.string.range_low : R.string.range_ok));
+    }
+
+    private final Runnable disarmFuel = () -> {
+        fuelResetArmed = false;
+        if (fuelReset != null) {
+            fuelReset.setText(R.string.trip_reset);
+            fuelReset.setTextColor(0xFFFFFFFF);
+        }
+    };
+
+    /** After filling up: the first tap arms it ("Tap again"), a second within 3 seconds puts the range back. */
+    private void resetFuel() {
+        if (!fuelResetArmed) {
+            fuelResetArmed = true;
+            fuelReset.setText(R.string.trip_confirm);
+            fuelReset.setTextColor(0xFFFF9F0A);
+            main.removeCallbacks(disarmFuel);
+            main.postDelayed(disarmFuel, 3_000);
+            return;
+        }
+        main.removeCallbacks(disarmFuel);
+        disarmFuel.run();
+        fuelMeter.reset();
+        saveTrip();
+        showRange();
+        showToast(getString(R.string.fuel_was_reset, cfg.fuelCountdownKm));
     }
 
     /** The music widget's play button when nothing is playing: the dock's music app, else the first one. */

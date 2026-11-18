@@ -17,6 +17,7 @@
     <string name="music_access_hint">Tap here and allow Glass Car</string>
     <string name="coolant">COOLANT</string>
     <string name="fuel_range">FUEL RANGE</string>
+    <string name="fuel_was_reset">Fuel range back to %1$d km</string>
     <string name="no_data">No data</string>
     <string name="coolant_cold">Warming up</string>
     <string name="coolant_normal">Normal</string>

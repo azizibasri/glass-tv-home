@@ -24,6 +24,13 @@ final class InfoTile extends View {
     private String text = "--", state = "No data";
     private float fraction;
     private final float d;
+    /** Room kept free on the right (for a button laid over the tile). */
+    private int rightInset;
+
+    void setRightInset(int px) {
+        rightInset = px;
+        invalidate();
+    }
 
     InfoTile(Context ctx, int iconRes, String title) {
         super(ctx);
@@ -54,7 +61,7 @@ final class InfoTile extends View {
 
     @Override
     protected void onDraw(Canvas c) {
-        int w = getWidth(), h = getHeight();
+        int w = getWidth() - rightInset, h = getHeight();
         float pad = Math.min(14 * d, h * 0.18f);
         float iconSize = Math.min(h * 0.42f, 30 * d);
         if (icon != null) {

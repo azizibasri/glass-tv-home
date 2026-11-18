@@ -91,8 +91,10 @@ Swipe left for the apps.
   screen. Without it, it adds up distance from the speed: the row says which.
 - **Coolant**: °C with a bar and a word: *Warming up* under 70 °C (blue), *Normal* (green), *Hot* over
   110 °C (red). A VW normally sits near 90 °C.
-- **Fuel range**: km left, as the car's own trip computer works it out. Orange *Refuel soon* under 80 km,
-  red under about 27 km.
+- **Fuel range**: a countdown, for a car whose fuel sensor can't be trusted: after filling up, tap **Reset**
+  on the tile (then *Tap again*) and it starts at **500 km**, going down with every km driven (the same
+  distance as the trip) to 0. Orange *Refuel soon* under 80 km, red under about 27 km. Kept across restarts.
+  `"fuel_countdown_km"` in `config.json` sets the full-tank distance; `0` shows the car's own range instead.
 - **Always connected**: the car data (OBD-II adapter, CAN box and GPS) runs in a small background service,
   so it stays connected when the reverse camera comes on, when you open Maps, Waze or music, and while the
   screen is off. Android shows it as a *Car data connected* notification. If the adapter drops out (engine
